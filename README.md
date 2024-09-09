@@ -1,27 +1,27 @@
 # aqua-container
 A rust implementation of the Aqua protocol.
 
-Phase 1 Features:
+Features:
 
 Functionality milestones Fileupload & Hasher:
-1) Upload file to Database (Done)
-2) Turn file into Aqua-Chain (In Progress)
-3) Export Aqua-Chain (no signature, no witness) as JSON (Todo)
-4) Sign Aqua-Chain with Metamask-Wallet (Todo)
-5) Import Aqua-Chain
-6) Extend existing Aqua-Chain with new Signature (Todo)
-7) Witness Aqua-Chain on Chain (Todo)
+1) [done] Upload file to Database
+2) [in progress] Turn file into Aqua-Chain 
+3) [todo] Export Aqua-Chain (no signature, no witness) as JSON
+4) [todo] Sign Aqua-Chain with Metamask-Wallet
+5) [todo] Import Aqua-Chain
+6) [todo] Extend existing Aqua-Chain with new Signature 
+7) [todo] Witness Aqua-Chain on Chain
 
 UI-Interface:
-1) Beautify website with CSS (todo)
-2) Make it mobile-responsive (todo)
+1) [todo] Beautify website with CSS
+2) [todo] Make it mobile-responsive
 
 Functionality milestones Verifier: 
-1) Upload Aqua-Chain for verification (todo)
-2) Verification of Aqua-Chain (print to console)
-3) Display verification results on the website
+1) [todo] Upload Aqua-Chain for verification
+2) [todo] Verification of Aqua-Chain (print to console)
+3) [todo] Display verification results on the website
 
 Pages:
-1) Hasher
-2) Verifier
-3) Config (configure Witness, see version of Software etc.)
+1) [in progress] Hasher
+2) [todo] Verifier
+3) [todo] Config (configure Witness, see version of Software etc.)
