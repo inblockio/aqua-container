@@ -9,7 +9,12 @@ use axum::{
     routing::{get, post},
     BoxError, Router,
 };
+
+use chrono::{NaiveDateTime, Utc};
+
 use futures::{Stream, TryStreamExt};
+use sha3::*;
+use std::collections::BTreeMap;
 use std::io;
 use std::net::SocketAddr;
 use std::time::SystemTime;
@@ -27,15 +32,14 @@ use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
 use serde::{Deserialize, Serialize};
 
-use guardian_common::custom_types::*;
+use guardian_common::{crypt, custom_types::*};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
 #[derive(Debug, Serialize, Deserialize, Collection)]
-#[collection(name = "messages")]
-struct Message {
-    pub timestamp: SystemTime,
-    pub contents: String,
+#[collection(name = "page")]
+pub struct PageData {
+    pub pages: Vec<HashChain>,
 }
 
 #[derive(Debug, Clone)]
@@ -45,15 +49,11 @@ struct Db {
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| format!("{}=debug", env!("CARGO_CRATE_NAME")).into()),
-        )
-        .with(tracing_subscriber::fmt::layer())
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    let db = Database::open::<Message>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
+    let db = Database::open::<PageData>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
 
     // save files to a separate directory to not override files in the current directory
     tokio::fs::create_dir(UPLOADS_DIRECTORY).await;
@@ -61,8 +61,7 @@ async fn main() {
     let server_database = Db { db: db };
 
     let app = Router::new()
-        .route("/", get(show_form).post(accept_form))
-        .route("/file/:file_name", post(save_request_body))
+        .route("/", get(show_form).post(save_request_body))
         .with_state(server_database);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")
@@ -74,29 +73,71 @@ async fn main() {
 
 async fn save_request_body(
     State(server_database): State<Db>,
-    Path(file_name): Path<String>,
     request: Request,
-) -> () {
+) -> Result<Redirect, (StatusCode, String)> {
+    tracing::debug!("yay2");
+    println!("yay2");
     let body_bytes = match axum::body::to_bytes(request.into_body(), usize::MAX).await {
         Ok(t) => t.to_vec(),
-        Err(e) => return,
+        Err(e) => {
+            println!("yay3");
+            return Ok(Redirect::to("/"));
+        }
     };
 
-    let body_string = match String::from_utf8(body_bytes) {
-        Ok(t) => t,
-        Err(e) => return,
-    };
+    let mut content_hasher = sha3::Sha3_512::default();
+    // 4.b add rev.metadata.domain_id to hasher {m}
+    content_hasher.update(body_bytes.clone());
+    let content_hash = Hash::from(content_hasher.finalize());
 
-    let document = Message {
-        contents: body_string,
-        timestamp: SystemTime::now(),
+    let b64 = Base64::from(body_bytes);
+
+    let document = PageData {
+        pages: vec![HashChain {
+            genesis_hash: "".to_owned(),
+            domain_id: "".to_owned(),
+            title: "".to_owned(),
+            namespace: 0,
+            chain_height: 0,
+            revisions: vec![(
+                content_hash,
+                Revision {
+                    content: RevisionContent {
+                        file: Some(FileContent {
+                            data: b64,
+                            filename: "Test".to_string(),
+                            size: 0,
+                            comment: "".to_string(),
+                        }),
+                        content: BTreeMap::new(),
+                        content_hash: content_hash,
+                    },
+                    metadata: RevisionMetadata {
+                        domain_id: "0".to_string(),
+                        time_stamp: Timestamp::from(chrono::NaiveDateTime::from_timestamp(
+                            Utc::now().timestamp(),
+                            0,
+                        )),
+                        previous_verification_hash: None,
+                        metadata_hash: content_hash,
+                        verification_hash: content_hash,
+                    },
+                    signature: None,
+                    witness: None,
+                },
+            )],
+        }],
     }
     .push_into(&server_database.db)
     .unwrap();
+
+    Ok(Redirect::to("/"))
 }
 
 // Handler that returns HTML for a multipart form.
 async fn show_form() -> Html<&'static str> {
+    tracing::debug!("yay");
+    println!("yay");
     Html(
         r#"
         <!doctype html>
