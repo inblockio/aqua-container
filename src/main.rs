@@ -67,6 +67,8 @@ async fn main() {
     let app = Router::new()
         .route("/", get(show_form).post(save_request_body))
         .route("/json", post(save_json_file))
+        .route("/verificationhash", post(get_verification_hash_for_file))
+        .route("/signrevision", post(add_signature_hash_for_file))
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database);
 
@@ -83,9 +85,53 @@ struct Input {
     filename: String,
 }
 
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+struct SInput {
+    filename: String,
+    signature: String,
+}
+
 // async fn accept_form(Form(input): Form<Input>) {
 //     dbg!(&input);
 // }
+
+async fn add_signature_hash_for_file(
+    State(server_database): State<Db>,
+    Form(input): Form<SInput>,
+) -> (StatusCode, String) {
+    let mut document2: &Option<PageData> =
+        &server_database.db.get_key(&input.filename).into().unwrap();
+
+    if document2.is_some() {
+        let doc: PageData = document2.clone().unwrap();
+        let len = &doc.pages[0].revisions.len();
+
+        let (ver1, rev1) = &doc.pages[0].revisions[len - 1];
+
+        let mut rev2 = rev1.clone();
+
+        return (StatusCode::OK, ver1.to_string());
+    }
+
+    return (StatusCode::NOT_FOUND, "".to_string());
+}
+
+async fn get_verification_hash_for_file(
+    State(server_database): State<Db>,
+    Form(input): Form<Input>,
+) -> (StatusCode, String) {
+    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
+
+    if document2.is_some() {
+        let doc: PageData = document2.clone().unwrap();
+        let len = &doc.pages[0].revisions.len();
+
+        let (ver1, _) = &doc.pages[0].revisions[len - 1];
+        return (StatusCode::OK, ver1.to_string());
+    }
+    return (StatusCode::NOT_FOUND, "".to_string());
+}
 
 async fn save_json_file(
     State(server_database): State<Db>,
@@ -111,6 +157,155 @@ async fn save_json_file(
         );
     }
     Ok(Redirect::to("/json"))
+}
+
+// Handler that returns HTML for a multipart form.
+async fn show_form() -> Html<&'static str> {
+    tracing::debug!("yay");
+    println!("yay");
+    Html(
+        r#"
+        <!doctype html>
+        <html>
+            <head>
+                <title>Upload something!</title>
+                    <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
+                    <script>
+                        function web3_check_metamask() {
+                            if (!window.ethereum) {
+                                console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+                                alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+                                return false;
+                            }else{
+                                console.log('MetaMask extension has been detected!!');
+                                return true;
+                            }
+                        }
+                        
+                        function web3_metamask_hash(){
+                            var hashed_string   = '';
+                            var chars           = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+                            var total_chars     = chars.length;
+                            for ( var i = 0; i < 256; i++ ) {
+                                hashed_string += chars.charAt(Math.floor(Math.random() * total_chars));
+                            }
+                            return hashed_string;                
+                        }
+                        
+                        async function web3_metamask_login(to_sign) {
+                            // Check first if the user has the MetaMask installed
+                            if ( web3_check_metamask() ) {
+                                console.log('Initate Login Process');
+            
+                                // Get the Ethereum provider
+                                const provider = new ethers.providers.Web3Provider(window.ethereum);                    
+                                // Get Ethereum accounts
+                                await provider.send("eth_requestAccounts", []);
+                                console.log("Connected!!"); 
+                                // Get the User Ethereum address
+                                const address = await provider.getSigner().getAddress();
+                                console.log(address);      
+            
+                                var fetchbody = "filename=" + to_sign;
+
+                                console.log(fetchbody);
+
+                                var key = "";
+                                var key2 = "c9d9b7787b233c49e63c9d0fd89383232d01668529974dbd735050f3a6b2f427f4db3d43d50454677fd225e6866f4a65b85f758d9a8ab23726bc6ecf1dc5ec21"
+
+                                const verification_hash = await fetch("http://localhost:3600/verificationhash", {
+                                  "method": "POST",
+                                  "body": fetchbody,
+                                  headers:{
+                                    "Content-Type": "application/x-www-form-urlencoded"
+                                  },   
+                                }).then(response => console.log(response.status) || response)
+                                .then(response => response.text())
+                                .then(body => key = body );
+
+                                console.log(key);
+
+                                // Create hashed string 
+                                const string_to_sign = "I sign the following page verification_hash: [" + key2 + "]"; 
+                                // Request the user to sign it
+                                const signature = await provider.getSigner().signMessage(string_to_sign);
+
+                                console.log(signature);
+                                // you can then send the signature to the webserver for further processing and verification 
+                            }
+                        }              
+                    </script>
+            </head>
+            <body>
+                <form action="/" method="post" enctype="multipart/form-data">
+                    <div>
+                        <label>
+                            Upload file:
+                            <input type="file" name="file" multiple>
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="submit" value="Upload files">
+                    </div>
+                </form>
+                <hr> 
+                <form action="/verificationhash" method="post">
+                    <div>
+                        <label>
+                            <input type="text" name="filename">
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="submit" value="Get verificationhash for files">
+                    </div>
+                </form>
+                <hr> 
+                <form action="/json" method="post">
+                    <div>
+                        <label>
+                            <input type="text" name="filename">
+                        </label>
+                    </div>
+                    <div>
+                        <input type="submit" value="Download aquachain for file">
+                    </div>
+                </form>
+                <hr> 
+                <div>
+                    <div>
+                        <label>
+                            <input type="text" id="signature_filename">
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="button" onclick='web3_metamask_login(document.getElementById("signature_filename").value);' value="Sign aquachain with metamask by title">
+                    </div>
+                </form>
+                <hr> 
+                <p>Check first if MetaMask is installed: <a href='#!' onclick='web3_check_metamask();'>Detect MetaMask</a></p>
+                <p>Initate the Login process: <a href='#!' onclick='web3_metamask_login();'>Login with MetaMask</a></p>
+            </body>
+        </html>
+        "#,
+    )
+}
+
+// to prevent directory traversal attacks we ensure the path consists of exactly one normal
+// component
+fn path_is_valid(path: &str) -> bool {
+    let path = std::path::Path::new(path);
+    let mut components = path.components().peekable();
+
+    if let Some(first) = components.peek() {
+        if !matches!(first, std::path::Component::Normal(_)) {
+            return false;
+        }
+    }
+
+    components.count() == 1
 }
 
 async fn save_request_body(
@@ -218,244 +413,4 @@ async fn save_request_body(
     }
 
     Ok(Redirect::to("/"))
-}
-
-// Handler that returns HTML for a multipart form.
-async fn show_form() -> Html<&'static str> {
-    tracing::debug!("yay");
-    println!("yay");
-    Html(
-        r#"
-        <!doctype html>
-        <html>
-            <head>
-               <style>
-                  body {
-                    font-family: Arial, sans-serif;
-                    background-color: #f4f4f9;
-                    color: #333;
-                    margin: 0;
-                    padding: 20px;
-                    line-height: 1.6;
-                        }
-
-                    h1, h2, h3 {color: #2c3e50;}
-
-                    form {
-                        background: #fff;
-                        padding: 20px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                        margin-bottom: 20px;
-                        }
-
-                    label {
-                        display: block;
-                        margin-bottom: 5px;
-                        color: #6c757d;
-                        }
-
-                    input[type="file"], input[type="text"] {
-                        width: 100%;
-                        padding: 10px;
-                        margin-bottom: 10px;
-                        border: 1px solid #ddd;
-                        border-radius: 4px;
-                        box-sizing: border-box;
-                        }
-
-                    input[type="submit"] {
-                        background-color: #3498db;
-                        color: white;
-                        padding: 10px 15px;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        transition: background-color 0.3s;
-                        }
-
-                        input[type="submit"]:hover {
-                        background-color: #2980b9;
-                        }
-
-                        hr {
-                            border: 0;
-                            height: 1px;
-                            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
-                            margin: 20px 0;
-                            }
-
-                        a {
-                            color: #3498db;
-                            text-decoration: none;
-                            transition: color 0.3s;
-                            }
-
-                        a:hover {
-                            color: #2980b9;
-                            text-decoration: underline;
-                            }
-
-                        p {
-                            margin: 10px 0;
-                            }
-
-                        /* For the MetaMask interaction */
-                        p a {
-                            display: inline-block;
-                            margin-right: 10px;
-                            padding: 5px 10px;
-                            background-color: #e74c3c;
-                            color: white;
-                            border-radius: 4px;
-                            transition: background-color 0.3s;
-                            }
-
-                        p a:hover {
-                            background-color: #c0392b;
-                            text-decoration: none;
-                            }
-                    </style>
-                <title>Upload something!</title>
-                <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
-                    <script>
-                        function web3_check_metamask() {
-                            if (!window.ethereum) {
-                                console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
-                                alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
-                                return false;
-                            }else{
-                                console.log('MetaMask extension has been detected!!');
-                                return true;
-                            }
-                        }
-                        
-                        function web3_metamask_hash(){
-                            var hashed_string   = '';
-                            var chars           = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-                            var total_chars     = chars.length;
-                            for ( var i = 0; i < 256; i++ ) {
-                                hashed_string += chars.charAt(Math.floor(Math.random() * total_chars));
-                            }
-                            return hashed_string;                
-                        }
-                        
-                        async function web3_metamask_login() {
-                            // Check first if the user has the MetaMask installed
-                            if ( web3_check_metamask() ) {
-                                console.log('Initate Login Process');
-            
-                                // Get the Ethereum provider
-                                const provider = new ethers.providers.Web3Provider(window.ethereum);                    
-                                // Get Ethereum accounts
-                                await provider.send("eth_requestAccounts", []);
-                                console.log("Connected!!"); 
-                                // Get the User Ethereum address
-                                const address = await provider.getSigner().getAddress();
-                                console.log(address);      
-            
-                                // Create hashed string 
-                                const hashed_string = web3_metamask_hash();      
-                                console.log("Hashed string: " + hashed_string);   
-                                // Request the user to sign it
-                                const signature = await provider.getSigner().signMessage(hashed_string);
-                                // Got the signature
-                                console.log("The signature: " + signature);   
-            
-                                // TODO
-                                // you can then send the signature to the webserver for further processing and verification 
-                            }
-                        }              
-                    </script>
-            </head>
-            <body>
-                <form action="/" method="post" enctype="multipart/form-data">
-                    <div>
-                        <label>
-                            Upload file:
-                            <input type="file" name="file" multiple>
-                        </label>
-                    </div>
-
-                    <div>
-                        <input type="submit" value="Upload files">
-                    </div>
-                </form>
-                <hr> 
-                <form action="/json" method="post">
-                    <div>
-                        <label>
-                            <input type="text" name="filename">
-                        </label>
-                    </div>
-                    <div>
-                        <input type="submit" value="Download aquachain for file">
-                    </div>
-                </form>
-                <hr> 
-                <p>Check first if MetaMask is installed: <a href='#!' onclick='web3_check_metamask();'>Detect MetaMask</a></p>
-                <p>Initate the Login process: <a href='#!' onclick='web3_metamask_login();'>Login with MetaMask</a></p>
-            </body>
-        </html>
-        "#,
-    )
-}
-
-// Handler that accepts a multipart form upload and streams each field to a file.
-async fn accept_form(mut multipart: Multipart) -> Result<Redirect, (StatusCode, String)> {
-    while let Ok(Some(field)) = multipart.next_field().await {
-        let file_name = if let Some(file_name) = field.file_name() {
-            file_name.to_owned()
-        } else {
-            continue;
-        };
-
-        stream_to_file(&file_name, field).await?;
-    }
-
-    Ok(Redirect::to("/"))
-}
-
-// Save a `Stream` to a file
-async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<(), (StatusCode, String)>
-where
-    S: Stream<Item = Result<Bytes, E>>,
-    E: Into<BoxError>,
-{
-    if !path_is_valid(path) {
-        return Err((StatusCode::BAD_REQUEST, "Invalid path".to_owned()));
-    }
-
-    async {
-        // Convert the stream into an `AsyncRead`.
-        let body_with_io_error = stream.map_err(|err| io::Error::new(io::ErrorKind::Other, err));
-        let body_reader = StreamReader::new(body_with_io_error);
-        futures::pin_mut!(body_reader);
-
-        // Create the file. `File` implements `AsyncWrite`.
-        let path = std::path::Path::new(UPLOADS_DIRECTORY).join(path);
-        let mut file = BufWriter::new(File::create(path).await?);
-
-        // Copy the body into the file.
-        tokio::io::copy(&mut body_reader, &mut file).await?;
-
-        Ok::<_, io::Error>(())
-    }
-    .await
-    .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
-}
-
-// to prevent directory traversal attacks we ensure the path consists of exactly one normal
-// component
-fn path_is_valid(path: &str) -> bool {
-    let path = std::path::Path::new(path);
-    let mut components = path.components().peekable();
-
-    if let Some(first) = components.peek() {
-        if !matches!(first, std::path::Component::Normal(_)) {
-            return false;
-        }
-    }
-
-    components.count() == 1
 }
