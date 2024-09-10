@@ -28,6 +28,7 @@ use tower_http::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
 use bonsaidb::core::schema::{Collection, SerializedCollection};
 use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
@@ -91,46 +92,63 @@ async fn save_request_body(
 
         let b64 = Base64::from(body_bytes);
 
-        let document = PageData {
-            pages: vec![HashChain {
-                genesis_hash: "".to_owned(),
-                domain_id: "".to_owned(),
-                title: "".to_owned(),
-                namespace: 0,
-                chain_height: 0,
-                revisions: vec![(
-                    content_hash,
-                    Revision {
-                        content: RevisionContent {
-                            file: Some(FileContent {
-                                data: b64,
-                                filename: "Test".to_string(),
-                                size: 0,
-                                comment: "".to_string(),
-                            }),
-                            content: BTreeMap::new(),
-                            content_hash: content_hash,
-                        },
-                        metadata: RevisionMetadata {
-                            domain_id: "0".to_string(),
-                            time_stamp: Timestamp::from(chrono::NaiveDateTime::from_timestamp(
-                                Utc::now().timestamp(),
-                                0,
-                            )),
-                            previous_verification_hash: None,
-                            metadata_hash: content_hash,
-                            verification_hash: content_hash,
-                        },
-                        signature: None,
-                        witness: None,
-                    },
-                )],
-            }],
-        }
-        .push_into(&server_database.db)
-        .unwrap();
+        let document = &server_database
+            .db
+            .set_key(
+                file_name.clone(),
+                &PageData {
+                    pages: vec![HashChain {
+                        genesis_hash: "".to_owned(),
+                        domain_id: "".to_owned(),
+                        title: "".to_owned(),
+                        namespace: 0,
+                        chain_height: 0,
+                        revisions: vec![(
+                            content_hash,
+                            Revision {
+                                content: RevisionContent {
+                                    file: Some(FileContent {
+                                        data: b64,
+                                        filename: "Test".to_string(),
+                                        size: 0,
+                                        comment: "".to_string(),
+                                    }),
+                                    content: BTreeMap::new(),
+                                    content_hash: content_hash,
+                                },
+                                metadata: RevisionMetadata {
+                                    domain_id: "0".to_string(),
+                                    time_stamp: Timestamp::from(
+                                        chrono::NaiveDateTime::from_timestamp(
+                                            Utc::now().timestamp(),
+                                            0,
+                                        ),
+                                    ),
+                                    previous_verification_hash: None,
+                                    metadata_hash: content_hash,
+                                    verification_hash: content_hash,
+                                },
+                                signature: None,
+                                witness: None,
+                            },
+                        )],
+                    }],
+                },
+            )
+            .only_if_vacant()
+            .execute()
+            .unwrap();
 
-        println!("{:#?}", document);
+        let document2: &Option<PageData> = &server_database.db.get_key(file_name).into().unwrap();
+        println!("{:#?}", document2);
+
+        // if Some(document2) {
+        //     let doc : PageData = document2.unwrap();
+        //     if Some(doc.pages[0].revisions[0].file) {
+        //         let file : FileContent = doc.pages[0].revisions[0].file.unwrap();
+        //         let txt : String = (file.data
+        //     }
+        // }
     }
     Ok(Redirect::to("/"))
 }
