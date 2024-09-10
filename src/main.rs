@@ -66,7 +66,8 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(show_form).post(save_request_body))
-        .route("/json", get(show_download_json_form).post(save_json_file))
+        .route("/json", post(save_json_file))
+        //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")
@@ -110,33 +111,6 @@ async fn save_json_file(
         );
     }
     Ok(Redirect::to("/json"))
-}
-
-async fn show_download_json_form() -> Html<&'static str> {
-    tracing::debug!("yam");
-    println!("yam");
-    Html(
-        r#"
-        <!doctype html>
-        <html>
-            <head>
-                <title>Upload something!</title>
-            </head>
-            <body>
-                <form action="/json" method="post">
-                    <div>
-                        <label>
-                            <input type="text" name="filename">
-                        </label>
-                    </div>
-                    <div>
-                        <input type="submit" value="Download aquachain for file">
-                    </div>
-                </form>
-            </body>
-        </html>
-        "#,
-    )
 }
 
 async fn save_request_body(
@@ -256,6 +230,56 @@ async fn show_form() -> Html<&'static str> {
         <html>
             <head>
                 <title>Upload something!</title>
+                <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
+                    <script>
+                        function web3_check_metamask() {
+                            if (!window.ethereum) {
+                                console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+                                alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+                                return false;
+                            }else{
+                                console.log('MetaMask extension has been detected!!');
+                                return true;
+                            }
+                        }
+                        
+                        function web3_metamask_hash(){
+                            var hashed_string   = '';
+                            var chars           = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+                            var total_chars     = chars.length;
+                            for ( var i = 0; i < 256; i++ ) {
+                                hashed_string += chars.charAt(Math.floor(Math.random() * total_chars));
+                            }
+                            return hashed_string;                
+                        }
+                        
+                        async function web3_metamask_login() {
+                            // Check first if the user has the MetaMask installed
+                            if ( web3_check_metamask() ) {
+                                console.log('Initate Login Process');
+            
+                                // Get the Ethereum provider
+                                const provider = new ethers.providers.Web3Provider(window.ethereum);                    
+                                // Get Ethereum accounts
+                                await provider.send("eth_requestAccounts", []);
+                                console.log("Connected!!"); 
+                                // Get the User Ethereum address
+                                const address = await provider.getSigner().getAddress();
+                                console.log(address);      
+            
+                                // Create hashed string 
+                                const hashed_string = web3_metamask_hash();      
+                                console.log("Hashed string: " + hashed_string);   
+                                // Request the user to sign it
+                                const signature = await provider.getSigner().signMessage(hashed_string);
+                                // Got the signature
+                                console.log("The signature: " + signature);   
+            
+                                // TODO
+                                // you can then send the signature to the webserver for further processing and verification 
+                            }
+                        }              
+                    </script>
             </head>
             <body>
                 <form action="/" method="post" enctype="multipart/form-data">
@@ -270,6 +294,20 @@ async fn show_form() -> Html<&'static str> {
                         <input type="submit" value="Upload files">
                     </div>
                 </form>
+                <hr> 
+                <form action="/json" method="post">
+                    <div>
+                        <label>
+                            <input type="text" name="filename">
+                        </label>
+                    </div>
+                    <div>
+                        <input type="submit" value="Download aquachain for file">
+                    </div>
+                </form>
+                <hr> 
+                <p>Check first if MetaMask is installed: <a href='#!' onclick='web3_check_metamask();'>Detect MetaMask</a></p>
+                <p>Initate the Login process: <a href='#!' onclick='web3_metamask_login();'>Login with MetaMask</a></p>
             </body>
         </html>
         "#,
