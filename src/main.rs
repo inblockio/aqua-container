@@ -440,7 +440,7 @@ async fn show_form() -> Html<&'static str> {
                         </label>
                     </div>
                     <div>
-                        <input type="submit" value="Download aquachain for file">
+                        <input type="submit" value="Download Aqua-Chain as a JSON file">
                     </div>
                 </form>
                 <hr> 
