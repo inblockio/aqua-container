@@ -455,9 +455,6 @@ async fn show_form() -> Html<&'static str> {
                         <input type="button" onclick='web3_metamask_login(document.getElementById("signature_filename").value);' value="Sign aquachain with metamask by title">
                     </div>
                 </form>
-                <hr> 
-                <p>Check first if MetaMask is installed: <a href='#!' onclick='web3_check_metamask();'>Detect MetaMask</a></p>
-                <p>Initate the Login process: <a href='#!' onclick='web3_metamask_login();'>Login with MetaMask</a></p>
             </body>
         </html>
         "#,
