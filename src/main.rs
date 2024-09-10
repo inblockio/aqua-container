@@ -331,6 +331,101 @@ async fn show_form() -> Html<&'static str> {
         <html>
             <head>
                 <title>Upload something!</title>
+                <style>
+                body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    background-image: url('https://aqua-protocol.org/favicons/android-96x96.png');
+    background-repeat:no-repeat;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    color: #2c3e50;
+    text-align: center;
+}
+
+form {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #6c757d;
+}
+
+input[type="file"], input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+input[type="submit"], input[type="button"] {
+    background-color: #3498db;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+input[type="submit"]:hover, input[type="button"]:hover {
+    background-color: #2980b9;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+    width: 100%;
+    max-width: 500px;
+    margin: 20px 0;
+}
+
+div {
+    margin-bottom: 10px;
+}
+
+/* For the MetaMask interaction button */
+input[type="button"] {
+    background-color: #e74c3c;
+}
+
+input[type="button"]:hover {
+    background-color: #c0392b;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    form {
+        max-width: 100%;
+    }
+}
+
+
+                </style>
                     <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
                     <script>
                         function web3_check_metamask() {
