@@ -229,6 +229,93 @@ async fn show_form() -> Html<&'static str> {
         <!doctype html>
         <html>
             <head>
+               <style>
+                  body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f9;
+                    color: #333;
+                    margin: 0;
+                    padding: 20px;
+                    line-height: 1.6;
+                        }
+
+                    h1, h2, h3 {color: #2c3e50;}
+
+                    form {
+                        background: #fff;
+                        padding: 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        margin-bottom: 20px;
+                        }
+
+                    label {
+                        display: block;
+                        margin-bottom: 5px;
+                        color: #6c757d;
+                        }
+
+                    input[type="file"], input[type="text"] {
+                        width: 100%;
+                        padding: 10px;
+                        margin-bottom: 10px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        box-sizing: border-box;
+                        }
+
+                    input[type="submit"] {
+                        background-color: #3498db;
+                        color: white;
+                        padding: 10px 15px;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: background-color 0.3s;
+                        }
+
+                        input[type="submit"]:hover {
+                        background-color: #2980b9;
+                        }
+
+                        hr {
+                            border: 0;
+                            height: 1px;
+                            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+                            margin: 20px 0;
+                            }
+
+                        a {
+                            color: #3498db;
+                            text-decoration: none;
+                            transition: color 0.3s;
+                            }
+
+                        a:hover {
+                            color: #2980b9;
+                            text-decoration: underline;
+                            }
+
+                        p {
+                            margin: 10px 0;
+                            }
+
+                        /* For the MetaMask interaction */
+                        p a {
+                            display: inline-block;
+                            margin-right: 10px;
+                            padding: 5px 10px;
+                            background-color: #e74c3c;
+                            color: white;
+                            border-radius: 4px;
+                            transition: background-color 0.3s;
+                            }
+
+                        p a:hover {
+                            background-color: #c0392b;
+                            text-decoration: none;
+                            }
+                    </style>
                 <title>Upload something!</title>
                 <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
                     <script>
