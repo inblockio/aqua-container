@@ -2,7 +2,7 @@
 
 use axum::{
     body::Bytes,
-    extract::{Multipart, Path, Request, State},
+    extract::{DefaultBodyLimit, Multipart, Path, Request, State},
     handler::HandlerWithoutStateExt,
     http::StatusCode,
     response::{Html, Redirect},
@@ -22,6 +22,7 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tower_http::{
+    limit::RequestBodyLimitLayer,
     services::{ServeDir, ServeFile},
     trace::TraceLayer,
 };
@@ -73,64 +74,64 @@ async fn main() {
 
 async fn save_request_body(
     State(server_database): State<Db>,
-    request: Request,
+    mut multipart: Multipart,
 ) -> Result<Redirect, (StatusCode, String)> {
     tracing::debug!("yay2");
-    println!("yay2");
-    let body_bytes = match axum::body::to_bytes(request.into_body(), usize::MAX).await {
-        Ok(t) => t.to_vec(),
-        Err(e) => {
-            println!("yay3");
-            return Ok(Redirect::to("/"));
+
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        let name = field.name().unwrap().to_string();
+        let file_name = field.file_name().unwrap().to_string();
+        let content_type = field.content_type().unwrap().to_string();
+        let body_bytes = field.bytes().await.unwrap().to_vec();
+
+        let mut content_hasher = sha3::Sha3_512::default();
+        // 4.b add rev.metadata.domain_id to hasher {m}
+        content_hasher.update(body_bytes.clone());
+        let content_hash = Hash::from(content_hasher.finalize());
+
+        let b64 = Base64::from(body_bytes);
+
+        let document = PageData {
+            pages: vec![HashChain {
+                genesis_hash: "".to_owned(),
+                domain_id: "".to_owned(),
+                title: "".to_owned(),
+                namespace: 0,
+                chain_height: 0,
+                revisions: vec![(
+                    content_hash,
+                    Revision {
+                        content: RevisionContent {
+                            file: Some(FileContent {
+                                data: b64,
+                                filename: "Test".to_string(),
+                                size: 0,
+                                comment: "".to_string(),
+                            }),
+                            content: BTreeMap::new(),
+                            content_hash: content_hash,
+                        },
+                        metadata: RevisionMetadata {
+                            domain_id: "0".to_string(),
+                            time_stamp: Timestamp::from(chrono::NaiveDateTime::from_timestamp(
+                                Utc::now().timestamp(),
+                                0,
+                            )),
+                            previous_verification_hash: None,
+                            metadata_hash: content_hash,
+                            verification_hash: content_hash,
+                        },
+                        signature: None,
+                        witness: None,
+                    },
+                )],
+            }],
         }
-    };
+        .push_into(&server_database.db)
+        .unwrap();
 
-    let mut content_hasher = sha3::Sha3_512::default();
-    // 4.b add rev.metadata.domain_id to hasher {m}
-    content_hasher.update(body_bytes.clone());
-    let content_hash = Hash::from(content_hasher.finalize());
-
-    let b64 = Base64::from(body_bytes);
-
-    let document = PageData {
-        pages: vec![HashChain {
-            genesis_hash: "".to_owned(),
-            domain_id: "".to_owned(),
-            title: "".to_owned(),
-            namespace: 0,
-            chain_height: 0,
-            revisions: vec![(
-                content_hash,
-                Revision {
-                    content: RevisionContent {
-                        file: Some(FileContent {
-                            data: b64,
-                            filename: "Test".to_string(),
-                            size: 0,
-                            comment: "".to_string(),
-                        }),
-                        content: BTreeMap::new(),
-                        content_hash: content_hash,
-                    },
-                    metadata: RevisionMetadata {
-                        domain_id: "0".to_string(),
-                        time_stamp: Timestamp::from(chrono::NaiveDateTime::from_timestamp(
-                            Utc::now().timestamp(),
-                            0,
-                        )),
-                        previous_verification_hash: None,
-                        metadata_hash: content_hash,
-                        verification_hash: content_hash,
-                    },
-                    signature: None,
-                    witness: None,
-                },
-            )],
-        }],
+        println!("{:#?}", document);
     }
-    .push_into(&server_database.db)
-    .unwrap();
-
     Ok(Redirect::to("/"))
 }
 
