@@ -15,6 +15,7 @@ use chrono::{NaiveDateTime, Utc};
 use futures::{Stream, TryStreamExt};
 use sha3::*;
 use std::collections::BTreeMap;
+use std::fs;
 use std::io;
 use std::net::SocketAddr;
 use std::time::SystemTime;
@@ -81,19 +82,30 @@ async fn save_request_body(
     tracing::debug!("yay2");
 
     while let Some(field) = multipart.next_field().await.unwrap() {
-        println!("{:#?}", field);
+        // println!("{:#?}", field);
 
         let name = field.name().unwrap().to_string();
         let file_name = field.file_name().unwrap().to_string();
         let content_type = field.content_type().unwrap().to_string();
         let body_bytes = field.bytes().await.unwrap().to_vec();
 
-        let mut content_hasher = sha3::Sha3_512::default();
         // 4.b add rev.metadata.domain_id to hasher {m}
-        content_hasher.update(body_bytes.clone());
-        let content_hash_current = Hash::from(content_hasher.finalize());
 
         let b64 = Base64::from(body_bytes);
+        let mut file_hasher = sha3::Sha3_512::default();
+        file_hasher.update(b64.clone());
+        let file_hash_current = Hash::from(file_hasher.finalize());
+
+        let mut content_current = BTreeMap::new();
+
+        content_current.insert("file_hash".to_owned(), file_hash_current.to_string());
+
+        println!("{:#?}", content_current);
+
+        let content_hash_current = content_hash(&content_current.clone());
+
+        println!("{:#?}", content_hash_current);
+
         let domain_id_current = "0".to_owned();
         let timestamp_current = Timestamp::from(chrono::NaiveDateTime::from_timestamp(
             Utc::now().timestamp(),
@@ -123,7 +135,7 @@ async fn save_request_body(
                                 size: 0,
                                 comment: "".to_string(),
                             }),
-                            content: BTreeMap::new(),
+                            content: content_current,
                             content_hash: content_hash_current,
                         },
                         metadata: RevisionMetadata {
@@ -159,7 +171,11 @@ async fn save_request_body(
                 // println!("{:#?}", String::from_utf8(vu8));
             }
 
-            print!("{:#?}", serde_json::to_value(&doc).unwrap());
+            //            fs::remove_file("../aqua-verifier-js/vef.json").unwrap();
+            //            fs::write(
+            //                "../aqua-verifier-js/vef.json",
+            //                serde_json::to_string(&doc).unwrap(),
+            //            );
         }
     }
 
