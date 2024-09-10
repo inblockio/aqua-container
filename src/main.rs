@@ -318,7 +318,7 @@ async fn save_json_file(
             serde_json::to_string(&doc).unwrap(),
         );
     }
-    Ok(Redirect::to("/json"))
+    Ok(Redirect::to("/"))
 }
 
 // Handler that returns HTML for a multipart form.
