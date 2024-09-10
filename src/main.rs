@@ -7,7 +7,7 @@ use axum::{
     http::StatusCode,
     response::{Html, Redirect},
     routing::{get, post},
-    BoxError, Router,
+    BoxError, Form, Router,
 };
 
 use chrono::{NaiveDateTime, Utc};
@@ -66,6 +66,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(show_form).post(save_request_body))
+        .route("/json", get(show_download_json_form).post(save_json_file))
         .with_state(server_database);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")
@@ -73,6 +74,69 @@ async fn main() {
         .unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
+}
+
+#[derive(Deserialize, Debug)]
+#[allow(dead_code)]
+struct Input {
+    filename: String,
+}
+
+// async fn accept_form(Form(input): Form<Input>) {
+//     dbg!(&input);
+// }
+
+async fn save_json_file(
+    State(server_database): State<Db>,
+    Form(input): Form<Input>,
+) -> Result<Redirect, (StatusCode, String)> {
+    println!("{:#?}", &input);
+
+    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
+
+    if document2.is_some() {
+        let doc: PageData = document2.clone().unwrap();
+        let (_, rev1) = &doc.pages[0].revisions[0];
+
+        if rev1.content.file.is_some() {
+            let file: FileContent = rev1.content.file.clone().unwrap();
+            let vu8 = file.data.to_vec();
+            // println!("{:#?}", String::from_utf8(vu8));
+        }
+
+        fs::write(
+            "./export/".to_owned() + &input.filename + ".aqua.json",
+            serde_json::to_string(&doc).unwrap(),
+        );
+    }
+    Ok(Redirect::to("/json"))
+}
+
+async fn show_download_json_form() -> Html<&'static str> {
+    tracing::debug!("yam");
+    println!("yam");
+    Html(
+        r#"
+        <!doctype html>
+        <html>
+            <head>
+                <title>Upload something!</title>
+            </head>
+            <body>
+                <form action="/json" method="post">
+                    <div>
+                        <label>
+                            <input type="text" name="filename">
+                        </label>
+                    </div>
+                    <div>
+                        <input type="submit" value="Download aquachain for file">
+                    </div>
+                </form>
+            </body>
+        </html>
+        "#,
+    )
 }
 
 async fn save_request_body(
@@ -155,7 +219,7 @@ async fn save_request_body(
         let document = &server_database
             .db
             .set_key(file_name.clone(), &pagedata_current)
-            .only_if_vacant()
+            //            .only_if_vacant()
             .execute()
             .unwrap();
 
