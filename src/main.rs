@@ -9,6 +9,7 @@ use axum::{
     routing::{get, post},
     BoxError, Form, Router,
 };
+use ethaddr::address;
 
 use chrono::{NaiveDateTime, Utc};
 
@@ -90,223 +91,13 @@ struct Input {
 struct SInput {
     filename: String,
     signature: String,
+    publickey: String,
+    wallet_address: String,
 }
 
 // async fn accept_form(Form(input): Form<Input>) {
 //     dbg!(&input);
 // }
-
-async fn add_signature_hash_for_file(
-    State(server_database): State<Db>,
-    Form(input): Form<SInput>,
-) -> (StatusCode, String) {
-    let mut document2: &Option<PageData> =
-        &server_database.db.get_key(&input.filename).into().unwrap();
-
-    if document2.is_some() {
-        let doc: PageData = document2.clone().unwrap();
-        let len = &doc.pages[0].revisions.len();
-
-        let (ver1, rev1) = &doc.pages[0].revisions[len - 1];
-
-        let mut rev2 = rev1.clone();
-
-        return (StatusCode::OK, ver1.to_string());
-    }
-
-    return (StatusCode::NOT_FOUND, "".to_string());
-}
-
-async fn get_verification_hash_for_file(
-    State(server_database): State<Db>,
-    Form(input): Form<Input>,
-) -> (StatusCode, String) {
-    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
-
-    if document2.is_some() {
-        let doc: PageData = document2.clone().unwrap();
-        let len = &doc.pages[0].revisions.len();
-
-        let (ver1, _) = &doc.pages[0].revisions[len - 1];
-        return (StatusCode::OK, ver1.to_string());
-    }
-    return (StatusCode::NOT_FOUND, "".to_string());
-}
-
-async fn save_json_file(
-    State(server_database): State<Db>,
-    Form(input): Form<Input>,
-) -> Result<Redirect, (StatusCode, String)> {
-    println!("{:#?}", &input);
-
-    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
-
-    if document2.is_some() {
-        let doc: PageData = document2.clone().unwrap();
-        let (_, rev1) = &doc.pages[0].revisions[0];
-
-        if rev1.content.file.is_some() {
-            let file: FileContent = rev1.content.file.clone().unwrap();
-            let vu8 = file.data.to_vec();
-            // println!("{:#?}", String::from_utf8(vu8));
-        }
-
-        fs::write(
-            "./export/".to_owned() + &input.filename + ".aqua.json",
-            serde_json::to_string(&doc).unwrap(),
-        );
-    }
-    Ok(Redirect::to("/json"))
-}
-
-// Handler that returns HTML for a multipart form.
-async fn show_form() -> Html<&'static str> {
-    tracing::debug!("yay");
-    println!("yay");
-    Html(
-        r#"
-        <!doctype html>
-        <html>
-            <head>
-                <title>Upload something!</title>
-                    <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
-                    <script>
-                        function web3_check_metamask() {
-                            if (!window.ethereum) {
-                                console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
-                                alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
-                                return false;
-                            }else{
-                                console.log('MetaMask extension has been detected!!');
-                                return true;
-                            }
-                        }
-                        
-                        function web3_metamask_hash(){
-                            var hashed_string   = '';
-                            var chars           = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-                            var total_chars     = chars.length;
-                            for ( var i = 0; i < 256; i++ ) {
-                                hashed_string += chars.charAt(Math.floor(Math.random() * total_chars));
-                            }
-                            return hashed_string;                
-                        }
-                        
-                        async function web3_metamask_login(to_sign) {
-                            // Check first if the user has the MetaMask installed
-                            if ( web3_check_metamask() ) {
-                                console.log('Initate Login Process');
-            
-                                // Get the Ethereum provider
-                                const provider = new ethers.providers.Web3Provider(window.ethereum);                    
-                                // Get Ethereum accounts
-                                await provider.send("eth_requestAccounts", []);
-                                console.log("Connected!!"); 
-                                // Get the User Ethereum address
-                                const address = await provider.getSigner().getAddress();
-                                console.log(address);      
-            
-                                var fetchbody = "filename=" + to_sign;
-
-                                console.log(fetchbody);
-
-                                var key = "";
-                                var key2 = "c9d9b7787b233c49e63c9d0fd89383232d01668529974dbd735050f3a6b2f427f4db3d43d50454677fd225e6866f4a65b85f758d9a8ab23726bc6ecf1dc5ec21"
-
-                                const verification_hash = await fetch("http://localhost:3600/verificationhash", {
-                                  "method": "POST",
-                                  "body": fetchbody,
-                                  headers:{
-                                    "Content-Type": "application/x-www-form-urlencoded"
-                                  },   
-                                }).then(response => console.log(response.status) || response)
-                                .then(response => response.text())
-                                .then(body => key = body );
-
-                                console.log(key);
-
-                                // Create hashed string 
-                                const string_to_sign = "I sign the following page verification_hash: [" + key2 + "]"; 
-                                // Request the user to sign it
-                                const signature = await provider.getSigner().signMessage(string_to_sign);
-
-                                console.log(signature);
-                                // you can then send the signature to the webserver for further processing and verification 
-                            }
-                        }              
-                    </script>
-            </head>
-            <body>
-                <form action="/" method="post" enctype="multipart/form-data">
-                    <div>
-                        <label>
-                            Upload file:
-                            <input type="file" name="file" multiple>
-                        </label>
-                    </div>
-
-                    <div>
-                        <input type="submit" value="Upload files">
-                    </div>
-                </form>
-                <hr> 
-                <form action="/verificationhash" method="post">
-                    <div>
-                        <label>
-                            <input type="text" name="filename">
-                        </label>
-                    </div>
-
-                    <div>
-                        <input type="submit" value="Get verificationhash for files">
-                    </div>
-                </form>
-                <hr> 
-                <form action="/json" method="post">
-                    <div>
-                        <label>
-                            <input type="text" name="filename">
-                        </label>
-                    </div>
-                    <div>
-                        <input type="submit" value="Download aquachain for file">
-                    </div>
-                </form>
-                <hr> 
-                <div>
-                    <div>
-                        <label>
-                            <input type="text" id="signature_filename">
-                        </label>
-                    </div>
-
-                    <div>
-                        <input type="button" onclick='web3_metamask_login(document.getElementById("signature_filename").value);' value="Sign aquachain with metamask by title">
-                    </div>
-                </form>
-                <hr> 
-                <p>Check first if MetaMask is installed: <a href='#!' onclick='web3_check_metamask();'>Detect MetaMask</a></p>
-                <p>Initate the Login process: <a href='#!' onclick='web3_metamask_login();'>Login with MetaMask</a></p>
-            </body>
-        </html>
-        "#,
-    )
-}
-
-// to prevent directory traversal attacks we ensure the path consists of exactly one normal
-// component
-fn path_is_valid(path: &str) -> bool {
-    let path = std::path::Path::new(path);
-    let mut components = path.components().peekable();
-
-    if let Some(first) = components.peek() {
-        if !matches!(first, std::path::Component::Normal(_)) {
-            return false;
-        }
-    }
-
-    components.count() == 1
-}
 
 async fn save_request_body(
     State(server_database): State<Db>,
@@ -413,4 +204,287 @@ async fn save_request_body(
     }
 
     Ok(Redirect::to("/"))
+}
+
+async fn add_signature_hash_for_file(
+    State(server_database): State<Db>,
+    Form(input): Form<SInput>,
+) -> (StatusCode, String) {
+    let mut document2: &Option<PageData> =
+        &server_database.db.get_key(&input.filename).into().unwrap();
+
+    if document2.is_some() {
+        let mut doc: PageData = document2.clone().unwrap();
+        let len = &doc.pages[0].revisions.len();
+
+        let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
+
+        let mut rev2 = rev1.clone();
+
+        rev2.metadata.previous_verification_hash = Some(*ver1);
+
+        let sig: Signature =
+            <Signature as std::str::FromStr>::from_str(&input.signature[..]).unwrap();
+
+        let pubk: PublicKey =
+            <PublicKey as std::str::FromStr>::from_str(&input.publickey[..]).unwrap();
+
+        let addr = ethaddr::Address::from_str_checksum(&input.wallet_address).unwrap();
+
+        let sig_hash = signature_hash(&sig, &pubk);
+
+        rev2.signature = Some(RevisionSignature {
+            signature: sig,
+            public_key: pubk,
+            signature_hash: sig_hash.clone(),
+            wallet_address: addr,
+        });
+
+        let timestamp_current = Timestamp::from(chrono::NaiveDateTime::from_timestamp(
+            Utc::now().timestamp(),
+            0,
+        ));
+
+        rev2.metadata.time_stamp = timestamp_current.clone();
+
+        let metadata_hash_current = metadata_hash(
+            &doc.pages[0].domain_id,
+            &timestamp_current.clone(),
+            Some(ver1),
+        );
+
+        let verification_hash_current = verification_hash(
+            &rev2.content.content_hash,
+            &metadata_hash_current,
+            Some(&sig_hash),
+            None,
+        );
+
+        rev2.metadata.metadata_hash = metadata_hash_current;
+
+        &doc.pages[0]
+            .revisions
+            .push((verification_hash_current, rev2));
+
+        let document = &server_database
+            .db
+            .set_key(&input.filename, &doc)
+            //            .only_if_vacant()
+            .execute()
+            .unwrap();
+
+        return (StatusCode::OK, ver1.to_string());
+    }
+
+    return (StatusCode::NOT_FOUND, "".to_string());
+}
+
+async fn get_verification_hash_for_file(
+    State(server_database): State<Db>,
+    Form(input): Form<Input>,
+) -> (StatusCode, String) {
+    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
+
+    if document2.is_some() {
+        let doc: PageData = document2.clone().unwrap();
+        let len = &doc.pages[0].revisions.len();
+
+        let (ver1, _) = &doc.pages[0].revisions[len - 1];
+        return (StatusCode::OK, ver1.to_string());
+    }
+    return (StatusCode::NOT_FOUND, "".to_string());
+}
+
+async fn save_json_file(
+    State(server_database): State<Db>,
+    Form(input): Form<Input>,
+) -> Result<Redirect, (StatusCode, String)> {
+    println!("{:#?}", &input);
+
+    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
+
+    if document2.is_some() {
+        let doc: PageData = document2.clone().unwrap();
+        let (_, rev1) = &doc.pages[0].revisions[0];
+
+        if rev1.content.file.is_some() {
+            let file: FileContent = rev1.content.file.clone().unwrap();
+            let vu8 = file.data.to_vec();
+            // println!("{:#?}", String::from_utf8(vu8));
+        }
+
+        fs::write(
+            "./export/".to_owned() + &input.filename + ".aqua.json",
+            serde_json::to_string(&doc).unwrap(),
+        );
+    }
+    Ok(Redirect::to("/json"))
+}
+
+// Handler that returns HTML for a multipart form.
+async fn show_form() -> Html<&'static str> {
+    tracing::debug!("yay");
+    println!("yay");
+    Html(
+        r#"
+        <!doctype html>
+        <html>
+            <head>
+                <title>Upload something!</title>
+                    <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
+                    <script>
+                        function web3_check_metamask() {
+                            if (!window.ethereum) {
+                                console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+                                alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+                                return false;
+                            }else{
+                                console.log('MetaMask extension has been detected!!');
+                                return true;
+                            }
+                        }
+                        
+                        function web3_metamask_hash(){
+                            var hashed_string   = '';
+                            var chars           = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+                            var total_chars     = chars.length;
+                            for ( var i = 0; i < 256; i++ ) {
+                                hashed_string += chars.charAt(Math.floor(Math.random() * total_chars));
+                            }
+                            return hashed_string;                
+                        }
+                        
+                        async function web3_metamask_login(to_sign) {
+                            // Check first if the user has the MetaMask installed
+                            if ( web3_check_metamask() ) {
+                                console.log('Initate Login Process');
+            
+                                // Get the Ethereum provider
+                                const provider = new ethers.providers.Web3Provider(window.ethereum);                    
+                                // Get Ethereum accounts
+                                await provider.send("eth_requestAccounts", []);
+                                console.log("Connected!!"); 
+                                // Get the User Ethereum address
+                                const address = await provider.getSigner().getAddress();
+                                console.log(address);      
+            
+                                var fetchbody = "filename=" + to_sign;
+
+                                console.log(fetchbody);
+
+                                var key = "";
+
+                                const verification_hash = await fetch("http://localhost:3600/verificationhash", {
+                                  "method": "POST",
+                                  "body": fetchbody,
+                                  headers:{
+                                    "Content-Type": "application/x-www-form-urlencoded"
+                                  },   
+                                }).then(response => console.log(response.status) || response)
+                                .then(response => response.text())
+                                .then(body => key = body );
+
+                                console.log(key);
+
+                                // Create hashed string 
+                                const string_to_sign = "I sign the following page verification_hash: [" + key + "]"; 
+                                // Request the user to sign it
+                                const signature = await provider.getSigner().signMessage(string_to_sign);
+
+                                console.log(signature);
+                                // you can then send the signature to the webserver for further processing and verification 
+
+                                const msgHashBytes = ethers.utils.arrayify(ethers.utils.hashMessage(string_to_sign));
+                                const pk = ethers.utils.recoverPublicKey(msgHashBytes, signature);
+                                
+                                console.log(pk);
+
+                                let fetchbody2 = new URLSearchParams();
+                                fetchbody2.append('filename', to_sign);
+                                fetchbody2.append('signature', signature);
+                                fetchbody2.append('publickey', pk);
+                                fetchbody2.append('wallet_address', address);
+
+
+                                const signature_hash = await fetch("http://localhost:3600/signrevision", {
+                                  "method": "POST",
+                                  "body": fetchbody2,
+                                  headers:{
+                                    "Content-Type": "application/x-www-form-urlencoded"
+                                  },   
+                                });
+                            }
+                        }              
+                    </script>
+            </head>
+            <body>
+                <form action="/" method="post" enctype="multipart/form-data">
+                    <div>
+                        <label>
+                            Upload file:
+                            <input type="file" name="file" multiple>
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="submit" value="Upload files">
+                    </div>
+                </form>
+                <hr> 
+                <form action="/verificationhash" method="post">
+                    <div>
+                        <label>
+                            <input type="text" name="filename">
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="submit" value="Get verificationhash for files">
+                    </div>
+                </form>
+                <hr> 
+                <form action="/json" method="post">
+                    <div>
+                        <label>
+                            <input type="text" name="filename">
+                        </label>
+                    </div>
+                    <div>
+                        <input type="submit" value="Download aquachain for file">
+                    </div>
+                </form>
+                <hr> 
+                <div>
+                    <div>
+                        <label>
+                            <input type="text" id="signature_filename">
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="button" onclick='web3_metamask_login(document.getElementById("signature_filename").value);' value="Sign aquachain with metamask by title">
+                    </div>
+                </form>
+                <hr> 
+                <p>Check first if MetaMask is installed: <a href='#!' onclick='web3_check_metamask();'>Detect MetaMask</a></p>
+                <p>Initate the Login process: <a href='#!' onclick='web3_metamask_login();'>Login with MetaMask</a></p>
+            </body>
+        </html>
+        "#,
+    )
+}
+
+// to prevent directory traversal attacks we ensure the path consists of exactly one normal
+// component
+fn path_is_valid(path: &str) -> bool {
+    let path = std::path::Path::new(path);
+    let mut components = path.components().peekable();
+
+    if let Some(first) = components.peek() {
+        if !matches!(first, std::path::Component::Normal(_)) {
+            return false;
+        }
+    }
+
+    components.count() == 1
 }
