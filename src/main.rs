@@ -140,15 +140,15 @@ async fn save_request_body(
             .unwrap();
 
         let document2: &Option<PageData> = &server_database.db.get_key(file_name).into().unwrap();
-        println!("{:#?}", document2);
+        // println!("{:#?}", document2);
 
-        // if Some(document2) {
-        //     let doc : PageData = document2.unwrap();
-        //     if Some(doc.pages[0].revisions[0].file) {
-        //         let file : FileContent = doc.pages[0].revisions[0].file.unwrap();
-        //         let txt : String = (file.data
-        //     }
-        // }
+        if Some(document2) {
+            let doc: PageData = document2.unwrap();
+            if Some(doc.pages[0].revisions[0].file) {
+                let file: FileContent = doc.pages[0].revisions[0].file.unwrap();
+                let vu8: Vec<u8> = Base64::from(file.data);
+            }
+        }
     }
     Ok(Redirect::to("/"))
 }
