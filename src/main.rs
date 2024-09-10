@@ -344,16 +344,6 @@ async fn show_form() -> Html<&'static str> {
                             }
                         }
                         
-                        function web3_metamask_hash(){
-                            var hashed_string   = '';
-                            var chars           = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-                            var total_chars     = chars.length;
-                            for ( var i = 0; i < 256; i++ ) {
-                                hashed_string += chars.charAt(Math.floor(Math.random() * total_chars));
-                            }
-                            return hashed_string;                
-                        }
-                        
                         async function web3_metamask_login(to_sign) {
                             // Check first if the user has the MetaMask installed
                             if ( web3_check_metamask() ) {
@@ -387,7 +377,7 @@ async fn show_form() -> Html<&'static str> {
                                 console.log(key);
 
                                 // Create hashed string 
-                                const string_to_sign = "I sign the following page verification_hash: [" + key + "]"; 
+                                const string_to_sign = "I sign the following page verification_hash: [0x" + key + "]"; 
                                 // Request the user to sign it
                                 const signature = await provider.getSigner().signMessage(string_to_sign);
 
