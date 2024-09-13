@@ -5,15 +5,15 @@ Features:
 
 Functionality milestones Fileupload & Hasher:
 1) [done] Upload file to Database
-2) [in progress] Turn file into Aqua-Chain 
-3) [todo] Export Aqua-Chain (no signature, no witness) as JSON
-4) [todo] Sign Aqua-Chain with Metamask-Wallet
+2) [done] Turn file into Aqua-Chain 
+3) [done] Export Aqua-Chain (no signature, no witness) as JSON
+4) [done] Sign Aqua-Chain with Metamask-Wallet
 5) [todo] Import Aqua-Chain
-6) [todo] Extend existing Aqua-Chain with new Signature 
+6) [done] Extend existing Aqua-Chain with new Signature 
 7) [todo] Witness Aqua-Chain on Chain
 
 UI-Interface:
-1) [todo] Beautify website with CSS
+1) [done] Beautify website with CSS
 2) [todo] Make it mobile-responsive
 
 Functionality milestones Verifier: 
