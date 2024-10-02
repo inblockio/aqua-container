@@ -30,7 +30,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
+use tower_http::cors::{Any, CorsLayer};
 use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
 use bonsaidb::core::schema::{Collection, SerializedCollection};
 use bonsaidb::local::config::{Builder, StorageConfiguration};
@@ -72,7 +72,10 @@ async fn main() {
         .route("/verificationhash", post(get_verification_hash_for_file))
         .route("/signrevision", post(add_signature_hash_for_file))
         //.route("/list", get(show_files_list).post(show_files))
-        .with_state(server_database);
+        .with_state(server_database)
+        .layer(CorsLayer::permissive())
+        .layer(TraceLayer::new_for_http());
+
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")
         .await

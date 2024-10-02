@@ -2,6 +2,11 @@
 <html>
 <head>
     <title>Upload something!</title>
+
+    <!--    <script type="module" src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.min.js" type="application/javascript"></script>-->
+    <!-- Import UMD version of ethers.js -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -98,81 +103,7 @@
 
 
     </style>
-    <script src="https://cdn.ethers.io/lib/ethers-5.6.4.umd.min.js" type="application/javascript"></script>
-    <script>
-        function web3_check_metamask() {
-            if (!window.ethereum) {
-                console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
-                alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
-                return false;
-            } else {
-                console.log('MetaMask extension has been detected!!');
-                return true;
-            }
-        }
 
-        async function web3_metamask_login(to_sign) {
-            // Check first if the user has the MetaMask installed
-            if (web3_check_metamask()) {
-                console.log('Initate Login Process');
-
-                // Get the Ethereum provider
-                const provider = new ethers.providers.Web3Provider(window.ethereum);
-                // Get Ethereum accounts
-                await provider.send("eth_requestAccounts", []);
-                console.log("Connected!!");
-                // Get the User Ethereum address
-                const address = await provider.getSigner().getAddress();
-                console.log(address);
-
-                var fetchbody = "filename=" + to_sign;
-
-                console.log(fetchbody);
-
-                var key = "";
-
-                const verification_hash = await fetch("http://localhost:3600/verificationhash", {
-                    "method": "POST",
-                    "body": fetchbody,
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                }).then(response => console.log(response.status) || response)
-                    .then(response => response.text())
-                    .then(body => key = body);
-
-                console.log(key);
-
-                // Create hashed string
-                const string_to_sign = "I sign the following page verification_hash: [0x" + key + "]";
-                // Request the user to sign it
-                const signature = await provider.getSigner().signMessage(string_to_sign);
-
-                console.log(signature);
-                // you can then send the signature to the webserver for further processing and verification
-
-                const msgHashBytes = ethers.utils.arrayify(ethers.utils.hashMessage(string_to_sign));
-                const pk = ethers.utils.recoverPublicKey(msgHashBytes, signature);
-
-                console.log(pk);
-
-                let fetchbody2 = new URLSearchParams();
-                fetchbody2.append('filename', to_sign);
-                fetchbody2.append('signature', signature);
-                fetchbody2.append('publickey', pk);
-                fetchbody2.append('wallet_address', address);
-
-
-                const signature_hash = await fetch("http://localhost:3600/signrevision", {
-                    "method": "POST",
-                    "body": fetchbody2,
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    },
-                });
-            }
-        }
-    </script>
 </head>
 <body>
 <form action="/" method="post" enctype="multipart/form-data">
@@ -223,5 +154,80 @@
                value="Sign aquachain with metamask by title">
     </div>
 </form>
+
+<script>
+    function web3_check_metamask() {
+        if (!window.ethereum) {
+            console.error('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+            alert('It seems that the MetaMask extension is not detected. Please install MetaMask first.');
+            return false;
+        } else {
+            console.log('MetaMask extension has been detected!!');
+            return true;
+        }
+    }
+
+    async function web3_metamask_login(to_sign) {
+        // Check first if the user has the MetaMask installed
+        if (web3_check_metamask()) {
+            console.log('Initate Login Process');
+
+            // Get the Ethereum provider
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            // Get Ethereum accounts
+            await provider.send("eth_requestAccounts", []);
+            console.log("Connected!!");
+            // Get the User Ethereum address
+            const address = await provider.getSigner().getAddress();
+            console.log(address);
+
+            var fetchbody = "filename=" + to_sign;
+
+            console.log(fetchbody);
+
+            var key = "";
+
+            const verification_hash = await fetch("http://localhost:3600/verificationhash", {
+                "method": "POST",
+                "body": fetchbody,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+            }).then(response => console.log(response.status) || response)
+                .then(response => response.text())
+                .then(body => key = body);
+
+            console.log(key);
+
+            // Create hashed string
+            const string_to_sign = "I sign the following page verification_hash: [0x" + key + "]";
+            // Request the user to sign it
+            const signature = await provider.getSigner().signMessage(string_to_sign);
+
+            console.log(signature);
+            // you can then send the signature to the webserver for further processing and verification
+
+            const msgHashBytes = ethers.utils.arrayify(ethers.utils.hashMessage(string_to_sign));
+            const pk = ethers.utils.recoverPublicKey(msgHashBytes, signature);
+
+            console.log(pk);
+
+            let fetchbody2 = new URLSearchParams();
+            fetchbody2.append('filename', to_sign);
+            fetchbody2.append('signature', signature);
+            fetchbody2.append('publickey', pk);
+            fetchbody2.append('wallet_address', address);
+
+
+            const signature_hash = await fetch("http://localhost:3600/signrevision", {
+                "method": "POST",
+                "body": fetchbody2,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+            });
+        }
+    }
+</script>
 </body>
 </html>
