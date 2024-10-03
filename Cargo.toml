@@ -29,3 +29,4 @@ tower-http = { version = "0.6.1", features = ["fs", "limit",  "trace", "cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ethaddr = "0.2.2"
+rusqlite = "0.32.1"

@@ -1,0 +1,7 @@
+
+Z	Web:S5254"@Add "lang" and/or "xml:lang" attributes to this "<html>" element(œ÷Ãûÿÿÿÿ
+IWeb:AvoidCommentedOutCodeCheck"Remove this commented out code.(–ß·¢
+_javascript:S1481¾"BRemove the declaration of the unused 'verification_hash' variable.(ßÍœÜ
+\javascript:S1854¾"?Remove this useless assignment to variable "verification_hash".(ßÍœÜ
+\javascript:S1481Ş"?Remove the declaration of the unused 'signature_hash' variable.(ğÀœö
+Yjavascript:S1854Ş"<Remove this useless assignment to variable "signature_hash".(ğÀœö

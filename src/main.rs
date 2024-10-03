@@ -1,5 +1,7 @@
 #![allow(warnings)]
 
+mod models;
+
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -51,6 +53,7 @@ pub struct PageData {
 #[derive(Debug, Clone)]
 struct Db {
     pub db: Database,
+
 }
 
 #[tokio::main]
@@ -71,6 +74,9 @@ async fn main() {
         .route("/json", post(save_json_file))
         .route("/verificationhash", post(get_verification_hash_for_file))
         .route("/signrevision", post(add_signature_hash_for_file))
+        .route("/explorer_files", post(add_signature_hash_for_file))
+        .route("/explorer_file_upload", post(add_signature_hash_for_file))
+
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())
