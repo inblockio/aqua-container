@@ -1,19 +1,57 @@
 import type {Component} from 'solid-js';
 import {createSignal} from "solid-js";
 import axios from "axios";
+import { ethers } from "ethers";
+import {FileInfo} from "./models/FileInfo";
 
 const App: Component = () => {
-    const [selectedFile, setSelectedFile] = createSignal<File | null>(null);
+    const [metaMaskAddress, setMetaMaskAddress] = createSignal<string | null>(null);
+    const [selectedFileForUpload, setSelectedFileForUpload] = createSignal<File | null>(null);
+    const [fileFromApi, setFilesFromApi] = createSignal<Array<FileInfo>>([]);
     const [error, setError] = createSignal<string>('');
     const maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
 
     let fileInput;
 
-    createSignal(()=>{
+    createSignal(() => {
 
     })
 
-    const handleClick = () => {
+    // Check if MetaMask is installed
+    const isMetaMaskInstalled = () => {
+        return typeof window.ethereum !== "undefined";
+    };
+
+    // Request access to MetaMask
+    const connectToMetaMask = async () => {
+
+
+        if (!isMetaMaskInstalled()) {
+            alert("MetaMask is not installed. Please install MetaMask and try again.");
+            return;
+        }
+
+        try {
+            // Create a new Web3Provider using BrowserProvider in v6
+            const provider = new ethers.BrowserProvider(window.ethereum);
+
+            // Request MetaMask accounts
+            const accounts = await provider.send("eth_requestAccounts", []);
+
+            // Get the signer
+            const signer = await provider.getSigner();
+
+            // Get the address
+            const address = await signer.getAddress();
+
+            setMetaMaskAddress(address); // Set the address
+        } catch (error) {
+            console.error("Error connecting to MetaMask:", error);
+        }
+    };
+
+
+    const handleSelectFileForUploadClick = () => {
         // Trigger the hidden file input click
         fileInput.click();
     };
@@ -22,20 +60,20 @@ const App: Component = () => {
         const file = input.files?.[0];
 
         if (!file) {
-            setSelectedFile(null);
+            setSelectedFileForUpload(null);
             setError('');
             return;
         }
 
         if (file.size > maxFileSize) {
-            setSelectedFile(null);
+            setSelectedFileForUpload(null);
             setError('File size exceeds 20 MB limit');
             // Reset the input
             input.value = '';
             return;
         }
 
-        setSelectedFile(file);
+        setSelectedFileForUpload(file);
         setError('');
 
 
@@ -44,7 +82,7 @@ const App: Component = () => {
     };
 
     const uploadFile = async () => {
-        const file = selectedFile();
+        const file = selectedFileForUpload();
         if (!file) {
             setError('No file selected');
             return;
@@ -87,16 +125,27 @@ const App: Component = () => {
                             <div class="p-5">
                                 <div class="relative">
 
-                                    <a href="javascript:void(0)" onClick={(e)=>{handleClick()}} data-fc-type="dropdown" data-fc-placement="bottom"
+                                    <a href="javascript:void(0)" onClick={(e) => {
+                                        handleSelectFileForUploadClick()
+                                    }} data-fc-type="dropdown" data-fc-placement="bottom"
                                        type="button"
-                                       class="btn inline-flex justify-center items-center bg-primary text-white w-full">
+                                       class="btn inline-flex justify-center items-center bg-primary text-white w-full mb-3">
                                         <i class="mgc_add_line text-lg me-2"></i> Upload File
+                                    </a>
+                                    <br/>
+
+                                    <a href="javascript:void(0)" onClick={(e) => {
+                                        console.log("todo")
+                                    }} data-fc-type="dropdown" data-fc-placement="bottom"
+                                       type="button"
+                                       class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
+                                        <i class="mgc_add_line text-lg me-2"></i> Verify aqua file
                                     </a>
                                     {/* Hidden file input */}
                                     <input
                                         type="file"
                                         ref={el => fileInput = el} // Save reference to the input element
-                                        style={{ display: "none" }} // Hide the input element
+                                        style={{display: "none"}} // Hide the input element
                                         onChange={handleFileSelect}
                                     />
 
@@ -123,8 +172,9 @@ const App: Component = () => {
                                             <>
 
 
-
-                                                <div id="dismiss-alert" class="bg-red-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4" role="alert">
+                                                <div id="dismiss-alert"
+                                                     class="bg-red-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
+                                                     role="alert">
                                                     <div class="flex items-center gap-3">
                                                         <div class="flex-shrink-0">
                                                             <i class="mgc_-badge-check text-xl"></i>
@@ -135,10 +185,18 @@ const App: Component = () => {
 
                                                             </div>
                                                         </div>
-                                                        <button onClick={(e)=>{setError("") ; setSelectedFile(null)}} data-fc-dismiss="dismiss-alert" type="button" id="dismiss-test" class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
+                                                        <button onClick={(e) => {
+                                                            setError("");
+                                                            setSelectedFileForUpload(null)
+                                                        }} data-fc-dismiss="dismiss-alert" type="button"
+                                                                id="dismiss-test"
+                                                                class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
                                                             {/*<i class="mgc_close_line text-xl"></i>*/}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x" viewBox="0 0 16 16">
-                                                                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                                                 height="16" fill="currentColor" class="bi bi-x"
+                                                                 viewBox="0 0 16 16">
+                                                                <path
+                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
                                                             </svg>
                                                         </button>
                                                     </div>
@@ -158,11 +216,22 @@ const App: Component = () => {
                                         <h4 class="text-xl">Folders</h4>
 
                                         <form class="ms-auto">
-                                            <div class="flex items-center">
-                                                <input type="text" class="form-input  rounded-full"
-                                                       placeholder="Search files..."/>
-                                                <span class="mgc_search_line text-xl -ms-8"></span>
-                                            </div>
+                                            {/*<div class="flex items-center">*/}
+                                            {/*    <input type="text" class="form-input  rounded-full"*/}
+                                            {/*           placeholder="Search files..."/>*/}
+                                            {/*    <span class="mgc_search_line text-xl -ms-8"></span>*/}
+                                            {/*</div>*/}
+
+                                            {
+                                                metaMaskAddress() == null ? <a href="javascript:void(0)" onClick={(e) => {
+                                                    connectToMetaMask()
+                                                }} data-fc-type="dropdown" data-fc-placement="bottom"
+                                                                               type="button"
+                                                                               class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
+                                                    <i class="mgc_add_line text-lg me-2"></i> sign in with metamask
+                                                </a> : <label>{metaMaskAddress()}</label>
+                                            }
+
                                         </form>
                                     </div>
                                 </div>
