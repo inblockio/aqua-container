@@ -25,3 +25,21 @@ Pages:
 1) [in progress] Hasher
 2) [todo] Verifier
 3) [todo] Config (configure Witness, see version of Software etc.)
+
+
+
+## Requirements
+
+Rust and `sqlx` (` cargo install sqlx-cli`)
+
+## How to run
+
+
+
+```bash
+export DATABASE_URL="sqlite:pages.db"
+sqlx database create
+sqlx migrate run
+cargo run
+```
+

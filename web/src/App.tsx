@@ -1,5 +1,5 @@
 import type {Component} from 'solid-js';
-import {createSignal} from "solid-js";
+import {createEffect, createSignal} from "solid-js";
 import axios from "axios";
 import { ethers } from "ethers";
 import {FileInfo} from "./models/FileInfo";
@@ -13,7 +13,10 @@ const App: Component = () => {
 
     let fileInput;
 
-    createSignal(() => {
+    createEffect(async () => {
+
+        let files  = await fetchFiles();
+        setFilesFromApi(files);
 
     })
 
@@ -90,6 +93,7 @@ const App: Component = () => {
 
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('account', "example");
 
         try {
             const response = await axios.post('http://127.0.0.1:3600/explorer_file_upload', formData, {
@@ -104,6 +108,34 @@ const App: Component = () => {
         }
     };
 
+    async function fetchFiles(): Promise<Array<FileInfo>> {
+        try {
+            const response = await fetch("http://127.0.0.1:3600/explorer_files");
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            console.log("fetchFiles Response "+ response.ok)
+
+            // Parse the response body as JSON
+            const data = await response.json();
+
+            // Assuming the API returns an array of FileInfo objects
+            const files: Array<FileInfo> = data.map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                file_type: item.file_type,
+                size: item.size,
+                page_data: item.page_data
+            }));
+
+            return files;
+        } catch (error) {
+            console.error("Error fetching files:", error);
+            return [];
+        }
+    }
     return (
         <div class="flex wrapper">
 
