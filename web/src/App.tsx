@@ -1,10 +1,17 @@
 import type {Component} from 'solid-js';
-import {createEffect, createSignal} from "solid-js";
+import {createEffect, createSignal, For} from "solid-js";
 import axios from "axios";
 import { ethers } from "ethers";
 import {FileInfo} from "./models/FileInfo";
 import {PageData} from "./models/PageData";
-import {debugPageDataStructure, humanReadableFileSize, sumFileContentSizes} from "./util";
+import {
+    capitalizeFirstLetter,
+    debugPageDataStructure,
+    filterFilesByType,
+    humanReadableFileSize,
+    sumFileContentSizes
+} from "./util";
+import {UiFileTypes} from "./models/UiFileTypes";
 
 const App: Component = () => {
 
@@ -12,6 +19,7 @@ const App: Component = () => {
     const [metaMaskAddress, setMetaMaskAddress] = createSignal<string | null>(null);
     const [selectedFileForUpload, setSelectedFileForUpload] = createSignal<File | null>(null);
     const [fileFromApi, setFilesFromApi] = createSignal<Array<FileInfo>>([]);
+    const [allFilesSize, setAllFileSize] = createSignal<number>(0);
     const [pageDataInfo, setPageDataInfo] = createSignal("");
     const [error, setError] = createSignal<string>('');
     const maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
@@ -33,9 +41,12 @@ const App: Component = () => {
             size += currentSize
         }
 
+        setAllFileSize(size)
         let hsize = humanReadableFileSize(size)
         let info= `${files.length} files (${hsize})`
         setPageDataInfo(info)
+
+
 
 
     })
@@ -155,6 +166,93 @@ const App: Component = () => {
             console.error("Error fetching files:", error);
             return [];
         }
+    }
+
+
+    const showFileTypesCards = () =>{
+
+        let fileTypes = ["image" , "document" , "music" , "video"];
+
+        let filesUiState : Array<UiFileTypes> =[];
+
+        for (const element of fileTypes) {
+
+            let fileItemData = filterFilesByType(fileFromApi(), element)
+
+            let size = 0;
+            for (const element of fileItemData) {
+                const pageData: PageData = JSON.parse(element.page_data);
+                // Debug the structure
+                debugPageDataStructure(pageData);
+
+                let currentSize = sumFileContentSizes(pageData)
+                size += currentSize
+            }
+
+            console.log("files length "+fileItemData.length+ "  file "+element +" size  "+size);
+            let percentage = size / allFilesSize() * 100
+            let usingText = `Using ${percentage}% of storage`
+            let hsize = humanReadableFileSize(size)
+
+            let item: UiFileTypes = {
+                name: element,
+               usingText: usingText,
+               size: hsize,
+               totalFiles: `${fileItemData.length} Files`
+           }
+
+            filesUiState.push(item)
+
+        }
+
+      return  <For each={filesUiState}>
+            {(item, index) => (
+                <>
+                    {fileTypecardItem(item)}
+                </>
+            )}
+        </For>
+    }
+
+    const fileTypecardItem = (fileData : UiFileTypes) => {
+      return  <div class="card">
+            <div class="p-5">
+                <div class="space-y-4 text-gray-600 dark:text-gray-300">
+                    <div class="flex items-start relative gap-5">
+                        <div class="flex items-center gap-3">
+                            <div class="h-14 w-14">
+                                                   <span class="flex h-full w-full items-center justify-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                             stroke-width="2" stroke-linecap="round"
+                                                             stroke-linejoin="round"
+                                                             class="feather feather-folder h-full w-full fill-warning text-warning"><path
+                                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                                    </span>
+                            </div>
+                            <div class="space-y-1">
+                                <p class="font-semibold text-base">{capitalizeFirstLetter(fileData.name, true)}</p>
+                                <p class="text-xs">{fileData.usingText}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center absolute top-0 end-0">
+                            <button data-fc-type="dropdown" data-fc-placement="bottom-end"
+                                    class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
+                                <i data-feather="more-vertical" class="w-4 h-4"></i>
+                            </button>
+
+
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm">{fileData.size}</p>
+                        <span class="p-0.5 bg-gray-600 rounded-full"></span>
+                        <p class="text-sm">{fileData.totalFiles}</p>
+                    </div>
+                </div>
+            </div>
+            {/*   <!-- end card body  --> */}
+        </div>
     }
     return (
         <div class="flex wrapper">
@@ -288,227 +386,9 @@ const App: Component = () => {
                                     </div>
                                 </div>
 
-                                <div class="card">
-                                    <div class="p-5">
-                                        <div class="space-y-4 text-gray-600 dark:text-gray-300">
-                                            <div class="flex items-start relative gap-5">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="h-14 w-14">
-                                                   <span class="flex h-full w-full items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                             stroke-width="2" stroke-linecap="round"
-                                                             stroke-linejoin="round"
-                                                             class="feather feather-folder h-full w-full fill-warning text-warning"><path
-                                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                                                    </span>
-                                                    </div>
-                                                    <div class="space-y-1">
-                                                        <p class="font-semibold text-base">Document</p>
-                                                        <p class="text-xs">Using 25% of storage</p>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center absolute top-0 end-0">
-                                                    <button data-fc-type="dropdown" data-fc-placement="bottom-end"
-                                                            class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                        <i data-feather="more-vertical" class="w-4 h-4"></i>
-                                                    </button>
+                                {showFileTypesCards()}
 
 
-                                                </div>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="text-sm">3 GB</p>
-                                                <span class="p-0.5 bg-gray-600 rounded-full"></span>
-                                                <p class="text-sm">400 Files</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/*   <!-- end card body  --> */}
-                                </div>
-
-                                <div class="card">
-                                    <div class="p-5">
-                                        <div class="space-y-4 text-gray-600 dark:text-gray-300">
-                                            <div class="flex items-start relative gap-5">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="h-14 w-14">
-                                                    <span class="flex h-full w-full items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                             stroke-width="2" stroke-linecap="round"
-                                                             stroke-linejoin="round"
-                                                             class="feather feather-folder h-full w-full fill-warning text-warning"><path
-                                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                                                    </span>
-                                                    </div>
-                                                    <div class="space-y-1">
-                                                        <p class="font-semibold text-base">Music</p>
-                                                        <p class="text-xs">Using 16% of storage</p>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center absolute top-0 end-0">
-                                                    <button data-fc-type="dropdown" data-fc-placement="bottom-end"
-                                                            class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                        <i data-feather="more-vertical" class="w-4 h-4"></i>
-                                                    </button>
-
-                                                    <div
-                                                        class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="edit-3" class="w-4 h-4 me-3"></i>
-                                                            Edit
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="link" class="w-4 h-4 me-3"></i>
-                                                            Copy Link
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="share-2" class="w-4 h-4 me-3"></i>
-                                                            Share
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="download" class="w-4 h-4 me-3"></i>
-                                                            Download
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="text-sm">1.5 GB</p>
-                                                <span class="p-0.5 bg-gray-600 rounded-full"></span>
-                                                <p class="text-sm">212 Files</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/*   <!-- end card body  --> */}
-                                </div>
-
-                                <div class="card">
-                                    <div class="p-5">
-                                        <div class="space-y-4 text-gray-600 dark:text-gray-300">
-                                            <div class="flex items-start relative gap-5">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="h-14 w-14">
-                                                    <span class="flex h-full w-full items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                             stroke-width="2" stroke-linecap="round"
-                                                             stroke-linejoin="round"
-                                                             class="feather feather-folder h-full w-full fill-warning text-warning"><path
-                                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                                                    </span>
-                                                    </div>
-                                                    <div class="space-y-1">
-                                                        <p class="font-semibold text-base">Images</p>
-                                                        <p class="text-xs">Using 50% of storage</p>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center absolute top-0 end-0">
-                                                    <button data-fc-type="dropdown" data-fc-placement="bottom-end"
-                                                            class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                        <i data-feather="more-vertical" class="w-4 h-4"></i>
-                                                    </button>
-
-                                                    <div
-                                                        class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="edit-3" class="w-4 h-4 me-3"></i>
-                                                            Edit
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="link" class="w-4 h-4 me-3"></i>
-                                                            Copy Link
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="share-2" class="w-4 h-4 me-3"></i>
-                                                            Share
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="download" class="w-4 h-4 me-3"></i>
-                                                            Download
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="text-sm">39 GB</p>
-                                                <span class="p-0.5 bg-gray-600 rounded-full"></span>
-                                                <p class="text-sm">25 Apps</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/*   <!-- end card body  --> */}
-                                </div>
-
-                                <div class="card">
-                                    <div class="p-5">
-                                        <div class="space-y-4 text-gray-600 dark:text-gray-300">
-                                            <div class="flex items-start relative gap-5">
-                                                <div class="flex items-center gap-3">
-                                                    <div class="h-14 w-14">
-                                                    <span class="flex h-full w-full items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                             stroke-width="2" stroke-linecap="round"
-                                                             stroke-linejoin="round"
-                                                             class="feather feather-folder h-full w-full fill-warning text-warning"><path
-                                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                                                    </span>
-                                                    </div>
-                                                    <div class="space-y-1">
-                                                        <p class="font-semibold text-base">Videos</p>
-                                                        <p class="text-xs">Using 8% of storage</p>
-                                                    </div>
-                                                </div>
-                                                <div class="flex items-center absolute top-0 end-0">
-                                                    <button data-fc-type="dropdown" data-fc-placement="bottom-end"
-                                                            class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                        <i data-feather="more-vertical" class="w-4 h-4"></i>
-                                                    </button>
-
-                                                    <div
-                                                        class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="edit-3" class="w-4 h-4 me-3"></i>
-                                                            Edit
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="link" class="w-4 h-4 me-3"></i>
-                                                            Copy Link
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="share-2" class="w-4 h-4 me-3"></i>
-                                                            Share
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="download" class="w-4 h-4 me-3"></i>
-                                                            Download
-                                                        </a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <p class="text-sm">4 GB</p>
-                                                <span class="p-0.5 bg-gray-600 rounded-full"></span>
-                                                <p class="text-sm">9 Videos</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/*   <!-- end card body  --> */}
-                                </div>
 
                                 <div class="2xl:col-span-4 sm:col-span-2">
                                     <div class="card">

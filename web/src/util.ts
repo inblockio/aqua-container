@@ -5,7 +5,7 @@ export const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xm
 export const documentTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
 export const musicTypes = ["audio/mpeg", "audio/wav"];
 export const videoTypes = ["video/mp4", "video/mpeg", "video/webm"];
-export  function filterFilesByType(files: FileInfo[], fileType: "image" | "document" | "music" | "video"): FileInfo[] {
+export  function filterFilesByType(files: FileInfo[], fileType: string): FileInfo[] { // "image" | "document" | "music" | "video"
     switch (fileType) {
         case "image":
             return files.filter(file => imageTypes.includes(file.extension));
@@ -65,4 +65,16 @@ export function debugPageDataStructure(pageData: PageData): void {
             console.log('  First revision type:', typeof hashChain.revisions[0]);
         }
     });
+}
+
+
+export function capitalizeFirstLetter(str: string, forceLowerRest: boolean = false): string {
+    if (!str) return str;
+
+    const firstChar = str.charAt(0).toUpperCase();
+    const restOfString = forceLowerRest
+        ? str.slice(1).toLowerCase()
+        : str.slice(1);
+
+    return `${firstChar}${restOfString}`;
 }
