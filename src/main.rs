@@ -36,7 +36,7 @@ use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use guardian_common::{crypt, custom_types::*};
 use serde_json::json;
 use verifier::v1_1::hashes::*;
-use crate::util::db_set_up;
+use crate::util::{check_or_generate_domain, db_set_up};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
@@ -58,6 +58,11 @@ async fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .init();
+
+    dotenv::dotenv::dotenv().ok();
+
+    check_or_generate_domain();
+
     let sqliteDb =  db_set_up().await;
     let db = Database::open::<PageData>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
 

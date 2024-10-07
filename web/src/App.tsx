@@ -430,6 +430,16 @@ const App: Component = () => {
                                                             </thead>
                                                             <tbody
                                                                 class="divide-y divide-gray-200 dark:divide-gray-600">
+
+                                                            <For each={fileFromApi()} >
+                                                                <tr>
+                                                                    <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
+                                                                        <a href="javascript: void(0);"
+                                                                           class="font-medium">fix me</a>
+                                                                    </td>
+                                                                </tr>
+                                                            </For>
+
                                                             <tr>
                                                                 <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
                                                                     <a href="javascript: void(0);" class="font-medium">App

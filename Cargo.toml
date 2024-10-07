@@ -31,3 +31,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ethaddr = "0.2.2" # help use etherirum wallet addresses
 rusqlite = "0.32.1" # rust sqlite
 sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio-native-tls"] } # used to interacting with sqlite
+dotenv = "0.15"
+rand = "0.8.5"
+ethers = "2.0.14"
