@@ -59,7 +59,7 @@ async fn main() {
         .with_max_level(tracing::Level::DEBUG)
         .init();
 
-    dotenv::dotenv::dotenv().ok();
+    dotenv::dotenv().ok();
 
     check_or_generate_domain();
 
@@ -272,6 +272,16 @@ async fn explorer_file_upload(
     let verification_hash_current =
         verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
+    let api_domain = std::env::var("API_DOMAIN").unwrap_or_default();
+
+
+    let mut domain = String::from("");
+
+    if api_domain.is_empty() {
+        domain= "0".to_string()
+    }else{
+        domain= api_domain
+    }
     let pagedata_current = &PageData {
         pages: vec![HashChain {
             genesis_hash: verification_hash_current.clone().to_string(),

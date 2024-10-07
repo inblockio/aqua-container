@@ -1,15 +1,15 @@
 import type {Component} from 'solid-js';
 import {createEffect, createSignal, For} from "solid-js";
 import axios from "axios";
-import { ethers } from "ethers";
+import {ethers} from "ethers";
 import {FileInfo} from "./models/FileInfo";
-import {PageData} from "./models/PageData";
+import {getTimestampSafe, PageData} from "./models/PageData";
 import {
     capitalizeFirstLetter,
-    debugPageDataStructure,
+    debugPageDataStructure, fileType,
     filterFilesByType,
     humanReadableFileSize,
-    sumFileContentSizes
+    sumFileContentSizes, timeToHumanFriendly
 } from "./util";
 import {UiFileTypes} from "./models/UiFileTypes";
 
@@ -28,12 +28,12 @@ const App: Component = () => {
 
     createEffect(async () => {
 
-        let files  = await fetchFiles();
+        let files = await fetchFiles();
         setFilesFromApi(files);
 
-        let size= 0;
-        for (let i = 0; i < files.length; i++) {
-                        const pageData: PageData = JSON.parse(files[i].page_data);
+        let size = 0;
+        for (const element of files) {
+            const pageData: PageData = JSON.parse(element.page_data);
             // Debug the structure
             debugPageDataStructure(pageData);
 
@@ -42,11 +42,9 @@ const App: Component = () => {
         }
 
         setAllFileSize(size)
-        let hsize = humanReadableFileSize(size)
-        let info= `${files.length} files (${hsize})`
+        let hSize = humanReadableFileSize(size)
+        let info = `${files.length} files (${hSize})`
         setPageDataInfo(info)
-
-
 
 
     })
@@ -147,7 +145,7 @@ const App: Component = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            console.log("fetchFiles Response "+ response.ok)
+            console.log("fetchFiles Response " + response.body)
 
             // Parse the response body as JSON
             const data = await response.json();
@@ -156,8 +154,7 @@ const App: Component = () => {
             const files: Array<FileInfo> = data.map((item: any) => ({
                 id: item.id,
                 name: item.name,
-                file_type: item.file_type,
-                size: item.size,
+                extension: item.extension,
                 page_data: item.page_data
             }));
 
@@ -169,53 +166,99 @@ const App: Component = () => {
     }
 
 
-    const showFileTypesCards = () =>{
+    const downloadAquaJson = (fileInfo: FileInfo)=>{
+        try {
+            // Parse the page_data string to a PageData object
+            const pageData: PageData = JSON.parse(fileInfo.page_data);
 
-        let fileTypes = ["image" , "document" , "music" , "video"];
+            // Convert the PageData object to a formatted JSON string
+            const jsonString = JSON.stringify(pageData, null, 2);
 
-        let filesUiState : Array<UiFileTypes> =[];
+            // Create a Blob from the JSON string
+            const blob = new Blob([jsonString], { type: 'application/json' });
 
-        for (const element of fileTypes) {
+            // Create a URL for the Blob
+            const url = URL.createObjectURL(blob);
 
-            let fileItemData = filterFilesByType(fileFromApi(), element)
+            // Create a temporary anchor element and trigger the download
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileInfo.name}-page-data.json`;
+            document.body.appendChild(a);
+            a.click();
 
-            let size = 0;
-            for (const element of fileItemData) {
-                const pageData: PageData = JSON.parse(element.page_data);
-                // Debug the structure
-                debugPageDataStructure(pageData);
-
-                let currentSize = sumFileContentSizes(pageData)
-                size += currentSize
-            }
-
-            console.log("files length "+fileItemData.length+ "  file "+element +" size  "+size);
-            let percentage = size / allFilesSize() * 100
-            let usingText = `Using ${percentage}% of storage`
-            let hsize = humanReadableFileSize(size)
-
-            let item: UiFileTypes = {
-                name: element,
-               usingText: usingText,
-               size: hsize,
-               totalFiles: `${fileItemData.length} Files`
-           }
-
-            filesUiState.push(item)
-
+            // Clean up
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading JSON:', error);
         }
 
-      return  <For each={filesUiState}>
+    }
+
+    const showFileTypesCards = () => {
+
+        let fileTypes = ["image", "document", "music", "video"];
+
+        let filesUiState: Array<UiFileTypes> = [];
+
+        if (fileFromApi().length > 0) {
+            for (const element of fileTypes) {
+
+                let fileItemData = filterFilesByType(fileFromApi(), element)
+
+                let size = 0;
+                for (const element of fileItemData) {
+                    const pageData: PageData = JSON.parse(element.page_data);
+                    // Debug the structure
+                    debugPageDataStructure(pageData);
+
+                    let currentSize = sumFileContentSizes(pageData)
+                    size += currentSize
+                }
+
+                console.log("element " + element + " length " + fileItemData.length + "  file " + element + " size  " + size);
+                let percentage = size / allFilesSize() * 100
+                let usingText = `Using ${percentage}% of storage`
+                let hSize = humanReadableFileSize(size)
+
+                let item: UiFileTypes = {
+                    name: element,
+                    usingText: usingText,
+                    size: hSize,
+                    totalFiles: `${fileItemData.length} Files`
+                }
+
+                filesUiState.push(item)
+
+            }
+
+        } else {
+            for (const element of fileTypes) {
+                let item: UiFileTypes = {
+                    name: element,
+                    usingText: `Using 0% of storage`,
+                    size: "0",
+                    totalFiles: `0 Files`
+                }
+
+                filesUiState.push(item)
+
+            }
+        }
+
+        return <For each={filesUiState}>
             {(item, index) => (
                 <>
-                    {fileTypecardItem(item)}
+                    {fileTypeCardItem(item)}
                 </>
             )}
         </For>
+
     }
 
-    const fileTypecardItem = (fileData : UiFileTypes) => {
-      return  <div class="card">
+    const fileTypeCardItem = (fileData: UiFileTypes) => {
+        return <div class="card">
             <div class="p-5">
                 <div class="space-y-4 text-gray-600 dark:text-gray-300">
                     <div class="flex items-start relative gap-5">
@@ -253,6 +296,54 @@ const App: Component = () => {
             </div>
             {/*   <!-- end card body  --> */}
         </div>
+    }
+
+    const fileListDisplay = (file: FileInfo) => {
+
+        const pageData: PageData = JSON.parse(file.page_data);
+        // Debug the structure
+        debugPageDataStructure(pageData);
+
+        let currentSize = sumFileContentSizes(pageData)
+        let hSize = humanReadableFileSize(currentSize)
+
+        const fileTypeInfo = fileType(file);
+
+        const timeStamp = getTimestampSafe(pageData)
+        let dateDisplay = "--"
+        if (timeStamp != undefined){
+            dateDisplay= timeToHumanFriendly(timeStamp)
+        }
+        return <tr>
+            <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
+                <a href="javascript: void(0);" class="font-medium">
+                    {file.name}</a>
+            </td>
+            <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
+                {fileTypeInfo}
+
+            </td>
+            <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
+                <p> {dateDisplay}</p>
+                {/*<span class="text-xs">by Andrew</span>*/}
+            </td>
+            <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
+                {hSize}
+            </td>
+
+            <td class="p-3.5">
+                <div></div>
+            </td>
+            <td class="p-3.5">
+                <div onClick={(e)=>{
+                    downloadAquaJson(file)
+                }}>
+                    <span class="px-2 py-0.5 rounded bg-success/25 text-success ms-2">
+                        <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> <small> Download Aqua chain JSON</small></span>
+
+                </div>
+            </td>
+        </tr>
     }
     return (
         <div class="flex wrapper">
@@ -373,13 +464,14 @@ const App: Component = () => {
                                             {/*</div>*/}
 
                                             {
-                                                metaMaskAddress() == null ? <a href="javascript:void(0)" onClick={(e) => {
-                                                    connectToMetaMask()
-                                                }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                                                               type="button"
-                                                                               class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
-                                                    <i class="mgc_add_line text-lg me-2"></i> sign in with metamask
-                                                </a> : <label>{metaMaskAddress()}</label>
+                                                metaMaskAddress() == null ?
+                                                    <a href="javascript:void(0)" onClick={(e) => {
+                                                        connectToMetaMask()
+                                                    }} data-fc-type="dropdown" data-fc-placement="bottom"
+                                                       type="button"
+                                                       class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
+                                                        <i class="mgc_add_line text-lg me-2"></i> sign in with metamask
+                                                    </a> : <label>{metaMaskAddress()}</label>
                                             }
 
                                         </form>
@@ -389,12 +481,10 @@ const App: Component = () => {
                                 {showFileTypesCards()}
 
 
-
                                 <div class="2xl:col-span-4 sm:col-span-2">
                                     <div class="card">
                                         <div class="card-header">
-                                            <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-300">Recent
-                                                Files</h4>
+                                            <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-300">Files</h4>
                                         </div>
 
                                         <div class="flex flex-col">
@@ -410,8 +500,12 @@ const App: Component = () => {
                                                                     Name
                                                                 </th>
                                                                 <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">Last
-                                                                    Modified
+                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">
+                                                                    Type
+                                                                </th>
+                                                                <th scope="col"
+                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">Uploaded
+                                                                    At
                                                                 </th>
                                                                 <th scope="col"
                                                                     class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">File
@@ -420,9 +514,9 @@ const App: Component = () => {
                                                                 <th scope="col"
                                                                     class="p-3.5 text-sm text-start font-semibold min-w-[8rem]">Owner
                                                                 </th>
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members
-                                                                </th>
+                                                                {/*<th scope="col"*/}
+                                                                {/*    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members*/}
+                                                                {/*</th>*/}
                                                                 <th scope="col"
                                                                     class="p-3.5 text-sm text-start font-semibold">Action
                                                                 </th>
@@ -431,370 +525,16 @@ const App: Component = () => {
                                                             <tbody
                                                                 class="divide-y divide-gray-200 dark:divide-gray-600">
 
-                                                            <For each={fileFromApi()} >
-                                                                <tr>
-                                                                    <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                        <a href="javascript: void(0);"
-                                                                           class="font-medium">fix me</a>
-                                                                    </td>
-                                                                </tr>
+                                                            <For each={fileFromApi()}>
+                                                                {(item, index) =>
+                                                                    <>
+                                                                        {fileListDisplay(item)}
+                                                                    </>
+                                                                }
+
                                                             </For>
 
-                                                            <tr>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <a href="javascript: void(0);" class="font-medium">App
-                                                                        Design & Development</a>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <p>Jan 03, 2020</p>
-                                                                    <span class="text-xs">by Andrew</span>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">128
-                                                                    MB
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    Danielle Thompson
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div class="flex -space-x-1.5">
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-1.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-2.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-3.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-4.jpg"
-                                                                            alt="Image Description"/>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div>
-                                                                        <button data-fc-type="dropdown"
-                                                                                data-fc-placement="bottom-end"
-                                                                                class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                                            <i data-feather="more-vertical"
-                                                                               class="w-4 h-4"></i>
-                                                                        </button>
 
-                                                                        <div
-                                                                            class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="edit-3"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Edit
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="link"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Copy Link
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="share-2"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Share
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="download"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-
-                                                            <tr>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <a href="javascript: void(0);"
-                                                                       class="font-medium">Hyper-sketch-design.zip</a>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <p>Feb 13, 2020</p>
-                                                                    <span class="text-xs">by Coderthemes</span>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">521
-                                                                    MB
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    Coder Themes
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div class="flex -space-x-1.5">
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-4.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-8.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-6.jpg"
-                                                                            alt="Image Description"/>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div>
-                                                                        <button data-fc-type="dropdown"
-                                                                                data-fc-placement="bottom-end"
-                                                                                class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                                            <i data-feather="more-vertical"
-                                                                               class="w-4 h-4"></i>
-                                                                        </button>
-
-                                                                        <div
-                                                                            class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="edit-3"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Edit
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="link"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Copy Link
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="share-2"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Share
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="download"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <a href="javascript: void(0);"
-                                                                       class="font-medium">Annualreport.pdf</a>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <p>Dec 18, 2019</p>
-                                                                    <span class="text-xs">by Alejandro</span>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">7.2
-                                                                    MB
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    Gary Coley
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div class="flex -space-x-1.5">
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-5.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-7.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-4.jpg"
-                                                                            alt="Image Description"/>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div>
-                                                                        <button data-fc-type="dropdown"
-                                                                                data-fc-placement="bottom-end"
-                                                                                class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                                            <i data-feather="more-vertical"
-                                                                               class="w-4 h-4"></i>
-                                                                        </button>
-
-                                                                        <div
-                                                                            class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="edit-3"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Edit
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="link"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Copy Link
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="share-2"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Share
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="download"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <a href="javascript: void(0);"
-                                                                       class="font-medium">Wireframes</a>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <p>Nov 25, 2019</p>
-                                                                    <span class="text-xs">by Dunkle</span>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">54.2
-                                                                    MB
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    Jasper Rigg
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div class="flex -space-x-1.5">
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-6.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-4.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-7.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-5.jpg"
-                                                                            alt="Image Description"/>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div>
-                                                                        <button data-fc-type="dropdown"
-                                                                                data-fc-placement="bottom-end"
-                                                                                class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                                            <i data-feather="more-vertical"
-                                                                               class="w-4 h-4"></i>
-                                                                        </button>
-
-                                                                        <div
-                                                                            class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="edit-3"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Edit
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="link"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Copy Link
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="share-2"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Share
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="download"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <a href="javascript: void(0);"
-                                                                       class="font-medium">Documentation.docs</a>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    <p>Feb 9, 2020</p>
-                                                                    <span class="text-xs">by Justin</span>
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">8.3
-                                                                    MB
-                                                                </td>
-                                                                <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
-                                                                    Cooper Sharwood
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div class="flex -space-x-1.5">
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-5.jpg"
-                                                                            alt="Image Description"/>
-                                                                        <img
-                                                                            class="inline-block h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-700"
-                                                                            src="images/users/avatar-8.jpg"
-                                                                            alt="Image Description"/>
-                                                                    </div>
-                                                                </td>
-                                                                <td class="p-3.5">
-                                                                    <div>
-                                                                        <button data-fc-type="dropdown"
-                                                                                data-fc-placement="bottom-end"
-                                                                                class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
-                                                                            <i data-feather="more-vertical"
-                                                                               class="w-4 h-4"></i>
-                                                                        </button>
-
-                                                                        <div
-                                                                            class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="edit-3"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Edit
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="link"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Copy Link
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="share-2"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Share
-                                                                            </a>
-                                                                            <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                                               href="apps-file-manager.html#">
-                                                                                <i data-feather="download"
-                                                                                   class="w-4 h-4 me-3"></i>
-                                                                                Download
-                                                                            </a>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
                                                             </tbody>
                                                         </table>
                                                     </div>

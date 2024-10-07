@@ -6,6 +6,7 @@ use sqlx::sqlite::SqlitePoolOptions;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
 use rand::{Rng, thread_rng};
+use std::io::Write;
 
 pub async fn db_set_up() -> Pool<Sqlite> {
     let db_file_path = "./pages.db";

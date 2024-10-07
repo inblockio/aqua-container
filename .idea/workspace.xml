@@ -9,15 +9,14 @@
   <component name="ChangeListManager">
     <list default="true" id="a369b260-3041-473d-885a-17825f51c0ac" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/98b67f3c-a700-446c-a857-1600fc563bd8.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/98b67f3c-a700-446c-a857-1600fc563bd8.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dbnavigator.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dbnavigator.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages.db" beforeDir="false" afterPath="$PROJECT_DIR$/pages.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages.db-shm" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages.db-wal" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/util.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/util.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/web/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/web/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/models/PageData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/models/PageData.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/util.ts" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/util.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,6 +67,8 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "WebServerToolWindowFactoryState": "false",
     "dart.analysis.tool.window.visible": "false",
+    "database.data.extractors.current.export.id": "JSON-Groovy.json.groovy",
+    "database.data.extractors.current.id": "JSON-Groovy.json.groovy",
     "git-widget-placeholder": "explorer",
     "go.import.settings.migrated": "true",
     "last_opened_file_path": "/home/kamau/Development/Projects/Aqua/aqua-PKC",
@@ -97,9 +98,6 @@
       <recent name="$PROJECT_DIR$/web/public" />
     </key>
   </component>
-  <component name="RsExternalLinterProjectSettings">
-    <option name="runOnTheFly" value="true" />
-  </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
   </component>
@@ -120,6 +118,7 @@
       <workItem from="1728057656519" duration="55000" />
       <workItem from="1728264089312" duration="11207000" />
       <workItem from="1728286498044" duration="1188000" />
+      <workItem from="1728290378929" duration="7454000" />
     </task>
     <servers />
   </component>
