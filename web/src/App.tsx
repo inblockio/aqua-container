@@ -3,11 +3,16 @@ import {createEffect, createSignal} from "solid-js";
 import axios from "axios";
 import { ethers } from "ethers";
 import {FileInfo} from "./models/FileInfo";
+import {PageData} from "./models/PageData";
+import {debugPageDataStructure, humanReadableFileSize, sumFileContentSizes} from "./util";
 
 const App: Component = () => {
+
+
     const [metaMaskAddress, setMetaMaskAddress] = createSignal<string | null>(null);
     const [selectedFileForUpload, setSelectedFileForUpload] = createSignal<File | null>(null);
     const [fileFromApi, setFilesFromApi] = createSignal<Array<FileInfo>>([]);
+    const [pageDataInfo, setPageDataInfo] = createSignal("");
     const [error, setError] = createSignal<string>('');
     const maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -17,6 +22,21 @@ const App: Component = () => {
 
         let files  = await fetchFiles();
         setFilesFromApi(files);
+
+        let size= 0;
+        for (let i = 0; i < files.length; i++) {
+                        const pageData: PageData = JSON.parse(files[i].page_data);
+            // Debug the structure
+            debugPageDataStructure(pageData);
+
+            let currentSize = sumFileContentSizes(pageData)
+            size += currentSize
+        }
+
+        let hsize = humanReadableFileSize(size)
+        let info= `${files.length} files (${hsize})`
+        setPageDataInfo(info)
+
 
     })
 
@@ -191,7 +211,7 @@ const App: Component = () => {
                                              role="progressbar" style="width: 46%" aria-valuenow="46" aria-valuemin="0"
                                              aria-valuemax="100"></div>
                                     </div>
-                                    <p class="text-gray-500 mt-4 text-xs">70 files (15 GB)</p>
+                                    <p class="text-gray-500 mt-4 text-xs">{pageDataInfo()}</p>
                                 </div>
                             </div>
                         </div>
@@ -294,29 +314,7 @@ const App: Component = () => {
                                                         <i data-feather="more-vertical" class="w-4 h-4"></i>
                                                     </button>
 
-                                                    <div
-                                                        class="fc-dropdown hidden fc-dropdown-open:opacity-100 opacity-0 w-40 z-50 mt-2 transition-all duration-300 bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 rounded-lg p-2">
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="edit-3" class="w-4 h-4 me-3"></i>
-                                                            Edit
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="link" class="w-4 h-4 me-3"></i>
-                                                            Copy Link
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="share-2" class="w-4 h-4 me-3"></i>
-                                                            Share
-                                                        </a>
-                                                        <a class="flex items-center py-2 px-4 text-sm rounded text-gray-500  hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300"
-                                                           href="apps-file-manager.html#">
-                                                            <i data-feather="download" class="w-4 h-4 me-3"></i>
-                                                            Download
-                                                        </a>
-                                                    </div>
+
                                                 </div>
                                             </div>
                                             <div class="flex items-center gap-2">

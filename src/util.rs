@@ -12,7 +12,6 @@ pub async fn db_set_up() -> Pool<Sqlite> {
 
     // Check if the database file exists, if not, create it
     if !Path::new(db_file_path).exists() {
-
         println!("please run `sqlx database create` then `sqlx migrate run` ")
     }else{
         println!("db exists {}", db_url)

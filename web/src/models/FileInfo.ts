@@ -1,8 +1,7 @@
 export  interface FileInfo {
     id: number,
     name: string,
-    file_type: String,
-    size :number,
-    page_data : String
+    extension: string,
+    page_data : string
 }
 
