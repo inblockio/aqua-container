@@ -12,16 +12,8 @@ pub async fn db_set_up() -> Pool<Sqlite> {
 
     // Check if the database file exists, if not, create it
     if !Path::new(db_file_path).exists() {
-        println!("Database file not found, creating one...");
 
-        // Create the directory if it doesn't exist
-        let db_dir = Path::new(db_file_path).parent().unwrap();
-        if !db_dir.exists() {
-            fs::create_dir_all(db_dir).expect("Failed to create database directory");
-        }
-
-        // Create an empty database file
-        fs::File::create(db_file_path).expect("Failed to create the database file");
+        println!("please run `sqlx database create` then `sqlx migrate run` ")
     }else{
         println!("db exists {}", db_url)
     }
@@ -31,26 +23,6 @@ pub async fn db_set_up() -> Pool<Sqlite> {
         .connect(db_url.as_str())
         .await
         .expect("Failed to connect to SQLite");
-
-    // Create table if it doesn't exist
-    sqlx::query(
-        r#"
-
-        "#,
-    )
-        .execute(&pool)
-        .await
-        .expect("Failed to create table");
-
-
-    sqlx::query(
-        r#"
-
-        "#,
-    )
-        .execute(&pool)
-        .await
-        .expect("Failed to create key-value table");
 
     return pool;
 }
