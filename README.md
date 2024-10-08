@@ -1,6 +1,6 @@
 # aqua-container
-Aqua container is a rust implmentation of aqua protocol.It enables data signed , witness and verified.
-This project has  a axum web server (with ssr  web page) and  a solid js frontend to display  the above capabilities.
+Aqua container is a rust implmentation of aqua protocol.It enables data to be signed , witnessed and verified.
+This project has  an axum web server (with ssr  web page) and  a solid js frontend to display  the above capabilities.
 
 Features:
 
@@ -35,9 +35,10 @@ Pages:
 2. node and npm.
 
 ## How to run
-1. `export DATABASE_URL="sqlite:pages.db"
-   sqlx database create
-   sqlx migrate run`
+1. `export DATABASE_URL="sqlite:pages.db"`
+   `sqlx database create`
+   `sqlx migrate run`
+    `cd web && npm i  `
 2. `cargo run `
 3. `cd web && npm run dev`
 

@@ -69,20 +69,32 @@ const HomePage: Component = () => {
 
         try {
             // Create a new Web3Provider using BrowserProvider in v6
-            const provider = new ethers.BrowserProvider(window.ethereum);
+            // const provider = new ethers.BrowserProvider(window.ethereum);
+            //
+            // // Request MetaMask accounts
+            // const accounts = await provider.send("eth_requestAccounts", []);
+            //
+            // // Get the signer
+            // const signer = await provider.getSigner();
+            //
+            // // Get the address
+            // const address = await signer.getAddress();
+            //
+            // setMetaMaskAddress(address); // Set the address
 
-            // Request MetaMask accounts
-            const accounts = await provider.send("eth_requestAccounts", []);
+            const message = "MESSAGETOBESIGNED";
 
-            // Get the signer
-            const signer = await provider.getSigner();
+            const signature = await window.ethereum.request({
+                method: 'personal_sign',
+                params: [message, window.ethereum.selectedAddress],
+            })
 
-            // Get the address
-            const address = await signer.getAddress();
+            const wallet_address = window.ethereum.selectedAddress
 
-            setMetaMaskAddress(address); // Set the address
+            setMetaMaskAddress(wallet_address)
         } catch (error) {
             console.error("Error connecting to MetaMask:", error);
+            setError("Error connecting to MetaMask: "+ error);
         }
     };
 
