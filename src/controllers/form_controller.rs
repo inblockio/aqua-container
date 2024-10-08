@@ -135,24 +135,26 @@ pub async fn save_request_body(
             .execute()
             .unwrap();
 
-        let document2: &Option<PageData> = &server_database.db.get_key(file_name).into().unwrap();
+        // let document2: &Option<PageData> = &server_database.db.get_key(file_name).into().unwrap();
+        //
+        // if document2.is_some() {
+        //     let doc: PageData = document2.clone().unwrap();
+        //     let (_, rev1) = &doc.pages[0].revisions[0];
+        //
+        //     if rev1.content.file.is_some() {
+        //         let file: FileContent = rev1.content.file.clone().unwrap();
+        //         let vu8 = file.data.to_vec();
+        //         // println!("{:#?}", String::from_utf8(vu8));
+        //     }
+        //
+        //     //            fs::remove_file("../aqua-verifier-js/vef.json").unwrap();
+        //     //            fs::write(
+        //     //                "../aqua-verifier-js/vef.json",
+        //     //                serde_json::to_string(&doc).unwrap(),
+        //     //            );
+        // }
 
-        if document2.is_some() {
-            let doc: PageData = document2.clone().unwrap();
-            let (_, rev1) = &doc.pages[0].revisions[0];
 
-            if rev1.content.file.is_some() {
-                let file: FileContent = rev1.content.file.clone().unwrap();
-                let vu8 = file.data.to_vec();
-                // println!("{:#?}", String::from_utf8(vu8));
-            }
-
-            //            fs::remove_file("../aqua-verifier-js/vef.json").unwrap();
-            //            fs::write(
-            //                "../aqua-verifier-js/vef.json",
-            //                serde_json::to_string(&doc).unwrap(),
-            //            );
-        }
     }
 
     Ok(Redirect::to("/"))
@@ -253,6 +255,8 @@ pub async fn save_json_file(
 ) -> Result<Redirect, (StatusCode, String)> {
     // println!("{:#?}", &input);
     tracing::debug!("{:#?}", &input);
+
+
 
     let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
 
