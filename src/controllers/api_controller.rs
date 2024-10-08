@@ -34,7 +34,7 @@ use crate::util::{check_or_generate_domain, db_set_up};
 use crate::Db;
 use crate::models::file::FileInfo;
 use crate::models::input::SInput;
-
+use crate::models::page_data::PageDataContainer;
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 #[derive(Debug)]
@@ -240,7 +240,7 @@ pub async fn explorer_file_upload(
 
     let api_domain = std::env::var("API_DOMAIN").unwrap_or_else(|_| "0".to_string());
 
-    let pagedata_current = crate::models::page_data::PageData {
+    let pagedata_current = crate::models::page_data::PageDataContainer {
 
         pages: vec![HashChain {
             genesis_hash: verification_hash_current.clone().to_string(),
@@ -339,7 +339,7 @@ pub async fn explorer_sign_revision(
     match row {
         Ok(Some(row)) => {
             // Deserialize page data
-            let deserialized: PageData = match serde_json::from_str(&row.page_data) {
+            let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
                 Ok(data) => data,
                 Err(e) => {
                     tracing::error!("Failed to parse page data record: {:?}", e);

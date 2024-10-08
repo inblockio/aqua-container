@@ -38,15 +38,13 @@ use crate::Db;
 use crate::util::{check_or_generate_domain, db_set_up};
 use crate::models::file::{FileInfo};
 use crate::models::input::SInput;
+use crate::models::page_data::PageDataContainer;
 
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
 pub struct Input {
     pub filename: String,
 }
-
-
-
 
 
 pub async fn save_request_body(
@@ -94,7 +92,7 @@ pub async fn save_request_body(
         let verification_hash_current =
             verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
-        let pagedata_current = &crate::models::page_data::PageData {
+        let pagedata_current = &PageDataContainer {
             pages: vec![HashChain {
                 genesis_hash: verification_hash_current.clone().to_string(),
                 domain_id: domain_id_current,
@@ -135,40 +133,39 @@ pub async fn save_request_body(
             .execute()
             .unwrap();
 
-        // let document2: &Option<PageData> = &server_database.db.get_key(file_name).into().unwrap();
-        //
-        // if document2.is_some() {
-        //     let doc: PageData = document2.clone().unwrap();
-        //     let (_, rev1) = &doc.pages[0].revisions[0];
-        //
-        //     if rev1.content.file.is_some() {
-        //         let file: FileContent = rev1.content.file.clone().unwrap();
-        //         let vu8 = file.data.to_vec();
-        //         // println!("{:#?}", String::from_utf8(vu8));
-        //     }
-        //
-        //     //            fs::remove_file("../aqua-verifier-js/vef.json").unwrap();
-        //     //            fs::write(
-        //     //                "../aqua-verifier-js/vef.json",
-        //     //                serde_json::to_string(&doc).unwrap(),
-        //     //            );
-        // }
+        let document2: &Option<PageDataContainer> = &server_database.db.get_key(file_name).into().unwrap();
 
+        if document2.is_some() {
+            let doc: PageDataContainer = document2.clone().unwrap();
+            let (_, rev1) = &doc.pages[0].revisions[0];
 
+            if rev1.content.file.is_some() {
+                let file: FileContent = rev1.content.file.clone().unwrap();
+                let vu8 = file.data.to_vec();
+                // println!("{:#?}", String::from_utf8(vu8));
+            }
+
+            //            fs::remove_file("../aqua-verifier-js/vef.json").unwrap();
+            //            fs::write(
+            //                "../aqua-verifier-js/vef.json",
+            //                serde_json::to_string(&doc).unwrap(),
+            //            );
+        }
     }
 
     Ok(Redirect::to("/"))
 }
 
+
 pub async fn add_signature_hash_for_file(
     State(server_database): State<Db>,
     Form(input): Form<SInput>,
 ) -> (StatusCode, String) {
-    let mut document2: &Option<PageData> =
+    let mut document2: &Option<PageDataContainer> =
         &server_database.db.get_key(&input.filename).into().unwrap();
 
     if document2.is_some() {
-        let mut doc: PageData = document2.clone().unwrap();
+        let mut doc: PageDataContainer = document2.clone().unwrap();
         let len = &doc.pages[0].revisions.len();
 
         let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
@@ -237,10 +234,10 @@ pub async fn get_verification_hash_for_file(
     State(server_database): State<Db>,
     Form(input): Form<Input>,
 ) -> (StatusCode, String) {
-    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
+    let document2: &Option<PageDataContainer> = &server_database.db.get_key(&input.filename).into().unwrap();
 
     if document2.is_some() {
-        let doc: PageData = document2.clone().unwrap();
+        let doc: PageDataContainer = document2.clone().unwrap();
         let len = &doc.pages[0].revisions.len();
 
         let (ver1, _) = &doc.pages[0].revisions[len - 1];
@@ -258,10 +255,10 @@ pub async fn save_json_file(
 
 
 
-    let document2: &Option<PageData> = &server_database.db.get_key(&input.filename).into().unwrap();
+    let document2: &Option<PageDataContainer> = &server_database.db.get_key(&input.filename).into().unwrap();
 
     if document2.is_some() {
-        let doc: PageData = document2.clone().unwrap();
+        let doc: PageDataContainer = document2.clone().unwrap();
         let (_, rev1) = &doc.pages[0].revisions[0];
 
         if rev1.content.file.is_some() {

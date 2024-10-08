@@ -76,7 +76,7 @@ async fn main() {
     check_or_generate_domain();
 
     let sqliteDb =  db_set_up().await;
-    let db = Database::open::<crate::models::page_data::PageData>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
+    let db = Database::open::<crate::models::page_data::PageDataContainer>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
 
     // save files to a separate directory to not override files in the current directory
     tokio::fs::create_dir(UPLOADS_DIRECTORY).await;
