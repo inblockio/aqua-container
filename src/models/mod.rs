@@ -1,2 +1,4 @@
 pub mod file;
-pub mod dashboard;
+pub mod page_data;
+
+pub mod input;
