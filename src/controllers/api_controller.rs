@@ -107,6 +107,76 @@ pub async fn fetch_explorer_files(State(server_database): State<Db>) -> (StatusC
     }
 }
 
+pub async fn explorer_file_verify_hash_upload(
+    State(server_database): State<Db>,
+    mut multipart: Multipart,
+) -> (StatusCode, Json<Option<PageDataContainer>>) {
+    tracing::debug!("explorer_file_verify_hash_upload fn");
+
+    while let Ok(Some(field)) = multipart.next_field().await {
+        let name = match field.name() {
+            Some(name) => name.to_string(),
+            None => {
+                tracing::error!("Field name missing");
+                return (StatusCode::BAD_REQUEST, Json(None));
+            }
+        };
+
+        tracing::debug!("Processing field: {}", name);
+        match name.as_str() {
+            "file" => {
+                let file_name = field.file_name().unwrap_or_default().to_string();
+
+                if  std::path::Path::new(&file_name).extension().and_then(|s| s.to_str()) != Some("json") {
+                    tracing::error!("Uploaded file is not a JSON file");
+                    return (StatusCode::BAD_REQUEST, Json(None));
+                }
+
+                // Read the field into a byte vector
+                let data = match field.bytes().await {
+                    Ok(data) => data,
+                    Err(e) => {
+                        tracing::error!("Failed to read file data: {:?}", e);
+                        return (StatusCode::BAD_REQUEST, Json(None));
+                    }
+                };
+
+                // Try to parse the file content into your struct
+                match serde_json::from_slice::<PageDataContainer>(&data) {
+                    Ok(parsed_data) => {
+                        tracing::debug!("file is okay fn");
+
+                        parsed_data.pages.get(0).unwrap();
+                        // // Recreate the hash from the received file
+                        // let b64 = Base64::encode(&received_file_bytes);
+                        // let mut file_hasher = Sha3_512::default();
+                        // file_hasher.update(b64);
+                        // let calculated_hash = Hash::from(file_hasher.finalize());
+
+                        println!(" calculated_hash {#}  \n vs expected_hash  {#}   ",calculated_hash , expected_hash );
+                        // Compare the calculated hash with the expected hash
+                       if( calculated_hash == expected_hash){
+                           // Process parsed_data (e.g., save to database, verify hash, etc.)
+                           return (StatusCode::OK, Json(Some(parsed_data)));
+                       }else{
+                           return (StatusCode::BAD_REQUEST, Json(None))
+                       }
+
+
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to parse JSON: {:?}", e);
+                        return (StatusCode::BAD_REQUEST, Json(None));
+                    }
+                }
+            }
+            _ => continue,
+        }
+    }
+
+    // Return an error if no file was found
+    (StatusCode::BAD_REQUEST, Json(None))
+}
 
 pub async fn explorer_file_upload(
     State(server_database): State<Db>,
@@ -242,7 +312,8 @@ pub async fn explorer_file_upload(
 
     let pagedata_current = crate::models::page_data::PageDataContainer {
 
-        pages: vec![HashChain {
+        pages: vec![
+            HashChain {
             genesis_hash: verification_hash_current.clone().to_string(),
             domain_id: domain_id_current,
             title: file_name.clone(),

@@ -25,6 +25,7 @@ const HomePage: Component = () => {
     // const [fileFromApi, setFilesFromApi] = createSignal<Array<FileInfo>>([]);
     const [allFilesSize, setAllFileSize] = createSignal<number>(0);
     const [pageDataInfo, setPageDataInfo] = createSignal("");
+    const [fileTypeForUpload, setFileTypeForUpload] = createSignal("");
     const [error, setError] = createSignal<string>('');
     const maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -98,11 +99,50 @@ const HomePage: Component = () => {
         }
     };
 
+    const uploadAquaJsonFile = async () =>{
+        const file = selectedFileForUpload();
+        if (!file) {
+            setError('No file selected');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('account', "example");
+
+        try {
+            const response = await axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            console.log('File uploaded successfully:', JSON.stringify(response.data));
+
+
+            console.log("Code "+response.status)
+            // Assuming the API returns an array of FileInfo objects
+            // const file: FileInfo = {
+            //     id: response.data.id,
+            //     name: response.data.name,
+            //     extension: response.data.extension,
+            //     page_data: response.data.page_data
+            // };
+            //
+            // setAppState("filesFromApi", [...appState.filesFromApi, file])
+
+            setFileTypeForUpload("");
+            return ;
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            setError('Failed to upload file');
+        }
+    }
 
     const handleSelectFileForUploadClick = () => {
         // Trigger the hidden file input click
         fileInput.click();
     };
+
     const handleFileSelect = (event: Event) => {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
@@ -140,8 +180,12 @@ const HomePage: Component = () => {
             setError('');
 
 
-            //upload the file
-            uploadFile()
+            if(fileTypeForUpload() == "json" ){
+                uploadAquaJsonFile()
+            }else {
+                //upload the file
+                uploadFile()
+            }
         }
     };
 
@@ -165,6 +209,7 @@ const HomePage: Component = () => {
             console.log('File uploaded successfully:', JSON.stringify(response.data));
 
 
+            setSelectedFileForUpload(null);
 
 
             // Assuming the API returns an array of FileInfo objects
@@ -176,6 +221,8 @@ const HomePage: Component = () => {
             };
 
             setAppState("filesFromApi", [...appState.filesFromApi, file])
+
+            setFileTypeForUpload("")
             return ;
         } catch (error) {
             console.error('Error uploading file:', error);
@@ -417,6 +464,7 @@ const HomePage: Component = () => {
                                 <div class="relative">
 
                                     <a href="javascript:void(0)" onClick={(e) => {
+                                        setFileTypeForUpload("file")
                                         handleSelectFileForUploadClick()
                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
                                        type="button"
@@ -426,7 +474,8 @@ const HomePage: Component = () => {
                                     <br/>
 
                                     <a href="javascript:void(0)" onClick={(e) => {
-                                        console.log("todo")
+                                        setFileTypeForUpload  ("json")
+                                        handleSelectFileForUploadClick  ();
                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
                                        type="button"
                                        class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">

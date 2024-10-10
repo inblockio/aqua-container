@@ -46,3 +46,6 @@ F
 web/src/pages/home.tsx,0/b/0b239f88c8780055315390a3475fedd6d2b18fca
 I
 web/src/pages/details.tsx,2/9/297e9f8ffcc46b9b6d9d56a9bc4f5c5205ff1d88
+:
+
+.gitignore,a/5/a5cc2925ca8258af241be7e5b0381edf30266302

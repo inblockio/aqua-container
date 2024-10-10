@@ -8,11 +8,9 @@ const App: Component = () => {
 
     return (
      <>
-
          <Route path="/details" component={DetailsPage}/>
          <Route path="/" component={HomePage}/>
          <Route path="*" component={HomePage}/>
-
      </>
     );
 };
