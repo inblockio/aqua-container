@@ -1,40 +1,42 @@
-use axum::{body::Bytes, extract::{DefaultBodyLimit, Multipart, Path, Request, State}, handler::HandlerWithoutStateExt, http::StatusCode, response::{Html, Redirect}, routing::{get, post}, BoxError, Form, Router, Json};
+use axum::{
+    body::Bytes,
+    extract::{DefaultBodyLimit, Multipart, Path, Request, State},
+    handler::HandlerWithoutStateExt,
+    http::StatusCode,
+    response::{Html, Redirect},
+    routing::{get, post},
+    BoxError, Form, Json, Router,
+};
 use ethaddr::address;
 
-use chrono::{NaiveDateTime, DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 
+use crate::models::file::FileInfo;
+use crate::models::input::SInput;
+use crate::models::page_data::PageDataContainer;
+use crate::util::{check_or_generate_domain, db_set_up};
+use crate::Db;
+use axum::response::{IntoResponse, Response};
+use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
+use bonsaidb::core::schema::{Collection, SerializedCollection};
+use bonsaidb::local::config::{Builder, StorageConfiguration};
+use bonsaidb::local::Database;
 use futures::{Stream, TryStreamExt};
+use guardian_common::{crypt, custom_types::*};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use sha3::*;
+use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::collections::BTreeMap;
 use std::fs;
 use std::io;
 use std::net::SocketAddr;
 use std::time::SystemTime;
-use axum::response::{IntoResponse, Response};
 use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
-use tower_http::{
-    limit::RequestBodyLimitLayer,
-    services::{ServeDir, ServeFile},
-    trace::TraceLayer,
-};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use tower_http::cors::{Any, CorsLayer};
-use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
-use bonsaidb::core::schema::{Collection, SerializedCollection};
-use bonsaidb::local::config::{Builder, StorageConfiguration};
-use bonsaidb::local::Database;
-use serde::{Deserialize, Serialize};
-use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
-use guardian_common::{crypt, custom_types::*};
-use serde_json::json;
 use verifier::v1_1::hashes::*;
-use crate::util::{check_or_generate_domain, db_set_up};
-use crate::Db;
-use crate::models::file::FileInfo;
-use crate::models::input::SInput;
-use crate::models::page_data::PageDataContainer;
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 #[derive(Debug)]
@@ -50,32 +52,36 @@ impl IntoResponse for UploadError {
         match self {
             UploadError::FileTooLarge(size) => (
                 StatusCode::PRECONDITION_FAILED,
-                format!("File size {} bytes exceeds maximum of {} bytes", size, MAX_FILE_SIZE)
-            ).into_response(),
+                format!(
+                    "File size {} bytes exceeds maximum of {} bytes",
+                    size, MAX_FILE_SIZE
+                ),
+            )
+                .into_response(),
             UploadError::MissingAccount => (
                 StatusCode::PRECONDITION_FAILED,
-                "Account field is required".to_string()
-            ).into_response(),
+                "Account field is required".to_string(),
+            )
+                .into_response(),
             UploadError::MissingFile => (
                 StatusCode::PRECONDITION_FAILED,
-                "File is required".to_string()
-            ).into_response(),
-            UploadError::MultipartError(msg) => (
-                StatusCode::BAD_REQUEST,
-                msg
-            ).into_response(),
+                "File is required".to_string(),
+            )
+                .into_response(),
+            UploadError::MultipartError(msg) => (StatusCode::BAD_REQUEST, msg).into_response(),
         }
     }
 }
 
-pub async fn fetch_explorer_files(State(server_database): State<Db>) -> (StatusCode, Json<Vec<FileInfo>>) {
+pub async fn fetch_explorer_files(
+    State(server_database): State<Db>,
+) -> (StatusCode, Json<Vec<FileInfo>>) {
     tracing::debug!("fetch_explorer_files");
-
 
     // Initialize an empty Vec to hold the result
     let mut pages: Vec<FileInfo> = Vec::new();
 
-// Fetch all rows from the 'pages' table
+    // Fetch all rows from the 'pages' table
     let rows = sqlx::query!("SELECT id, name, extension, page_data FROM pages")
         .fetch_all(&server_database.sqliteDb)
         .await;
@@ -127,7 +133,11 @@ pub async fn explorer_file_verify_hash_upload(
             "file" => {
                 let file_name = field.file_name().unwrap_or_default().to_string();
 
-                if  std::path::Path::new(&file_name).extension().and_then(|s| s.to_str()) != Some("json") {
+                if std::path::Path::new(&file_name)
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    != Some("json")
+                {
                     tracing::error!("Uploaded file is not a JSON file");
                     return (StatusCode::BAD_REQUEST, Json(None));
                 }
@@ -146,23 +156,53 @@ pub async fn explorer_file_verify_hash_upload(
                     Ok(parsed_data) => {
                         tracing::debug!("file is okay fn");
 
-                        parsed_data.pages.get(0).unwrap();
+                        // verify t
+                    let mut matches = true;
+                     let parsed_data_chain =  parsed_data.pages.get(0).unwrap();
+                        // if the aqua json file has more than one revision compare the has
+                        // current has with the previous  metadata > verification_hash
+                        tracing::error!("Loop starts");
+                        if(parsed_data_chain.revisions.len() > 1){
+                            tracing::error!("Looping, revisions more than 2");
+                            for (index, (current_hash, current_revision)) in parsed_data_chain.revisions.iter().enumerate()  {
+                                if(index > 1) {
+                                    tracing::error!("Looping, revisions more than 3");
+                                    let (previous_revision_hash, previous_revision) = parsed_data_chain.revisions.get(index - 1).unwrap();
+                                    if (*previous_revision_hash != current_revision.metadata.verification_hash){
+                                        matches = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        tracing::error!("Loop ends");
+                        return if matches {
+                            tracing::error!("Returning true");
+                            (StatusCode::OK, Json(Some(parsed_data)))
+                        } else {
+                            tracing::error!("Returning false");
+                            (StatusCode::BAD_REQUEST, Json(None))
+                        }
+
+
+
                         // // Recreate the hash from the received file
                         // let b64 = Base64::encode(&received_file_bytes);
                         // let mut file_hasher = Sha3_512::default();
                         // file_hasher.update(b64);
                         // let calculated_hash = Hash::from(file_hasher.finalize());
 
-                        println!(" calculated_hash {#}  \n vs expected_hash  {#}   ",calculated_hash , expected_hash );
-                        // Compare the calculated hash with the expected hash
-                       if( calculated_hash == expected_hash){
-                           // Process parsed_data (e.g., save to database, verify hash, etc.)
-                           return (StatusCode::OK, Json(Some(parsed_data)));
-                       }else{
-                           return (StatusCode::BAD_REQUEST, Json(None))
-                       }
-
-
+                        // println!(
+                        //     " calculated_hash {}  \n vs expected_hash  {}   ",
+                        //     calculated_hash, expected_hash
+                        // );
+                        // // Compare the calculated hash with the expected hash
+                        // if (calculated_hash == expected_hash) {
+                        //     // Process parsed_data (e.g., save to database, verify hash, etc.)
+                        //     return (StatusCode::OK, Json(Some(parsed_data)));
+                        // } else {
+                        //     return (StatusCode::BAD_REQUEST, Json(None));
+                        // }
                     }
                     Err(e) => {
                         tracing::error!("Failed to parse JSON: {:?}", e);
@@ -301,19 +341,13 @@ pub async fn explorer_file_upload(
     let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
 
     let metadata_hash_current = metadata_hash(&domain_id_current, &timestamp_current, None);
-    let verification_hash_current = verification_hash(
-        &content_hash_current,
-        &metadata_hash_current,
-        None,
-        None,
-    );
+    let verification_hash_current =
+        verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
     let api_domain = std::env::var("API_DOMAIN").unwrap_or_else(|_| "0".to_string());
 
     let pagedata_current = crate::models::page_data::PageDataContainer {
-
-        pages: vec![
-            HashChain {
+        pages: vec![HashChain {
             genesis_hash: verification_hash_current.clone().to_string(),
             domain_id: domain_id_current,
             title: file_name.clone(),
@@ -366,8 +400,8 @@ pub async fn explorer_file_upload(
         content_type,
         json_string,
     )
-        .fetch_one(&server_database.sqliteDb)
-        .await
+    .fetch_one(&server_database.sqliteDb)
+    .await
     {
         Ok(record) => {
             let file_info = FileInfo {
@@ -385,8 +419,6 @@ pub async fn explorer_file_upload(
     }
 }
 
-
-
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<SInput>,
@@ -403,8 +435,8 @@ pub async fn explorer_sign_revision(
         "SELECT id, name, extension, page_data FROM pages WHERE name = ? LIMIT 1",
         input.filename
     )
-        .fetch_optional(&server_database.sqliteDb)
-        .await;
+    .fetch_optional(&server_database.sqliteDb)
+    .await;
 
     // Handle database result errors
     match row {
@@ -461,11 +493,8 @@ pub async fn explorer_sign_revision(
             let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
             rev2.metadata.time_stamp = timestamp_current.clone();
 
-            let metadata_hash_current = metadata_hash(
-                &doc.pages[0].domain_id,
-                &timestamp_current,
-                Some(ver1),
-            );
+            let metadata_hash_current =
+                metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
 
             let verification_hash_current = verification_hash(
                 &rev2.content.content_hash,
@@ -475,7 +504,9 @@ pub async fn explorer_sign_revision(
             );
 
             rev2.metadata.metadata_hash = metadata_hash_current;
-            doc.pages[0].revisions.push((verification_hash_current, rev2));
+            doc.pages[0]
+                .revisions
+                .push((verification_hash_current, rev2));
 
             // Serialize the updated document
             let page_data_new = match serde_json::to_string(&doc) {
@@ -492,8 +523,8 @@ pub async fn explorer_sign_revision(
                 page_data_new,
                 row.id
             )
-                .execute(&server_database.sqliteDb)
-                .await;
+            .execute(&server_database.sqliteDb)
+            .await;
 
             // Handle the result of the update
             match result {

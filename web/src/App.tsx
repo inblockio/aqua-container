@@ -5,7 +5,6 @@ import DetailsPage from "./pages/details"
 import {Route} from "@solidjs/router";
 const App: Component = () => {
 
-
     return (
      <>
          <Route path="/details" component={DetailsPage}/>

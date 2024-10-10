@@ -27,6 +27,7 @@ const HomePage: Component = () => {
     const [pageDataInfo, setPageDataInfo] = createSignal("");
     const [fileTypeForUpload, setFileTypeForUpload] = createSignal("");
     const [error, setError] = createSignal<string>('');
+    const [success, setSuccess] = createSignal<string>('');
     const maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
 
     let fileInput;
@@ -120,16 +121,13 @@ const HomePage: Component = () => {
 
 
             console.log("Code "+response.status)
-            // Assuming the API returns an array of FileInfo objects
-            // const file: FileInfo = {
-            //     id: response.data.id,
-            //     name: response.data.name,
-            //     extension: response.data.extension,
-            //     page_data: response.data.page_data
-            // };
-            //
-            // setAppState("filesFromApi", [...appState.filesFromApi, file])
 
+            if(response.status ==200){
+                setSuccess("Verification success")
+            }else{
+                setError("Verification failed")
+            }
+            
             setFileTypeForUpload("");
             return ;
         } catch (error) {
@@ -544,6 +542,45 @@ const HomePage: Component = () => {
                                                 <br/>
                                             </>
                                     }
+
+                                    {
+                                        success().length == 0 ? <div></div> :
+                                            <>
+
+
+                                                <div id="dismiss-alert"
+                                                     class="bg-green-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
+                                                     role="alert">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="flex-shrink-0">
+                                                            <i class="mgc_-badge-check text-xl"></i>
+                                                        </div>
+                                                        <div class="flex-grow">
+                                                            <div class="text-sm text-teal-800 font-medium">
+                                                                {success()}
+
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={(e) => {
+                                                            setSuccess("");
+                                                            setSelectedFileForUpload(null)
+                                                        }} data-fc-dismiss="dismiss-alert" type="button"
+                                                                id="dismiss-test"
+                                                                class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
+                                                            {/*<i class="mgc_close_line text-xl"></i>*/}
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                                                 height="16" fill="currentColor" class="bi bi-x"
+                                                                 viewBox="0 0 16 16">
+                                                                <path
+                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <br/>
+                                            </>
+                                    }
+
                                     <div class="flex items-center justify-between gap-4">
                                         <div class="lg:hidden block">
                                             <button data-fc-target="default-offcanvas" data-fc-type="offcanvas"
