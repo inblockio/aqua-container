@@ -134,7 +134,7 @@ const HomePage: Component = () => {
             } else {
                 console.error('An error occurred:', error.message);
                 console.error('Error uploading file:', error);
-                setError('Failed to upload file');
+                setError(error.message + " =--- "+ error.message);
             }
         
         }
@@ -535,7 +535,7 @@ const HomePage: Component = () => {
 
 
                                                 <div id="dismiss-alert"
-                                                    class="bg-red-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
+                                                    class="bg-red-500 text-sm text-white transition duration-300 bg-danger-50 border border-red-200 rounded-md p-4"
                                                     role="alert">
                                                     <div class="flex items-center gap-3">
                                                         <div class="flex-shrink-0">

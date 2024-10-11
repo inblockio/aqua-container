@@ -175,11 +175,11 @@ pub async fn explorer_file_verify_hash_upload(
                         // current has with the previous  metadata > verification_hash
                         tracing::error!("Loop starts");
                         if (parsed_data_chain.revisions.len() > 1) {
-                            
                             tracing::error!("revisions more than 1 result");
-                            (matches, failure_reason) =  check_if_page_data_revision_are_okay(parsed_data_chain.revisions.clone());
+                            (matches, failure_reason) = check_if_page_data_revision_are_okay(
+                                parsed_data_chain.revisions.clone(),
+                            );
                             tracing::error!("revisions are valied ? {}", matches);
-                        
                         } else {
                             // let rev  = parsed_data_chain.revisions.get(0).unwrap();
                             // let hash =  compute_content_hash(rev);
@@ -196,18 +196,25 @@ pub async fn explorer_file_verify_hash_upload(
                                 Ok(data) => {
                                     // Step 4: Compare the recomputed content hash with the stored content hash
 
-                                       
-                                    let contnent_hash_str = format!("{:#?}", revision.content.content_hash);
+                                    let contnent_hash_str =
+                                        format!("{:#?}", revision.content.content_hash);
                                     let data_str = format!("{:#?}", revision.content.content_hash);
-                                        // data_str,
-                                        // contnent_hash_str
-                                    
-                                    tracing::error!(" returd conetnet is   {} \n  my son content hash is {} \n", data_str, contnent_hash_str);
-                                   if data ==revision.content.content_hash{
-                                    matches =  true ;
-                                   }else{
-                    failure_reason=format!("a hash is not valid : {:#?}",  revision.content.content_hash)
-                                   }
+                                    // data_str,
+                                    // contnent_hash_str
+
+                                    tracing::error!(
+                                        " returd conetnet is   {} \n  my son content hash is {} \n",
+                                        data_str,
+                                        contnent_hash_str
+                                    );
+                                    if data == revision.content.content_hash {
+                                        matches = true;
+                                    } else {
+                                        failure_reason = format!(
+                                            "a hash is not valid : {:#?}",
+                                            revision.content.content_hash
+                                        )
+                                    }
                                     //revision.content.content_hash;
                                 }
                                 Err(err) => {
@@ -225,10 +232,7 @@ pub async fn explorer_file_verify_hash_upload(
                             (StatusCode::OK, Json(Some("AQUA Chain valid".to_string())))
                         } else {
                             tracing::error!("Returning false");
-                            (
-                                StatusCode::BAD_REQUEST,
-                                Json(Some("AQUA Chin not valid".to_string())),
-                            )
+                            (StatusCode::BAD_REQUEST, Json(Some(failure_reason)))
                         };
                     }
                     Err(e) => {
