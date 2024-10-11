@@ -14,7 +14,9 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use crate::models::file::FileInfo;
 use crate::models::input::SInput;
 use crate::models::page_data::PageDataContainer;
-use crate::util::{check_or_generate_domain, compute_content_hash, db_set_up, check_if_page_data_revision_are_okay};
+use crate::util::{
+    check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash, db_set_up,
+};
 use crate::Db;
 use axum::response::{IntoResponse, Response};
 use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
@@ -167,6 +169,7 @@ pub async fn explorer_file_verify_hash_upload(
 
                         // verify t
                         let mut matches = true;
+                        let mut failure_reason = "".to_string();
                         let parsed_data_chain = parsed_data.pages.get(0).unwrap();
                         // if the aqua json file has more than one revision compare the has
                         // current has with the previous  metadata > verification_hash
@@ -174,7 +177,7 @@ pub async fn explorer_file_verify_hash_upload(
                         if (parsed_data_chain.revisions.len() > 1) {
                             
                             tracing::error!("revisions more than 1 result");
-                            matches =  check_if_page_data_revision_are_okay(parsed_data_chain.revisions.clone());
+                            (matches, failure_reason) =  check_if_page_data_revision_are_okay(parsed_data_chain.revisions.clone());
                             tracing::error!("revisions are valied ? {}", matches);
                         
                         } else {
@@ -193,10 +196,19 @@ pub async fn explorer_file_verify_hash_upload(
                                 Ok(data) => {
                                     // Step 4: Compare the recomputed content hash with the stored content hash
 
+                                       
                                     let contnent_hash_str = format!("{:#?}", revision.content.content_hash);
                                     let data_str = format!("{:#?}", revision.content.content_hash);
-                                    tracing::error!("returd conetnet is   {} \n  my json content hash is {} \n", data_str, contnent_hash_str);
-                                    matches = data ==revision.content.content_hash  ;//revision.content.content_hash;
+                                        // data_str,
+                                        // contnent_hash_str
+                                    
+                                    tracing::error!(" returd conetnet is   {} \n  my son content hash is {} \n", data_str, contnent_hash_str);
+                                   if data ==revision.content.content_hash{
+                                    matches =  true ;
+                                   }else{
+                    failure_reason=format!("a hash is not valid : {:#?}",  revision.content.content_hash)
+                                   }
+                                    //revision.content.content_hash;
                                 }
                                 Err(err) => {
                                     tracing::error!("Error compute_content_hash {} ", err);

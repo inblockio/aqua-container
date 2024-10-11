@@ -99,13 +99,13 @@ fn update_env_file(key: &str, value: &str) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn check_if_page_data_revision_are_okay(revisions: Vec<(Hash, Revision)>) -> bool {
-    let mut is_valid = true;
+pub fn check_if_page_data_revision_are_okay(revisions: Vec<(Hash, Revision)>) -> (bool, String) {
+    let mut is_valid = (true, "".to_string());
     let has_valid_genessis = revsions_has_valid_genesis(revisions.clone());
     tracing::debug!("revsions_has_valid_genesis {:#?}", has_valid_genessis);
 
     if has_valid_genessis.is_none() {
-        return false;
+        return (false, "revisions do not contain a valid genesis".to_string());
     }
 
     // check if the revision > metadata > previous_verification_hash is among the hash in revsions par
@@ -121,18 +121,23 @@ pub fn check_if_page_data_revision_are_okay(revisions: Vec<(Hash, Revision)>) ->
     for (index, (current_hash, current_revision)) in revisions.iter().enumerate() {
         let current_hash_str = format!("{:#?}", current_hash);
 
-// check hash if match the newly generated one
-        let recomputed_content_hash = compute_content_hash(revision.content);
-       
+        // check hash if match the newly generated one
+        let recomputed_content_hash = compute_content_hash(current_revision.content);
+
         match recomputed_content_hash {
-            Ok(data)=>{
-if data == *current_hash { 
-    tracing::error!("an error occured {}",error);
-}
-            },
+            Ok(data) => {
+                if data == *current_hash {
+                    tracing::error!("hashes match the generetaed one continue ...");
+                }else{
+                    tracing::error!("\n hashes do not match revision has {:#?} \n vs generated hash {:#?} \n",data,current_hash );
+                    is_valid = (false, format!("a hash is not valid : {:#?}",  current_hash));
+
+                    break;
+                }
+            }
             Err(error) => {
-                tracing::error!("an error occured {}",error);
-                is_valid = false;
+                tracing::error!("an error occured {}", error);
+                is_valid = (false, "error generating a hash ".to_string());
                 break;
             }
         }
@@ -140,12 +145,8 @@ if data == *current_hash {
         // let data_str = format!("{:#?}", revision.content.content_hash);
         // tracing::error!("returd conetnet is   {} \n  my json content hash is {} \n", data_str, contnent_hash_str);
         // matches = data ==revision.content.content_hash  ;//revision.content.content_hash;
-    
 
-
-
-    
-// chec if the hash chain is valid (ie if there any orphan revisions)
+        // chec if the hash chain is valid (ie if there any orphan revisions)
         if current_hash_str == genesis_hash_str {
             tracing::debug!("ignoring genessis hash is {:#?}", genesis_hash_str);
         } else {
@@ -153,7 +154,7 @@ if data == *current_hash {
 
             if contains == false {
                 tracing::debug!("cannot find hash is {:#?}", current_hash_str);
-                is_valid = false;
+                is_valid = (false, "Hash chain is invalid ".to_string());;
                 break;
             }
         }
