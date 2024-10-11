@@ -165,8 +165,8 @@ pub async fn explorer_file_verify_hash_upload(
                         if(parsed_data_chain.revisions.len() > 1){
                             tracing::error!("Looping, revisions more than 2");
                             for (index, (current_hash, current_revision)) in parsed_data_chain.revisions.iter().enumerate()  {
-                                tracing::error!("We are at index {} - {}, {}", index, current_hash, current_revision.metadata.verification_hash);
                                 if(index >= 1) {
+                                    tracing::error!("We are at index {} - {}, {}", index, current_hash, current_revision.metadata.verification_hash);
                                     tracing::error!("Looping, revisions more than 3");
                                     let (previous_revision_hash, previous_revision) = parsed_data_chain.revisions.get(index - 1).unwrap();
                                     tracing::debug!("Matching {} - {}:{:#?}", index, *previous_revision_hash, current_revision.metadata);
