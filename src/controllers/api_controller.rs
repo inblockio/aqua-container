@@ -14,7 +14,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use crate::models::file::FileInfo;
 use crate::models::input::SInput;
 use crate::models::page_data::PageDataContainer;
-use crate::util::{check_or_generate_domain, db_set_up};
+use crate::util::{check_or_generate_domain, compute_content_hash, db_set_up, check_if_page_data_revision_are_okay};
 use crate::Db;
 use axum::response::{IntoResponse, Response};
 use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
@@ -124,7 +124,10 @@ pub async fn explorer_file_verify_hash_upload(
             Some(name) => name.to_string(),
             None => {
                 tracing::error!("Field name missing");
-                return (StatusCode::BAD_REQUEST, Json(Some("Field missing".to_string())));
+                return (
+                    StatusCode::BAD_REQUEST,
+                    Json(Some("Field missing".to_string())),
+                );
             }
         };
 
@@ -139,7 +142,10 @@ pub async fn explorer_file_verify_hash_upload(
                     != Some("json")
                 {
                     tracing::error!("Uploaded file is not a JSON file");
-                    return (StatusCode::BAD_REQUEST, Json(Some("File not JSON".to_string())));
+                    return (
+                        StatusCode::BAD_REQUEST,
+                        Json(Some("File not JSON".to_string())),
+                    );
                 }
 
                 // Read the field into a byte vector
@@ -147,7 +153,10 @@ pub async fn explorer_file_verify_hash_upload(
                     Ok(data) => data,
                     Err(e) => {
                         tracing::error!("Failed to read file data: {:?}", e);
-                        return (StatusCode::BAD_REQUEST, Json(Some("JSON broken".to_string())));
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            Json(Some("JSON broken".to_string())),
+                        );
                     }
                 };
 
@@ -157,23 +166,44 @@ pub async fn explorer_file_verify_hash_upload(
                         tracing::debug!("file is okay fn");
 
                         // verify t
-                    let mut matches = true;
-                     let parsed_data_chain =  parsed_data.pages.get(0).unwrap();
+                        let mut matches = true;
+                        let parsed_data_chain = parsed_data.pages.get(0).unwrap();
                         // if the aqua json file has more than one revision compare the has
                         // current has with the previous  metadata > verification_hash
                         tracing::error!("Loop starts");
-                        if(parsed_data_chain.revisions.len() > 1){
-                            tracing::error!("Looping, revisions more than 2");
-                            for (index, (current_hash, current_revision)) in parsed_data_chain.revisions.iter().enumerate()  {
-                                if(index >= 1) {
-                                    tracing::error!("We are at index {} - {}, {}", index, current_hash, current_revision.metadata.verification_hash);
-                                    tracing::error!("Looping, revisions more than 3");
-                                    let (previous_revision_hash, previous_revision) = parsed_data_chain.revisions.get(index - 1).unwrap();
-                                    tracing::debug!("Matching {} - {}:{:#?}", index, *previous_revision_hash, current_revision.metadata);
-                                    if (*previous_revision_hash != current_revision.metadata.previous_verification_hash.unwrap()){
-                                        matches = false;
-                                        break;
-                                    }
+                        if (parsed_data_chain.revisions.len() > 1) {
+                            
+                            tracing::error!("revisions more than 1 result");
+                            matches =  check_if_page_data_revision_are_okay(parsed_data_chain.revisions.clone());
+                            tracing::error!("revisions are valied ? {}", matches);
+                        
+                        } else {
+                            // let rev  = parsed_data_chain.revisions.get(0).unwrap();
+                            // let hash =  compute_content_hash(rev);
+
+                            let (verification_hash, revision) = parsed_data_chain
+                                .revisions
+                                .first()
+                                .expect("No revisions found");
+
+                            // Step 3: Recompute the content hash for the revision
+                            let recomputed_content_hash = compute_content_hash(&revision.content);
+
+                            match recomputed_content_hash {
+                                Ok(data) => {
+                                    // Step 4: Compare the recomputed content hash with the stored content hash
+
+                                    let contnent_hash_str = format!("{:#?}", revision.content.content_hash);
+                                    let data_str = format!("{:#?}", revision.content.content_hash);
+                                    tracing::error!("returd conetnet is   {} \n  my json content hash is {} \n", data_str, contnent_hash_str);
+                                    matches = data ==revision.content.content_hash  ;//revision.content.content_hash;
+                                }
+                                Err(err) => {
+                                    tracing::error!("Error compute_content_hash {} ", err);
+                                    return (
+                                        StatusCode::OK,
+                                        Json(Some("AQUA Chain valid".to_string())),
+                                    );
                                 }
                             }
                         }
@@ -183,32 +213,18 @@ pub async fn explorer_file_verify_hash_upload(
                             (StatusCode::OK, Json(Some("AQUA Chain valid".to_string())))
                         } else {
                             tracing::error!("Returning false");
-                            (StatusCode::BAD_REQUEST, Json(Some("AQUA Chin not valid".to_string())))
-                        }
-
-
-
-                        // // Recreate the hash from the received file
-                        // let b64 = Base64::encode(&received_file_bytes);
-                        // let mut file_hasher = Sha3_512::default();
-                        // file_hasher.update(b64);
-                        // let calculated_hash = Hash::from(file_hasher.finalize());
-
-                        // println!(
-                        //     " calculated_hash {}  \n vs expected_hash  {}   ",
-                        //     calculated_hash, expected_hash
-                        // );
-                        // // Compare the calculated hash with the expected hash
-                        // if (calculated_hash == expected_hash) {
-                        //     // Process parsed_data (e.g., save to database, verify hash, etc.)
-                        //     return (StatusCode::OK, Json(Some(parsed_data)));
-                        // } else {
-                        //     return (StatusCode::BAD_REQUEST, Json(None));
-                        // }
+                            (
+                                StatusCode::BAD_REQUEST,
+                                Json(Some("AQUA Chin not valid".to_string())),
+                            )
+                        };
                     }
                     Err(e) => {
                         tracing::error!("Failed to parse JSON: {:?}", e);
-                        return (StatusCode::BAD_REQUEST, Json(Some("Failed to parse JSON".to_string())));
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            Json(Some("Failed to parse JSON".to_string())),
+                        );
                     }
                 }
             }

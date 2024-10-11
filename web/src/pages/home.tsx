@@ -103,51 +103,51 @@ const HomePage: Component = () => {
         formData.append('file', file);
         formData.append('account', "example");
 
-        // try {
-        //     const response = await axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
-        //         headers: {
-        //             'Content-Type': 'multipart/form-data',
-        //         },
-        //     });
-        //     console.log('File uploaded successfully:', JSON.stringify(response.data));
-        //
-        //
-        //     console.log("Code "+response.status)
-        //
-        //     if(response.status ==200){
-        //         setSuccess("Verification success")
-        //     }else{
-        //         setError("Verification failed")
-        //     }
-        //
-        //     setFileTypeForUpload("");
-        //     return ;
-        // } catch (error) {
-        //     if (error.response && error.response.status === 404) {
-        //         console.error('Custom 404 message: The requested resource was not found', error.response);
-        //         setError('404 : Failed to upload file '+error.response);
-        //
-        //     } else if(error.response && error.response.status === 400){
-        //         console.error('Custom 400',error.response );
-        //         setError('400 Failed to upload file '+error.response);
-        //
-        //     } else {
-        //         console.error('An error occurred:', error.message);
-        //         console.error('Error uploading file:', error);
-        //         setError('Failed to upload file');
-        //     }
-        //
-        // }
+        try {
+            const response = await axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            console.log('File uploaded successfully:', JSON.stringify(response.data));
+        
+        
+            console.log("Code "+response.status)
+        
+            if(response.status ==200){
+                setSuccess("Verification success")
+            }else{
+                setError("Verification failed")
+            }
+        
+            setFileTypeForUpload("");
+            return ;
+        } catch (error: any) {
+            if (error.response && error.response.status === 404) {
+                console.error('Custom 404 message: The requested resource was not found', error.response);
+                setError('404 : Failed to upload file '+error.response);
+        
+            } else if(error.response && error.response.status === 400){
+                console.error('Custom 400',error.response );
+                setError('400 Failed to upload file '+error.response);
+        
+            } else {
+                console.error('An error occurred:', error.message);
+                console.error('Error uploading file:', error);
+                setError('Failed to upload file');
+            }
+        
+        }
 
-        axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        }).then((res: any) => {
+        // axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
+        //     headers: {
+        //         'Content-Type': 'multipart/form-data',
+        //     },
+        // }).then((res: any) => {
 
-        }).catch(error => {
-            console.log("Error", error)
-        })
+        // }).catch(error => {
+        //     console.log("Error", error)
+        // })
     }
 
     const handleSelectFileForUploadClick = () => {
@@ -421,11 +421,7 @@ const HomePage: Component = () => {
         if (timeStamp != undefined) {
             dateDisplay = timeToHumanFriendly(timeStamp)
         }
-        return <tr onClick={(e) => {
-            setAppState("selectedFileFromApi", file);
-
-            navigate("/details");
-        }}>
+        return <tr >
             <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
                 <a href="javascript: void(0);" class="font-medium">
                     {file.name}</a>
@@ -451,6 +447,18 @@ const HomePage: Component = () => {
                 }}>
                     <span class="px-2 py-0.5 rounded bg-success/25 text-success ms-2">
                         <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> <small> Download Aqua chain JSON</small></span>
+
+                </div>
+<br/>
+                <div onClick={(e) => {
+            setAppState("selectedFileFromApi", file);
+
+            navigate("/details");
+        }}>
+
+<span class="px-2 py-0.5 rounded bg-warning/25 text-warning ms-2">
+                        <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> view more details</span>
+
 
                 </div>
             </td>
