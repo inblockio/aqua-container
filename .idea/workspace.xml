@@ -8,11 +8,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a369b260-3041-473d-885a-17825f51c0ac" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dataSources/98b67f3c-a700-446c-a857-1600fc563bd8.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controllers/api_controller.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/controllers/api_controller.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/web/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/web/src/pages/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/pages/home.tsx" afterDir="false" />
     </list>
     <list id="f103f1a5-16ef-49ce-9cdd-703d56c205b9" name="Changes by kamau" comment="">
       <change beforePath="$PROJECT_DIR$/web/src/pages/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/web/src/pages/home.tsx" afterDir="false" />
@@ -39,6 +37,18 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="file://$USER_HOME$/.cargo/git/checkouts/aqua-guardian-d3216dc84b3f4457/2ae5c19/guardian-common/src/custom_types/page_data.rs" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="LineStatusTrackerManager">
+    <file path="$PROJECT_DIR$/web/src/pages/home.tsx">
+      <ranges>
+        <range start1="104" end1="104" start2="104" end2="105" changelist="a369b260-3041-473d-885a-17825f51c0ac" />
+        <range start1="113" end1="121" start2="114" end2="155" changelist="f103f1a5-16ef-49ce-9cdd-703d56c205b9" />
+        <range start1="122" end1="136" start2="156" end2="159" changelist="f103f1a5-16ef-49ce-9cdd-703d56c205b9" />
+        <range start1="167" end1="168" start2="190" end2="191" changelist="a369b260-3041-473d-885a-17825f51c0ac" />
+        <range start1="179" end1="181" start2="202" end2="205" changelist="a369b260-3041-473d-885a-17825f51c0ac" />
+        <range start1="184" end1="184" start2="208" end2="209" changelist="a369b260-3041-473d-885a-17825f51c0ac" />
+      </ranges>
+    </file>
   </component>
   <component name="MacroExpansionManager">
     <option name="directoryName" value="z4opk3c5" />
@@ -160,7 +170,7 @@
       <workItem from="1728554649946" duration="275000" />
       <workItem from="1728555222889" duration="193000" />
       <workItem from="1728555426450" duration="326000" />
-      <workItem from="1728555776220" duration="2773000" />
+      <workItem from="1728555776220" duration="9442000" />
     </task>
     <servers />
   </component>

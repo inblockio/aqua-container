@@ -116,7 +116,7 @@ pub async fn fetch_explorer_files(
 pub async fn explorer_file_verify_hash_upload(
     State(server_database): State<Db>,
     mut multipart: Multipart,
-) -> (StatusCode, Json<Option<PageDataContainer>>) {
+) -> (StatusCode, Json<Option<String>>) {
     tracing::debug!("explorer_file_verify_hash_upload fn");
 
     while let Ok(Some(field)) = multipart.next_field().await {
@@ -124,7 +124,7 @@ pub async fn explorer_file_verify_hash_upload(
             Some(name) => name.to_string(),
             None => {
                 tracing::error!("Field name missing");
-                return (StatusCode::BAD_REQUEST, Json(None));
+                return (StatusCode::BAD_REQUEST, Json(Some("Field missing".to_string())));
             }
         };
 
@@ -139,7 +139,7 @@ pub async fn explorer_file_verify_hash_upload(
                     != Some("json")
                 {
                     tracing::error!("Uploaded file is not a JSON file");
-                    return (StatusCode::BAD_REQUEST, Json(None));
+                    return (StatusCode::BAD_REQUEST, Json(Some("File not JSON".to_string())));
                 }
 
                 // Read the field into a byte vector
@@ -147,7 +147,7 @@ pub async fn explorer_file_verify_hash_upload(
                     Ok(data) => data,
                     Err(e) => {
                         tracing::error!("Failed to read file data: {:?}", e);
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        return (StatusCode::BAD_REQUEST, Json(Some("JSON broken".to_string())));
                     }
                 };
 
@@ -165,10 +165,12 @@ pub async fn explorer_file_verify_hash_upload(
                         if(parsed_data_chain.revisions.len() > 1){
                             tracing::error!("Looping, revisions more than 2");
                             for (index, (current_hash, current_revision)) in parsed_data_chain.revisions.iter().enumerate()  {
-                                if(index > 1) {
+                                tracing::error!("We are at index {} - {}, {}", index, current_hash, current_revision.metadata.verification_hash);
+                                if(index >= 1) {
                                     tracing::error!("Looping, revisions more than 3");
                                     let (previous_revision_hash, previous_revision) = parsed_data_chain.revisions.get(index - 1).unwrap();
-                                    if (*previous_revision_hash != current_revision.metadata.verification_hash){
+                                    tracing::debug!("Matching {} - {}:{:#?}", index, *previous_revision_hash, current_revision.metadata);
+                                    if (*previous_revision_hash != current_revision.metadata.previous_verification_hash.unwrap()){
                                         matches = false;
                                         break;
                                     }
@@ -178,10 +180,10 @@ pub async fn explorer_file_verify_hash_upload(
                         tracing::error!("Loop ends");
                         return if matches {
                             tracing::error!("Returning true");
-                            (StatusCode::OK, Json(Some(parsed_data)))
+                            (StatusCode::OK, Json(Some("AQUA Chain valid".to_string())))
                         } else {
                             tracing::error!("Returning false");
-                            (StatusCode::BAD_REQUEST, Json(None))
+                            (StatusCode::BAD_REQUEST, Json(Some("AQUA Chin not valid".to_string())))
                         }
 
 
@@ -206,7 +208,7 @@ pub async fn explorer_file_verify_hash_upload(
                     }
                     Err(e) => {
                         tracing::error!("Failed to parse JSON: {:?}", e);
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        return (StatusCode::BAD_REQUEST, Json(Some("Failed to parse JSON".to_string())));
                     }
                 }
             }

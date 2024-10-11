@@ -1,9 +1,9 @@
-import type {Component} from 'solid-js';
-import {createEffect, createSignal, For} from "solid-js";
+import type { Component } from 'solid-js';
+import { createEffect, createSignal, For } from "solid-js";
 import axios from "axios";
-import {ethers} from "ethers";
-import {FileInfo} from "../models/FileInfo";
-import {getTimestampSafe, PageData} from "../models/PageData";
+import { ethers } from "ethers";
+import { FileInfo } from "../models/FileInfo";
+import { getTimestampSafe, PageData } from "../models/PageData";
 import {
     capitalizeFirstLetter,
     debugPageDataStructure, fileType,
@@ -11,10 +11,10 @@ import {
     humanReadableFileSize,
     sumFileContentSizes, timeToHumanFriendly
 } from "../util";
-import {UiFileTypes} from "../models/UiFileTypes";
-import {appState, setAppState} from "../store/store";
+import { UiFileTypes } from "../models/UiFileTypes";
+import { appState, setAppState } from "../store/store";
 import app from "../App";
-import {useNavigate} from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 
 const HomePage: Component = () => {
 
@@ -30,12 +30,12 @@ const HomePage: Component = () => {
     const [success, setSuccess] = createSignal<string>('');
     const maxFileSize = 20 * 1024 * 1024; // 20 MB in bytes
 
-    let fileInput;
+    let fileInput: HTMLInputElement;
 
     createEffect(async () => {
 
         let files = await fetchFiles();
-        setAppState('filesFromApi',files);
+        setAppState('filesFromApi', files);
 
         let size = 0;
         for (const element of files) {
@@ -60,48 +60,40 @@ const HomePage: Component = () => {
         return typeof window.ethereum !== "undefined";
     };
 
-    // Request access to MetaMask
-    const connectToMetaMask = async () => {
+    const signAndConnect = async () => {
+        if (window.ethereum) {
+            try {
+                // Connect wallet
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                const walletAddress = accounts[0];
+                
+                console.log('Connected account:', walletAddress);
+                
+                // Message to sign
+                const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
+                
+                // Sign the message
+                const signature = await window.ethereum.request({
+                    method: 'personal_sign',
+                    params: [message, walletAddress],
+                });
+                
+                if(signature){
+                    setMetaMaskAddress(walletAddress);
+                }
 
-
-        if (!isMetaMaskInstalled()) {
-            alert("MetaMask is not installed. Please install MetaMask and try again.");
-            return;
-        }
-
-        try {
-            // Create a new Web3Provider using BrowserProvider in v6
-            // const provider = new ethers.BrowserProvider(window.ethereum);
-            //
-            // // Request MetaMask accounts
-            // const accounts = await provider.send("eth_requestAccounts", []);
-            //
-            // // Get the signer
-            // const signer = await provider.getSigner();
-            //
-            // // Get the address
-            // const address = await signer.getAddress();
-            //
-            // setMetaMaskAddress(address); // Set the address
-
-            const message = "MESSAGETOBESIGNED";
-
-            const signature = await window.ethereum.request({
-                method: 'personal_sign',
-                params: [message, window.ethereum.selectedAddress],
-            })
-
-            const wallet_address = window.ethereum.selectedAddress
-
-            setMetaMaskAddress(wallet_address)
-        } catch (error) {
-            console.error("Error connecting to MetaMask:", error);
-            setError("Error connecting to MetaMask: "+ error);
+            } catch (error) {
+                console.error('Error during wallet connection or signing:', error);
+            }
+        } else {
+            alert('MetaMask is not installed');
         }
     };
 
-    const uploadAquaJsonFile = async () =>{
+
+    const uploadAquaJsonFile = async () => {
         const file = selectedFileForUpload();
+        console.log("Uploading")
         if (!file) {
             setError('No file selected');
             return;
@@ -111,29 +103,51 @@ const HomePage: Component = () => {
         formData.append('file', file);
         formData.append('account', "example");
 
-        try {
-            const response = await axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
-            });
-            console.log('File uploaded successfully:', JSON.stringify(response.data));
+        // try {
+        //     const response = await axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
+        //         headers: {
+        //             'Content-Type': 'multipart/form-data',
+        //         },
+        //     });
+        //     console.log('File uploaded successfully:', JSON.stringify(response.data));
+        //
+        //
+        //     console.log("Code "+response.status)
+        //
+        //     if(response.status ==200){
+        //         setSuccess("Verification success")
+        //     }else{
+        //         setError("Verification failed")
+        //     }
+        //
+        //     setFileTypeForUpload("");
+        //     return ;
+        // } catch (error) {
+        //     if (error.response && error.response.status === 404) {
+        //         console.error('Custom 404 message: The requested resource was not found', error.response);
+        //         setError('404 : Failed to upload file '+error.response);
+        //
+        //     } else if(error.response && error.response.status === 400){
+        //         console.error('Custom 400',error.response );
+        //         setError('400 Failed to upload file '+error.response);
+        //
+        //     } else {
+        //         console.error('An error occurred:', error.message);
+        //         console.error('Error uploading file:', error);
+        //         setError('Failed to upload file');
+        //     }
+        //
+        // }
 
+        axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }).then((res: any) => {
 
-            console.log("Code "+response.status)
-
-            if(response.status ==200){
-                setSuccess("Verification success")
-            }else{
-                setError("Verification failed")
-            }
-            
-            setFileTypeForUpload("");
-            return ;
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            setError('Failed to upload file');
-        }
+        }).catch(error => {
+            console.log("Error", error)
+        })
     }
 
     const handleSelectFileForUploadClick = () => {
@@ -163,25 +177,27 @@ const HomePage: Component = () => {
         const fileName = file.name;
         console.log('Selected file:', fileName);
 
-        let exists =  appState.filesFromApi.find((e)=>e.name == fileName);
+        let exists = appState.filesFromApi.find((e) => e.name == fileName);
 
-        if (exists != undefined){
+        if (exists != undefined && fileTypeForUpload() !== "json") {
 
             setSelectedFileForUpload(null);
-            setError('Rename the file, a file with name '+fileName+ ' already exists');
+            setError('Rename the file, a file with name ' + fileName + ' already exists');
             // Reset the input
             input.value = '';
             return;
 
-        }else {
+        } else {
             setSelectedFileForUpload(file);
             setError('');
 
-
-            if(fileTypeForUpload() == "json" ){
+            console.log("Type: ", fileTypeForUpload())
+            if (fileTypeForUpload() === "json") {
+                console.log("Uploading json")
                 uploadAquaJsonFile()
-            }else {
+            } else {
                 //upload the file
+                console.log("Uploading file")
                 uploadFile()
             }
         }
@@ -221,7 +237,7 @@ const HomePage: Component = () => {
             setAppState("filesFromApi", [...appState.filesFromApi, file])
 
             setFileTypeForUpload("")
-            return ;
+            return;
         } catch (error) {
             console.error('Error uploading file:', error);
             setError('Failed to upload file');
@@ -257,7 +273,7 @@ const HomePage: Component = () => {
     }
 
 
-    const downloadAquaJson = (fileInfo: FileInfo)=>{
+    const downloadAquaJson = (fileInfo: FileInfo) => {
         try {
             // Parse the page_data string to a PageData object
             const pageData: PageData = JSON.parse(fileInfo.page_data);
@@ -355,14 +371,14 @@ const HomePage: Component = () => {
                     <div class="flex items-start relative gap-5">
                         <div class="flex items-center gap-3">
                             <div class="h-14 w-14">
-                                                   <span class="flex h-full w-full items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                             stroke-width="2" stroke-linecap="round"
-                                                             stroke-linejoin="round"
-                                                             class="feather feather-folder h-full w-full fill-warning text-warning"><path
-                                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                                                    </span>
+                                <span class="flex h-full w-full items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        class="feather feather-folder h-full w-full fill-warning text-warning"><path
+                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                                </span>
                             </div>
                             <div class="space-y-1">
                                 <p class="font-semibold text-base">{capitalizeFirstLetter(fileData.name, true)}</p>
@@ -371,7 +387,7 @@ const HomePage: Component = () => {
                         </div>
                         <div class="flex items-center absolute top-0 end-0">
                             <button data-fc-type="dropdown" data-fc-placement="bottom-end"
-                                    class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
+                                class="inline-flex text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-700 dark:text-gray-300 rounded-full p-2">
                                 <i data-feather="more-vertical" class="w-4 h-4"></i>
                             </button>
 
@@ -402,10 +418,10 @@ const HomePage: Component = () => {
 
         const timeStamp = getTimestampSafe(pageData)
         let dateDisplay = "--"
-        if (timeStamp != undefined){
-            dateDisplay= timeToHumanFriendly(timeStamp)
+        if (timeStamp != undefined) {
+            dateDisplay = timeToHumanFriendly(timeStamp)
         }
-        return <tr onClick={(e)=>{
+        return <tr onClick={(e) => {
             setAppState("selectedFileFromApi", file);
 
             navigate("/details");
@@ -430,7 +446,7 @@ const HomePage: Component = () => {
                 <div></div>
             </td>
             <td class="p-3.5">
-                <div onClick={(e)=>{
+                <div onClick={(e) => {
                     downloadAquaJson(file)
                 }}>
                     <span class="px-2 py-0.5 rounded bg-success/25 text-success ms-2">
@@ -456,8 +472,8 @@ const HomePage: Component = () => {
 
                     <div class="flex">
                         <div id="default-offcanvas"
-                             class="lg:block hidden top-0 left-0 transform h-full min-w-[16rem] me-6 card rounded-none lg:rounded-md fc-offcanvas-open:translate-x-0 lg:z-0 z-50 fixed lg:static lg:translate-x-0 -translate-x-full transition-all duration-300"
-                             tabindex="-1">
+                            class="lg:block hidden top-0 left-0 transform h-full min-w-[16rem] me-6 card rounded-none lg:rounded-md fc-offcanvas-open:translate-x-0 lg:z-0 z-50 fixed lg:static lg:translate-x-0 -translate-x-full transition-all duration-300"
+                            tabindex="-1">
                             <div class="p-5">
                                 <div class="relative">
 
@@ -465,25 +481,25 @@ const HomePage: Component = () => {
                                         setFileTypeForUpload("file")
                                         handleSelectFileForUploadClick()
                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                       type="button"
-                                       class="btn inline-flex justify-center items-center bg-primary text-white w-full mb-3">
+                                        type="button"
+                                        class="btn inline-flex justify-center items-center bg-primary text-white w-full mb-3">
                                         <i class="mgc_add_line text-lg me-2"></i> Upload File
                                     </a>
-                                    <br/>
+                                    <br />
 
                                     <a href="javascript:void(0)" onClick={(e) => {
-                                        setFileTypeForUpload  ("json")
-                                        handleSelectFileForUploadClick  ();
+                                        setFileTypeForUpload("json")
+                                        handleSelectFileForUploadClick();
                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                       type="button"
-                                       class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
+                                        type="button"
+                                        class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
                                         <i class="mgc_add_line text-lg me-2"></i> Verify aqua file
                                     </a>
                                     {/* Hidden file input */}
                                     <input
                                         type="file"
                                         ref={el => fileInput = el} // Save reference to the input element
-                                        style={{display: "none"}} // Hide the input element
+                                        style={{ display: "none" }} // Hide the input element
                                         onChange={handleFileSelect}
                                     />
 
@@ -494,8 +510,8 @@ const HomePage: Component = () => {
                                     <div
                                         class="flex w-full h-1.5 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700 mt-4">
                                         <div class="flex flex-col justify-center overflow-hidden bg-primary"
-                                             role="progressbar" style="width: 46%" aria-valuenow="46" aria-valuemin="0"
-                                             aria-valuemax="100"></div>
+                                            role="progressbar" style="width: 46%" aria-valuenow="46" aria-valuemin="0"
+                                            aria-valuemax="100"></div>
                                     </div>
                                     <p class="text-gray-500 mt-4 text-xs">{pageDataInfo()}</p>
                                 </div>
@@ -511,8 +527,8 @@ const HomePage: Component = () => {
 
 
                                                 <div id="dismiss-alert"
-                                                     class="bg-red-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
-                                                     role="alert">
+                                                    class="bg-red-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
+                                                    role="alert">
                                                     <div class="flex items-center gap-3">
                                                         <div class="flex-shrink-0">
                                                             <i class="mgc_-badge-check text-xl"></i>
@@ -527,19 +543,19 @@ const HomePage: Component = () => {
                                                             setError("");
                                                             setSelectedFileForUpload(null)
                                                         }} data-fc-dismiss="dismiss-alert" type="button"
-                                                                id="dismiss-test"
-                                                                class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
+                                                            id="dismiss-test"
+                                                            class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
                                                             {/*<i class="mgc_close_line text-xl"></i>*/}
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16"
-                                                                 height="16" fill="currentColor" class="bi bi-x"
-                                                                 viewBox="0 0 16 16">
+                                                                height="16" fill="currentColor" class="bi bi-x"
+                                                                viewBox="0 0 16 16">
                                                                 <path
-                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
                                                             </svg>
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <br/>
+                                                <br />
                                             </>
                                     }
 
@@ -549,8 +565,8 @@ const HomePage: Component = () => {
 
 
                                                 <div id="dismiss-alert"
-                                                     class="bg-green-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
-                                                     role="alert">
+                                                    class="bg-green-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
+                                                    role="alert">
                                                     <div class="flex items-center gap-3">
                                                         <div class="flex-shrink-0">
                                                             <i class="mgc_-badge-check text-xl"></i>
@@ -565,26 +581,26 @@ const HomePage: Component = () => {
                                                             setSuccess("");
                                                             setSelectedFileForUpload(null)
                                                         }} data-fc-dismiss="dismiss-alert" type="button"
-                                                                id="dismiss-test"
-                                                                class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
+                                                            id="dismiss-test"
+                                                            class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
                                                             {/*<i class="mgc_close_line text-xl"></i>*/}
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16"
-                                                                 height="16" fill="currentColor" class="bi bi-x"
-                                                                 viewBox="0 0 16 16">
+                                                                height="16" fill="currentColor" class="bi bi-x"
+                                                                viewBox="0 0 16 16">
                                                                 <path
-                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
                                                             </svg>
                                                         </button>
                                                     </div>
                                                 </div>
-                                                <br/>
+                                                <br />
                                             </>
                                     }
 
                                     <div class="flex items-center justify-between gap-4">
                                         <div class="lg:hidden block">
                                             <button data-fc-target="default-offcanvas" data-fc-type="offcanvas"
-                                                    class="inline-flex items-center justify-center text-gray-700 border border-gray-300 rounded shadow hover:bg-slate-100 dark:text-gray-400 hover:dark:bg-gray-800 dark:border-gray-700 transition h-9 w-9 duration-100">
+                                                class="inline-flex items-center justify-center text-gray-700 border border-gray-300 rounded shadow hover:bg-slate-100 dark:text-gray-400 hover:dark:bg-gray-800 dark:border-gray-700 transition h-9 w-9 duration-100">
                                                 <div class="mgc_menu_line text-lg"></div>
                                             </button>
                                         </div>
@@ -601,13 +617,13 @@ const HomePage: Component = () => {
 
                                             {
                                                 metaMaskAddress() == null ?
-                                                    <a href="javascript:void(0)" onClick={(e) => {
-                                                        connectToMetaMask()
+                                                    <button onClick={(e) => {
+                                                        signAndConnect()
                                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                                       type="button"
-                                                       class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
+                                                        type="button"
+                                                        class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
                                                         <i class="mgc_add_line text-lg me-2"></i> sign in with metamask
-                                                    </a> : <label>{metaMaskAddress()}</label>
+                                                    </button> : <label>{metaMaskAddress()}</label>
                                             }
 
                                         </form>
@@ -630,45 +646,45 @@ const HomePage: Component = () => {
                                                         <table
                                                             class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
                                                             <thead class="bg-gray-50 dark:bg-gray-700">
-                                                            <tr class="text-gray-800 dark:text-gray-300">
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">File
-                                                                    Name
-                                                                </th>
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">
-                                                                    Type
-                                                                </th>
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">Uploaded
-                                                                    At
-                                                                </th>
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">File
-                                                                    Size
-                                                                </th>
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold min-w-[8rem]">Owner
-                                                                </th>
-                                                                {/*<th scope="col"*/}
-                                                                {/*    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members*/}
-                                                                {/*</th>*/}
-                                                                <th scope="col"
-                                                                    class="p-3.5 text-sm text-start font-semibold">Action
-                                                                </th>
-                                                            </tr>
+                                                                <tr class="text-gray-800 dark:text-gray-300">
+                                                                    <th scope="col"
+                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">File
+                                                                        Name
+                                                                    </th>
+                                                                    <th scope="col"
+                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">
+                                                                        Type
+                                                                    </th>
+                                                                    <th scope="col"
+                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">Uploaded
+                                                                        At
+                                                                    </th>
+                                                                    <th scope="col"
+                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">File
+                                                                        Size
+                                                                    </th>
+                                                                    <th scope="col"
+                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[8rem]">Owner
+                                                                    </th>
+                                                                    {/*<th scope="col"*/}
+                                                                    {/*    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members*/}
+                                                                    {/*</th>*/}
+                                                                    <th scope="col"
+                                                                        class="p-3.5 text-sm text-start font-semibold">Action
+                                                                    </th>
+                                                                </tr>
                                                             </thead>
                                                             <tbody
                                                                 class="divide-y divide-gray-200 dark:divide-gray-600">
 
-                                                            <For each={appState.filesFromApi}>
-                                                                {(item, index) =>
-                                                                    <>
-                                                                        {fileListDisplay(item)}
-                                                                    </>
-                                                                }
+                                                                <For each={appState.filesFromApi}>
+                                                                    {(item, index) =>
+                                                                        <>
+                                                                            {fileListDisplay(item)}
+                                                                        </>
+                                                                    }
 
-                                                            </For>
+                                                                </For>
 
 
                                                             </tbody>
