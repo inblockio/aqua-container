@@ -7,6 +7,7 @@ use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
 use rand::{Rng, thread_rng};
 use std::io::Write;
+use guardian_common::custom_types::{Hash, Revision};
 
 pub async fn db_set_up() -> Pool<Sqlite> {
     let db_file_path = "./pages.db";
@@ -98,6 +99,24 @@ fn update_env_file(key: &str, value: &str) -> std::io::Result<()> {
         writeln!(file, "{}={}", key, value)?;
     }
     Ok(())
+}
+
+
+
+pub fn check_if_page_data_revision_are_okay(revisions: Vec<(Hash, Revision)>) ->bool {
+    let mut is_valid= true;
+
+    if revisions.len() <=1 {
+        return is_valid
+    }
+
+
+    for (index, (hash,revision)) in revisions.iter().enumerate() {
+
+    }
+
+
+    return is_valid;
 }
 
 
