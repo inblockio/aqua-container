@@ -3,6 +3,16 @@ import type {Component} from 'solid-js';
 import HomePage from "./pages/home";
 import DetailsPage from "./pages/details"
 import {Route} from "@solidjs/router";
+
+declare global {
+    interface Window {
+      ethereum?: {
+        isMetaMask?: boolean;
+        request?: (args: { method: string; params?: Array<any> }) => Promise<any>;
+      };
+    }
+  }
+
 const App: Component = () => {
 
     return (
