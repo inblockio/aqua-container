@@ -6,3 +6,4 @@ export/*
 pages.db
 pages.db-shm
 pages.db-wal
+.idea

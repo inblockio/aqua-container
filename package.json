@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@metamask/providers": "^17.2.1"
+  }
+}
