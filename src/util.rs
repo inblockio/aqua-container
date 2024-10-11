@@ -122,7 +122,7 @@ pub fn check_if_page_data_revision_are_okay(revisions: Vec<(Hash, Revision)>) ->
         let current_hash_str = format!("{:#?}", current_hash);
 
         // check hash if match the newly generated one
-        let recomputed_content_hash = compute_content_hash(current_revision.content);
+        let recomputed_content_hash = compute_content_hash(&current_revision.content);
 
         match recomputed_content_hash {
             Ok(data) => {
@@ -206,6 +206,7 @@ pub fn revsions_has_valid_genesis(revisions: Vec<(Hash, Revision)>) -> Option<Ha
 
 pub fn compute_content_hash(contentPar: &RevisionContent) -> Result<Hash, String> {
     let b64 = contentPar.file.clone().unwrap().data;
+    
     let mut file_hasher = sha3::Sha3_512::default();
     file_hasher.update(b64.clone());
     let file_hash_current = Hash::from(file_hasher.finalize());
