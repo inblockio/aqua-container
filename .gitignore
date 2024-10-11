@@ -7,3 +7,4 @@ pages.db
 pages.db-shm
 pages.db-wal
 .idea
+node_modules
