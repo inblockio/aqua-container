@@ -7,7 +7,10 @@ use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
 use rand::{Rng, thread_rng};
 use std::io::Write;
-use guardian_common::custom_types::{Hash, Revision};
+use guardian_common::custom_types::{Hash, Revision, RevisionContent};
+use sha3::{Digest, Sha3_512};
+use serde_json::Value;
+use std::collections::BTreeMap;
 
 pub async fn db_set_up() -> Pool<Sqlite> {
     let db_file_path = "./pages.db";
@@ -119,5 +122,32 @@ pub fn check_if_page_data_revision_are_okay(revisions: Vec<(Hash, Revision)>) ->
     return is_valid;
 }
 
+
+fn compute_content_hash(content: &RevisionContent) -> Result<String, String> {
+    // Assuming content is serialized and hashed
+    let mut file_hasher = Sha3_512::new();
+
+    // Include the file's base64-encoded data
+    if let Some(file) = &content.file {
+        file_hasher.update(&*file.data.clone());
+    }
+
+    // Include the content map (sorted by key)
+    let mut sorted_content = BTreeMap::new();
+    for (key, value) in &content.content {
+        sorted_content.insert(key.clone(), value.clone());
+    }
+
+    // Hash the content data
+    let serialized_content = match serde_json::to_string(&sorted_content) {
+        Ok(data) => data,
+        Err(e) => return Err(format!("Failed to serialize content: {}", e)),
+    };
+
+    file_hasher.update(serialized_content);
+
+    // Finalize the hash and return it as a hex string
+    Ok(format!("{:x}", file_hasher.finalize()))
+}
 
 
