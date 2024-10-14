@@ -15,6 +15,8 @@ import { UiFileTypes } from "../models/UiFileTypes";
 import { appState, setAppState } from "../store/store";
 import app from "../App";
 import { useNavigate } from "@solidjs/router";
+import SignFile from '../components/SignFile';
+import WitnessFile from '../components/WitnessFile';
 
 const HomePage: Component = () => {
 
@@ -55,30 +57,25 @@ const HomePage: Component = () => {
 
     })
 
-    // Check if MetaMask is installed
-    const isMetaMaskInstalled = () => {
-        return typeof window.ethereum !== "undefined";
-    };
-
     const signAndConnect = async () => {
         if (window.ethereum) {
             try {
                 // Connect wallet
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
                 const walletAddress = accounts[0];
-                
+
                 console.log('Connected account:', walletAddress);
-                
+
                 // Message to sign
                 const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
-                
+
                 // Sign the message
                 const signature = await window.ethereum.request({
                     method: 'personal_sign',
                     params: [message, walletAddress],
                 });
-                
-                if(signature){
+
+                if (signature) {
                     setMetaMaskAddress(walletAddress);
                 }
 
@@ -110,33 +107,33 @@ const HomePage: Component = () => {
                 },
             });
             console.log('File uploaded successfully:', JSON.stringify(response.data));
-        
-        
-            console.log("Code "+response.status)
-        
-            if(response.status ==200){
+
+
+            console.log("Code " + response.status)
+
+            if (response.status == 200) {
                 setSuccess("Verification success")
-            }else{
+            } else {
                 setError("Verification failed")
             }
-        
+
             setFileTypeForUpload("");
-            return ;
+            return;
         } catch (error: any) {
             if (error.response && error.response.status === 404) {
                 console.error('Custom 404 message: The requested resource was not found', error.response);
-                setError('404 : Failed to upload file '+error.response);
-        
-            } else if(error.response && error.response.status === 400){
-                console.error('Custom 400',error.response );
-                setError('400 Failed to upload file '+error.response);
-        
+                setError('404 : Failed to upload file ' + error.response);
+
+            } else if (error.response && error.response.status === 400) {
+                console.error('Custom 400', error.response);
+                setError('400 Failed to upload file ' + error.response.data);
+
             } else {
                 console.error('An error occurred:', error.message);
                 console.error('Error uploading file:', error);
-                setError(error.message + " =--- "+ error.message);
+                setError(error.message + " =--- " + error.message);
             }
-        
+
         }
 
         // axios.post('http://127.0.0.1:3600/explorer_verify_hash', formData, {
@@ -324,7 +321,7 @@ const HomePage: Component = () => {
                     size += currentSize
                 }
 
-                console.log("element " + element + " length " + fileItemData.length + "  file " + element + " size  " + size);
+                // console.log("element " + element + " length " + fileItemData.length + "  file " + element + " size  " + size);
                 let percentage = size / allFilesSize() * 100
                 let usingText = `Using ${percentage}% of storage`
                 let hSize = humanReadableFileSize(size)
@@ -421,6 +418,12 @@ const HomePage: Component = () => {
         if (timeStamp != undefined) {
             dateDisplay = timeToHumanFriendly(timeStamp)
         }
+
+        const getLastRevisionVerificationHash = () => {
+            const revisionHashes = Object.keys(pageData.pages[0].revisions)
+            return pageData.pages[0].revisions[revisionHashes[revisionHashes.length - 1]].metadata.verification_hash
+        }
+
         return <tr >
             <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
                 <a href="javascript: void(0);" class="font-medium">
@@ -449,18 +452,17 @@ const HomePage: Component = () => {
                         <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> <small> Download Aqua chain JSON</small></span>
 
                 </div>
-<br/>
+                <br />
                 <div onClick={(e) => {
-            setAppState("selectedFileFromApi", file);
+                    setAppState("selectedFileFromApi", file);
+                    navigate("/details");
+                }}>
 
-            navigate("/details");
-        }}>
-
-<span class="px-2 py-0.5 rounded bg-warning/25 text-warning ms-2">
+                    <span class="px-2 py-0.5 rounded bg-warning/25 text-warning ms-2">
                         <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> view more details</span>
-
-
                 </div>
+                <SignFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
+                <WitnessFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
             </td>
         </tr>
     }
@@ -542,7 +544,7 @@ const HomePage: Component = () => {
                                                             <i class="mgc_-badge-check text-xl"></i>
                                                         </div>
                                                         <div class="flex-grow">
-                                                            <div class="text-sm text-teal-800 font-medium">
+                                                            <div class="text-sm text-white-800 font-medium">
                                                                 {error()}
 
                                                             </div>
@@ -552,7 +554,7 @@ const HomePage: Component = () => {
                                                             setSelectedFileForUpload(null)
                                                         }} data-fc-dismiss="dismiss-alert" type="button"
                                                             id="dismiss-test"
-                                                            class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
+                                                            class="ms-auto h-8 w-8 rounded-full bg-white-400 flex justify-center items-center">
                                                             {/*<i class="mgc_close_line text-xl"></i>*/}
                                                             <svg xmlns="http://www.w3.org/2000/svg" width="16"
                                                                 height="16" fill="currentColor" class="bi bi-x"

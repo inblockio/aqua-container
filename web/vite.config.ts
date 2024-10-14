@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 // import devtools from 'solid-devtools/vite';
 
 export default defineConfig({
@@ -10,6 +11,7 @@ export default defineConfig({
     */
     // devtools(),
     solidPlugin(),
+    nodePolyfills()
   ],
   server: {
     port: 3000,

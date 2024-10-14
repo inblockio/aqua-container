@@ -37,7 +37,7 @@ use verifier::v1_1::hashes::*;
 use crate::Db;
 use crate::util::{check_or_generate_domain, db_set_up};
 use crate::models::file::{FileInfo};
-use crate::models::input::SInput;
+use crate::models::input::RevisionInput;
 use crate::models::page_data::PageDataContainer;
 
 #[derive(Deserialize, Debug)]
@@ -159,7 +159,7 @@ pub async fn save_request_body(
 
 pub async fn add_signature_hash_for_file(
     State(server_database): State<Db>,
-    Form(input): Form<SInput>,
+    Form(input): Form<RevisionInput>,
 ) -> (StatusCode, String) {
     let mut document2: &Option<PageDataContainer> =
         &server_database.db.get_key(&input.filename).into().unwrap();

@@ -71,18 +71,18 @@ export function sumFileContentSizes(pageData: PageData): number {
 
 // Helper function to debug the data structure
 export function debugPageDataStructure(pageData: PageData): void {
-    console.log('PageData structure:');
-    console.log('Number of pages:', pageData.pages?.length);
-    pageData.pages?.forEach((hashChain, index) => {
-        console.log(`Page ${index}:`);
-        console.log('  Revisions type:', typeof hashChain.revisions);
-        console.log('  Revisions type:', JSON.stringify(hashChain.revisions));
-        console.log('  Is array:', Array.isArray(hashChain.revisions));
-        console.log('  Revisions length:', hashChain.revisions?.length);
-        if (hashChain.revisions?.length > 0) {
-            console.log('  First revision type:', typeof hashChain.revisions[0]);
-        }
-    });
+    // console.log('PageData structure:');
+    // console.log('Number of pages:', pageData.pages?.length);
+    // pageData.pages?.forEach((hashChain, index) => {
+    //     console.log(`Page ${index}:`);
+    //     console.log('  Revisions type:', typeof hashChain.revisions);
+    //     console.log('  Revisions type:', JSON.stringify(hashChain.revisions));
+    //     console.log('  Is array:', Array.isArray(hashChain.revisions));
+    //     console.log('  Revisions length:', hashChain.revisions?.length);
+    //     if (hashChain.revisions?.length > 0) {
+    //         console.log('  First revision type:', typeof hashChain.revisions[0]);
+    //     }
+    // });
 }
 
 

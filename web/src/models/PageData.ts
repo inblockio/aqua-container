@@ -8,7 +8,8 @@ export interface FileInfo {
 export interface HashChain {
     genesis_hash: string;
     domain_id: string;
-    title: string;DateFormatter
+    title: string;
+    DateFormatter: any // Not sute about this field! Does it exist
     namespace: number;
     chain_height: number;
     revisions: Record<string, Revision>;  // Changed from Array<[string, Revision]>

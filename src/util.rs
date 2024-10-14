@@ -205,7 +205,7 @@ pub fn revsions_has_valid_genesis(revisions: Vec<(Hash, Revision)>) -> Option<Ha
 }
 
 pub fn compute_content_hash(contentPar: &RevisionContent) -> Result<Hash, String> {
-    let b64 = contentPar.file.clone().unwrap().data;
+    let b64 = contentPar.file.clone().unwrap().data; 
     
     let mut file_hasher = sha3::Sha3_512::default();
     file_hasher.update(b64.clone());

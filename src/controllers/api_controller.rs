@@ -10,10 +10,11 @@ use axum::{
 use ethaddr::address;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
+use ethers::core::k256::sha2::Sha256;
 
-use crate::models::file::FileInfo;
-use crate::models::input::SInput;
+use crate::models::input::{RevisionInput, WitnessInput};
 use crate::models::page_data::PageDataContainer;
+use crate::models::{file::FileInfo, page_data};
 use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash, db_set_up,
 };
@@ -27,7 +28,7 @@ use futures::{Stream, TryStreamExt};
 use guardian_common::{crypt, custom_types::*};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use sha3::*;
+use sha3::{Digest, Sha3_512};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::collections::BTreeMap;
 use std::fs;
@@ -354,7 +355,7 @@ pub async fn explorer_file_upload(
     tracing::debug!(
         "Processing file upload - Account: {}, File: {}, Size: {} bytes",
         account,
-        file_name,
+        file_name, 
         file_size
     );
 
@@ -455,7 +456,7 @@ pub async fn explorer_file_upload(
 
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
-    Form(input): Form<SInput>,
+    Form(input): Form<RevisionInput>,
 ) -> (StatusCode, Json<Option<FileInfo>>) {
     tracing::debug!("explorer_sign_revision");
 
@@ -541,6 +542,178 @@ pub async fn explorer_sign_revision(
             doc.pages[0]
                 .revisions
                 .push((verification_hash_current, rev2));
+
+            // Serialize the updated document
+            let page_data_new = match serde_json::to_string(&doc) {
+                Ok(data) => data,
+                Err(e) => {
+                    tracing::error!("Failed to serialize updated page data: {:?}", e);
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+                }
+            };
+
+            // Update the database with the new document
+            let result = sqlx::query!(
+                "UPDATE pages SET page_data = ? WHERE id = ?",
+                page_data_new,
+                row.id
+            )
+            .execute(&server_database.sqliteDb)
+            .await;
+
+            // Handle the result of the update
+            match result {
+                Ok(_) => {
+                    let file_info = FileInfo {
+                        id: row.id,
+                        name: row.name,
+                        extension: row.extension,
+                        page_data: page_data_new,
+                    };
+                    (StatusCode::OK, Json(Some(file_info)))
+                }
+                Err(e) => {
+                    tracing::error!("Failed to update page data: {:?}", e);
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+                }
+            }
+        }
+        Ok(None) => (StatusCode::NOT_FOUND, Json(None)),
+        Err(e) => {
+            tracing::error!("Failed to fetch record: {:?}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+        }
+    }
+}
+
+pub async fn explorer_witness_file(
+    State(server_database): State<Db>,
+    Form(input): Form<WitnessInput>,
+) -> (StatusCode, Json<Option<FileInfo>>) {
+    tracing::debug!("explorer_witness_file");
+
+    // Get the name parameter from the input
+    if input.filename.is_empty() {
+        return (StatusCode::BAD_REQUEST, Json(None));
+    };
+
+    // Fetch a single row from the 'pages' table where name matches
+    let row = sqlx::query!(
+        "SELECT id, name, extension, page_data FROM pages WHERE name = ? LIMIT 1",
+        input.filename
+    )
+    .fetch_optional(&server_database.sqliteDb)
+    .await;
+
+    // Handle database result errors
+    match row {
+        Ok(Some(row)) => {
+            // Deserialize page data
+            let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
+                Ok(data) => data,
+                Err(e) => {
+                    tracing::error!("Failed to parse page data record: {:?}", e);
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+                }
+            };
+
+            let mut doc = deserialized.clone();
+            let len = doc.pages[0].revisions.len();
+
+            let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
+
+            let mut rev2 = rev1.clone();
+            rev2.metadata.previous_verification_hash = Some(*ver1);
+
+            // Parse input data with proper error handling
+            // let sig = match input.signature.parse::<Signature>() {
+            //     Ok(s) => s,
+            //     Err(e) => {
+            //         tracing::error!("Failed to parse signature: {:?}", e);
+            //         return (StatusCode::BAD_REQUEST, Json(None));
+            //     }
+            // };
+            // let pubk = match input.publickey.parse::<PublicKey>() {
+            //     Ok(p) => p,
+            //     Err(e) => {
+            //         tracing::error!("Failed to parse public key: {:?}", e);
+            //         return (StatusCode::BAD_REQUEST, Json(None));
+            //     }
+            // };
+            // let addr = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
+            //     Ok(a) => a,
+            //     Err(e) => {
+            //         tracing::error!("Failed to parse wallet address: {:?}", e);
+            //         return (StatusCode::BAD_REQUEST, Json(None));
+            //     }
+            // };
+
+            // let sig_hash = signature_hash(&sig, &pubk);
+
+            let txHash = match input.tx_hash.parse::<TxHash>() {
+                Ok(s) => s,
+                Err(e) => {
+                    tracing::error!("Failed to parse tx hash: {:?}", e);
+                    return (StatusCode::BAD_REQUEST, Json(None));
+                }
+            };
+
+            let wallet_address = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
+                Ok(a) => a,
+                Err(e) => {
+                    tracing::error!("Failed to parse wallet address: {:?}", e);
+                    return (StatusCode::BAD_REQUEST, Json(None));
+                }
+            };
+
+            let mut file_hasher = sha3::Sha3_512::default();
+            file_hasher.update(wallet_address.clone());
+            let wallet_address_hash = Hash::from(file_hasher.finalize());
+
+            let domain_snapshot_genesis_string = &deserialized
+            .pages
+            .get(0)
+            .unwrap()
+            .genesis_hash;
+
+            let mut hasher = sha3::Sha3_512::default(); 
+            hasher.update(domain_snapshot_genesis_string);
+            let domain_snapshot_genesis_hash = Hash::from(hasher.finalize());
+
+            rev2.witness = Some(RevisionWitness {
+                domain_snapshot_genesis_hash: domain_snapshot_genesis_hash,
+                merkle_root: domain_snapshot_genesis_hash,
+                witness_network: "sepolia".to_string(),
+                witness_event_transaction_hash: txHash,
+                witness_hash: wallet_address_hash,
+                structured_merkle_proof: Vec::new(),
+            });
+            rev2.signature = None;
+
+            // rev2.signature = Some(RevisionSignature {
+            //     signature: sig,
+            //     public_key: pubk,
+            //     signature_hash: sig_hash.clone(),
+            //     wallet_address: addr,
+            // });
+
+            // let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
+            // rev2.metadata.time_stamp = timestamp_current.clone();
+
+            // let metadata_hash_current =
+            //     metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
+
+            // let verification_hash_current = verification_hash(
+            //     &rev2.content.content_hash,
+            //     &metadata_hash_current,
+            //     Some(&sig_hash),
+            //     None,
+            // );
+
+            // rev2.metadata.metadata_hash = metadata_hash_current;
+            // doc.pages[0]
+            //     .revisions
+            //     .push((verification_hash_current, rev2));
 
             // Serialize the updated document
             let page_data_new = match serde_json::to_string(&doc) {
