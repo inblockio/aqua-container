@@ -30,7 +30,7 @@ export function fileType(file: FileInfo): string {
     } else if (documentTypes.includes(file.extension.replace(/\s+/g, ''))) {
         return "Document";
     } else if (musicTypes.includes(file.extension.replace(/\s+/g, ''))) {
-        return "Image";
+        return "Music";
     } else if (videoTypes.includes(file.extension.replace(/\s+/g, ''))) {
         return "Video";
     } else {

@@ -630,11 +630,7 @@ const HomePage: Component = () => {
                                         <h4 class="text-xl">Folders</h4>
 
                                         <form class="ms-auto">
-                                            {/*<div class="flex items-center">*/}
-                                            {/*    <input type="text" class="form-input  rounded-full"*/}
-                                            {/*           placeholder="Search files..."/>*/}
-                                            {/*    <span class="mgc_search_line text-xl -ms-8"></span>*/}
-                                            {/*</div>*/}
+                                           
 
                                             {
                                                 metaMaskAddress() == null ?
