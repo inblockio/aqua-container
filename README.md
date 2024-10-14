@@ -42,6 +42,9 @@ Pages:
 2. `cargo run `
 3. `cd web && npm run dev`
 
+## How to clear db and set it up again 
+`rm pages.db  && export DATABASE_URL="sqlite:pages.db" && sqlx database create && sqlx migrate run `
+
 
 
 
