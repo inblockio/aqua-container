@@ -14,7 +14,7 @@ const DetailsPage: Component = () => {
         if (appState.selectedFileFromApi != undefined) {
             const pageData: PageData = JSON.parse(appState.selectedFileFromApi.page_data);
             setFilePageData(pageData)
-        }else{
+        } else {
             // navigate("/details");
         }
 
@@ -56,15 +56,15 @@ const DetailsPage: Component = () => {
     const filePreviewView = () => {
 
 
-        const fileTypeInfo = fileType(appState.selectedFileFromApi!!);
+        // const fileTypeInfo = fileType(appState.selectedFileFromApi!!);
 
-        if (fileTypeInfo=="Image"){
-            const base64String = "data:image/png;base64,"
-            return <img  id="base64Image" alt="Base64 Image" src={base64String}></img>
-        }
-
-        return <img  id="base64Image" alt="Base64 Image" src="/images/preview.jpg"></img>
-
+        // if (fileTypeInfo=="Image"){
+        //     const base64String = "data:image/png;base64,"
+        //     return <img  id="base64Image" alt="Base64 Image" src={base64String}></img>
+        // }
+        return <div class="text-center">
+            <img id="base64Image" alt="Base64 Image" class="rounded  img-fluid" src="/images/preview.jpg"></img>
+        </div>
     }
     const fileRevisionsText = () => {
         let totalRevisions = filePageData()?.pages[0].revisions;
@@ -128,8 +128,8 @@ const DetailsPage: Component = () => {
 
                                             {/* <!-- stat 2 --> */}
                                             <div class="flex items-center gap-5">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square h-10 w-10"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                                                 <div class="">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square h-10 w-10"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                                <div class="">
                                                     <h4 class="text-lg text-gray-700 dark:text-gray-300 font-medium">0</h4>
                                                     <span class="text-sm">Total Signers</span>
                                                 </div>
@@ -137,8 +137,8 @@ const DetailsPage: Component = () => {
 
                                             {/* <!-- stat 3 --> */}
                                             <div class="flex items-center gap-5">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users h-10 w-10"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                                                 <div class="">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users h-10 w-10"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                                <div class="">
                                                     <h4 class="text-lg text-gray-700 dark:text-gray-300 font-medium">0</h4>
                                                     <span class="text-sm">Total Witness</span>
                                                 </div>
