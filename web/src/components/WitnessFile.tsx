@@ -1,5 +1,24 @@
 import axios from "axios";
 import { ethers } from "ethers";
+import { ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
+
+function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) {
+
+    const formData = new URLSearchParams();
+
+    formData.append('filename', filename);
+    formData.append('tx_hash', txhash);
+    formData.append('wallet_address', ownerAddress);
+
+    axios.post("http://localhost:3600/explorer_witness_file", formData, {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    }).then((resp: any) => {
+        alert("Witnessing successful")
+    })
+
+}
 
 interface IWitnessFile {
     pageVerificationHash: String
@@ -20,57 +39,40 @@ const WitnessFile = ({ pageVerificationHash, filename }: IWitnessFile) => {
                     return;
                 }
 
-                // Message to sign
-                const message = `I sign the following page verification hash: [${pageVerificationHash}]`;
-
-                // Create an ethers provider
-                const provider = new ethers.BrowserProvider(window.ethereum);
-                const signer = await provider.getSigner();
-
-                // Hash the message (optional but recommended)
-                const messageHash = ethers.hashMessage(message);
-
-                // Sign the message using ethers.js
-                const signature = await signer.signMessage(message);
-
-                /* This obtains public signing key but it might not be the public key of signer */
-                // let pubKey = await window.ethereum.request({
-                //     method: "eth_getEncryptionPublicKey",
-                //     params: [
-                //         walletAddress
-                //     ],
-                // });
-                // console.log("Public key is: 0x", Buffer.from(pubKey, 'base64').toString('hex'))
-
-                if (signature) {
-                    try {
-                        // Recover the public key from the signature; This returns an address same as wallet address
-                        const publicKey = ethers.recoverAddress(messageHash, signature)
-
-                        const formData = new URLSearchParams();
-                        formData.append('filename', filename);
-                        formData.append('signature', signature);
-                        /* Recovered public key if needed */
-                        // formData.append('publickey', walletAddress);
-                        /* Hardcoded public key value for now; Remove this once a fix for obtaining public keys is found */
-                        formData.append('publickey', "0x04c56c1231c8a69a375c3f81e549413eb0f415cfd56d40c9a5622456a3f77be0625e1fe8a50cb6274e5d0959625bf33f3c8d1606b5782064bad2e4b46c5e2a7428");
-                        formData.append('wallet_address', ethers.getAddress(walletAddress));
-
-                        const response = await axios.post("http://localhost:3600/explorer_sign_revision", formData, {
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            }
-                        });
-
-                        if (response.status === 200) {
-                            alert("Revision signed successfully")
-                        }
-                        console.log(response)
-
-                    } catch (error) {
-                        console.error('Error during signature submission:', error);
-                    }
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                // const serverChainId = ethChainIdMap[parsed.witness_network]
+                // if (serverChainId !== chainId) {
+                if (ETH_CHAINID_MAP.sepolia !== chainId) {
+                    console.log(ETH_CHAINID_MAP.sepolia, chainId)
+                    // Switch network if the Wallet network does not match DA
+                    // server network.
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{
+                            chainId: ETH_CHAINID_MAP.sepolia,
+                        }],
+                    })
                 }
+                const params = [
+                    {
+                        from: walletAddress,
+                        to: SEPOLIA_SMART_CONTRACT_ADDRESS,
+                        // gas and gasPrice are optional values which are
+                        // automatically set by MetaMask.
+                        // gas: '0x7cc0', // 30400
+                        // gasPrice: '0x328400000',
+                        data: '0x9cef4ea1' + pageVerificationHash,
+                    },
+                ]
+                window.ethereum
+                    .request({
+                        method: 'eth_sendTransaction',
+                        params: params,
+                    })
+                    .then(txhash => {
+                        console.log("Transaction hash is: ", txhash)
+                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress))
+                    })
 
             } catch (error) {
                 console.error('Error during wallet connection or signing:', error);
@@ -81,10 +83,10 @@ const WitnessFile = ({ pageVerificationHash, filename }: IWitnessFile) => {
     };
 
     return (
-        <div  class="rounded bg-primary/25 px-2 mx-4 " style="display: inline-flex; align-items: center;"  onclick={witnessFileHandler}>
+        <div class="rounded bg-primary/25 px-2 mx-4" style="cursor: pointer; display: inline-flex; align-items: center;" onclick={witnessFileHandler}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person m-2" viewBox="0 0 16 16">
-  <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
-</svg>
+                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z" />
+            </svg>
             Witness
         </div>
     )

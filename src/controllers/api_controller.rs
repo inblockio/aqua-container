@@ -372,14 +372,17 @@ pub async fn explorer_file_upload(
     let content_hash_current = content_hash(&content_current);
     tracing::debug!("Content hash current: {:#?}", content_hash_current);
 
-    let domain_id_current = "0".to_owned();
+    let api_domain = std::env::var("API_DOMAIN").unwrap_or_else(|_| "0".to_string());
+    let domain_id_current = api_domain.clone();
     let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
 
+    tracing::debug!("Domain ID: {}, Current timestamp: {:#?}", domain_id_current, timestamp_current);
+
     let metadata_hash_current = metadata_hash(&domain_id_current, &timestamp_current, None);
+    tracing::debug!("HASH: {}", metadata_hash_current);
     let verification_hash_current =
         verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
-    let api_domain = std::env::var("API_DOMAIN").unwrap_or_else(|_| "0".to_string());
 
     let pagedata_current = crate::models::page_data::PageDataContainer {
         pages: vec![HashChain {
@@ -697,23 +700,23 @@ pub async fn explorer_witness_file(
             //     wallet_address: addr,
             // });
 
-            // let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
-            // rev2.metadata.time_stamp = timestamp_current.clone();
+            let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
+            rev2.metadata.time_stamp = timestamp_current.clone();
 
-            // let metadata_hash_current =
-            //     metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
+            let metadata_hash_current =
+                metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
 
-            // let verification_hash_current = verification_hash(
-            //     &rev2.content.content_hash,
-            //     &metadata_hash_current,
-            //     Some(&sig_hash),
-            //     None,
-            // );
+            let verification_hash_current = verification_hash(
+                &rev2.content.content_hash,
+                &metadata_hash_current,
+                None,
+                Some(&wallet_address_hash),
+            );
 
             // rev2.metadata.metadata_hash = metadata_hash_current;
-            // doc.pages[0]
-            //     .revisions
-            //     .push((verification_hash_current, rev2));
+            doc.pages[0]
+                .revisions
+                .push((verification_hash_current, rev2));
 
             // Serialize the updated document
             let page_data_new = match serde_json::to_string(&doc) {

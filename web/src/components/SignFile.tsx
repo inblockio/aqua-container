@@ -21,7 +21,7 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
                 }
 
                 // Message to sign
-                const message = `I sign the following page verification hash: [${pageVerificationHash}]`;
+                const message = "I sign the following page verification_hash: [0x" + pageVerificationHash + "]"
 
                 // Create an ethers provider
                 const provider = new ethers.BrowserProvider(window.ethereum);
@@ -32,6 +32,8 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
 
                 // Sign the message using ethers.js
                 const signature = await signer.signMessage(message);
+
+                console.log("Signature: ", signature)
 
                 /* This obtains public signing key but it might not be the public key of signer */
                 // let pubKey = await window.ethereum.request({
