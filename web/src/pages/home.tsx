@@ -441,28 +441,39 @@ const HomePage: Component = () => {
                 {hSize}
             </td>
 
-            <td class="p-3.5">
+            {/* <td class="p-3.5">
                 <div></div>
-            </td>
-            <td class="p-3.5">
-                <div onClick={(e) => {
-                    downloadAquaJson(file)
-                }}>
-                    <span class="px-2 py-0.5 rounded bg-success/25 text-success ms-2">
-                        <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> <small> Download Aqua chain JSON</small></span>
+            </td> */}
+            <td class="">
+                <div>
+
+                    <div onClick={(e) => {
+                        downloadAquaJson(file)
+                    }} class="rounded bg-success/25 px-2 " style="display: inline-flex; align-items: center;">
+
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download m-2" viewBox="0 0 16 16">
+                            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
+                            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
+                        </svg>  Download Aqua chain JSON
+
+                    </div>
+
+                    <div onClick={(e) => {
+                        setAppState("selectedFileFromApi", file);
+                        navigate("/details");
+                    }} class="rounded bg-warning/25 px-2 mx-4 " style="display: inline-flex; align-items: center;">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill m-2" viewBox="0 0 16 16">
+                            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+                            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
+                        </svg>
+                        view more details
+                    </div>
+                    <SignFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
+                    <WitnessFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
 
                 </div>
-                <br />
-                <div onClick={(e) => {
-                    setAppState("selectedFileFromApi", file);
-                    navigate("/details");
-                }}>
-
-                    <span class="px-2 py-0.5 rounded bg-warning/25 text-warning ms-2">
-                        <i class="mgc_arrow_up_line text-sm align-baseline me-1"></i> view more details</span>
-                </div>
-                <SignFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
-                <WitnessFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
             </td>
         </tr>
     }
@@ -673,9 +684,9 @@ const HomePage: Component = () => {
                                                                         class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">File
                                                                         Size
                                                                     </th>
-                                                                    <th scope="col"
+                                                                    {/* <th scope="col"
                                                                         class="p-3.5 text-sm text-start font-semibold min-w-[8rem]">Owner
-                                                                    </th>
+                                                                    </th> */}
                                                                     {/*<th scope="col"*/}
                                                                     {/*    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members*/}
                                                                     {/*</th>*/}
