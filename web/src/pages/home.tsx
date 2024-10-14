@@ -323,7 +323,7 @@ const HomePage: Component = () => {
 
                 // console.log("element " + element + " length " + fileItemData.length + "  file " + element + " size  " + size);
                 let percentage = size / allFilesSize() * 100
-                let usingText = `Using ${percentage}% of storage`
+                let usingText = `Using ${percentage.toFixed(2)}% of storage`
                 let hSize = humanReadableFileSize(size)
 
                 let item: UiFileTypes = {
