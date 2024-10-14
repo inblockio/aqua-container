@@ -323,7 +323,7 @@ const HomePage: Component = () => {
 
                 // console.log("element " + element + " length " + fileItemData.length + "  file " + element + " size  " + size);
                 let percentage = size / allFilesSize() * 100
-                let usingText = `Using ${percentage}% of storage`
+                let usingText = `Using ${percentage.toFixed(2)}% of storage`
                 let hSize = humanReadableFileSize(size)
 
                 let item: UiFileTypes = {
@@ -455,7 +455,7 @@ const HomePage: Component = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-download m-2" viewBox="0 0 16 16">
                             <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5" />
                             <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z" />
-                        </svg>  Download Aqua chain JSON
+                        </svg>  Download Aqua-File
 
                     </div>
 
@@ -468,7 +468,7 @@ const HomePage: Component = () => {
                             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
                             <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7" />
                         </svg>
-                        view more details
+                        See Details
                     </div>
                     <SignFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
                     <WitnessFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
@@ -514,7 +514,7 @@ const HomePage: Component = () => {
                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
                                         type="button"
                                         class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
-                                        <i class="mgc_add_line text-lg me-2"></i> Verify aqua file
+                                        <i class="mgc_add_line text-lg me-2"></i> Verify Aqua-File
                                     </a>
                                     {/* Hidden file input */}
                                     <input
@@ -639,7 +639,7 @@ const HomePage: Component = () => {
                                                     }} data-fc-type="dropdown" data-fc-placement="bottom"
                                                         type="button"
                                                         class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
-                                                        <i class="mgc_add_line text-lg me-2"></i> sign in with metamask
+                                                        <i class="mgc_add_line text-lg me-2"></i> Sign in with MetaMask
                                                     </button> : <label>{metaMaskAddress()}</label>
                                             }
 
