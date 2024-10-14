@@ -29,7 +29,7 @@ const DetailsPage: Component = () => {
 
 
     const fileHashAndRevisionsDetails = () => {
-        <For each={filePageData()?.pages ?? []}>
+      return  <For each={filePageData()?.pages ?? []}>
             {(item, index) =>
                 <>
                     {fileChainsDisplay(item, index())}
@@ -48,17 +48,17 @@ const DetailsPage: Component = () => {
                     <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {pages.domain_id}
 
                     </div>
-                    <p class="text-gray-600 dark:text-gray-400"> Hash : {pages.revisions}</p>
+                    <p class="text-gray-600 dark:text-gray-400"> Hash : </p>
                 </div>
 
-                <For each={filePageData()?.pages ?? []}>
+                {/* <For each={filePageData()?.pages ?? []}>
                     {(item, index) =>
                         <>
                             {fileRevisionsDisplay(item, index())}
                         </>
                     }
 
-                </For>
+                </For> */}
 
             </div>
         </div>
@@ -73,7 +73,7 @@ const DetailsPage: Component = () => {
                     <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {pages.domain_id}
 
                     </div>
-                    <p class="text-gray-600 dark:text-gray-400"> Hash : {pages.revisions}</p>
+                    <p class="text-gray-600 dark:text-gray-400"> Hash : </p>
                 </div>
                 {/* <div
                         class="px-3 py-1 md:block hidden rounded text-xs font-medium">Testing
@@ -122,10 +122,10 @@ const DetailsPage: Component = () => {
 
     }
 
-    const fileRevisionsDisplay = (revision: Revision) => {
-        return <>
-        </>
-    }
+    // const fileRevisionsDisplay = (revision: Revision) => {
+    //     return <>
+    //     </>
+    // }
     return (
         <>
             <div class="flex wrapper">
