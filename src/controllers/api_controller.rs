@@ -355,7 +355,7 @@ pub async fn explorer_file_upload(
     tracing::debug!(
         "Processing file upload - Account: {}, File: {}, Size: {} bytes",
         account,
-        file_name, 
+        file_name,
         file_size
     );
 
@@ -376,13 +376,16 @@ pub async fn explorer_file_upload(
     let domain_id_current = api_domain.clone();
     let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
 
-    tracing::debug!("Domain ID: {}, Current timestamp: {:#?}", domain_id_current, timestamp_current);
+    tracing::debug!(
+        "Domain ID: {}, Current timestamp: {:#?}",
+        domain_id_current,
+        timestamp_current
+    );
 
     let metadata_hash_current = metadata_hash(&domain_id_current, &timestamp_current, None);
     tracing::debug!("HASH: {}", metadata_hash_current);
     let verification_hash_current =
         verification_hash(&content_hash_current, &metadata_hash_current, None, None);
-
 
     let pagedata_current = crate::models::page_data::PageDataContainer {
         pages: vec![HashChain {
@@ -542,6 +545,8 @@ pub async fn explorer_sign_revision(
             );
 
             rev2.metadata.metadata_hash = metadata_hash_current;
+            rev2.metadata.verification_hash = verification_hash_current;
+
             doc.pages[0]
                 .revisions
                 .push((verification_hash_current, rev2));
@@ -589,6 +594,13 @@ pub async fn explorer_sign_revision(
     }
 }
 
+pub fn make_empty_hash() -> Hash {
+    let mut hasher = sha3::Sha3_512::default();
+    hasher.update("");
+    let empty_hash = Hash::from(hasher.finalize());
+    empty_hash
+}
+
 pub async fn explorer_witness_file(
     State(server_database): State<Db>,
     Form(input): Form<WitnessInput>,
@@ -628,31 +640,6 @@ pub async fn explorer_witness_file(
             let mut rev2 = rev1.clone();
             rev2.metadata.previous_verification_hash = Some(*ver1);
 
-            // Parse input data with proper error handling
-            // let sig = match input.signature.parse::<Signature>() {
-            //     Ok(s) => s,
-            //     Err(e) => {
-            //         tracing::error!("Failed to parse signature: {:?}", e);
-            //         return (StatusCode::BAD_REQUEST, Json(None));
-            //     }
-            // };
-            // let pubk = match input.publickey.parse::<PublicKey>() {
-            //     Ok(p) => p,
-            //     Err(e) => {
-            //         tracing::error!("Failed to parse public key: {:?}", e);
-            //         return (StatusCode::BAD_REQUEST, Json(None));
-            //     }
-            // };
-            // let addr = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
-            //     Ok(a) => a,
-            //     Err(e) => {
-            //         tracing::error!("Failed to parse wallet address: {:?}", e);
-            //         return (StatusCode::BAD_REQUEST, Json(None));
-            //     }
-            // };
-
-            // let sig_hash = signature_hash(&sig, &pubk);
-
             let txHash = match input.tx_hash.parse::<TxHash>() {
                 Ok(s) => s,
                 Err(e) => {
@@ -660,6 +647,8 @@ pub async fn explorer_witness_file(
                     return (StatusCode::BAD_REQUEST, Json(None));
                 }
             };
+
+            tracing::debug!("Tx hash: {}", txHash);
 
             let wallet_address = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
                 Ok(a) => a,
@@ -669,39 +658,51 @@ pub async fn explorer_witness_file(
                 }
             };
 
-            let mut file_hasher = sha3::Sha3_512::default();
-            file_hasher.update(wallet_address.clone());
-            let wallet_address_hash = Hash::from(file_hasher.finalize());
+            let domain_snapshot_genesis_string = &deserialized.pages.get(0).unwrap().genesis_hash;
 
-            let domain_snapshot_genesis_string = &deserialized
-            .pages
-            .get(0)
-            .unwrap()
-            .genesis_hash;
+            let mut hasher = sha3::Sha3_512::default();
+            hasher.update("");
 
-            let mut hasher = sha3::Sha3_512::default(); 
-            hasher.update(domain_snapshot_genesis_string);
             let domain_snapshot_genesis_hash = Hash::from(hasher.finalize());
+            tracing::debug!(
+                "Rev1 Metadata verification hash: {}",
+                rev1.metadata.verification_hash
+            );
+
+            let witness_hash = witness_hash(
+                &domain_snapshot_genesis_hash,
+                &rev1.metadata.verification_hash,
+                "sepolia",
+                &txHash,
+            );
+            tracing::debug!("Tx hash after user: {}", txHash);
+
+            let mut merkle_tree = Vec::new();
+            merkle_tree.push(MerkleNode {
+                left_leaf: rev1.metadata.verification_hash,
+                right_leaf: make_empty_hash(),
+            });
 
             rev2.witness = Some(RevisionWitness {
                 domain_snapshot_genesis_hash: domain_snapshot_genesis_hash,
-                merkle_root: domain_snapshot_genesis_hash,
+                merkle_root: rev1.metadata.verification_hash,
                 witness_network: "sepolia".to_string(),
                 witness_event_transaction_hash: txHash,
-                witness_hash: wallet_address_hash,
-                structured_merkle_proof: Vec::new(),
+                witness_hash: witness_hash,
+                structured_merkle_proof: merkle_tree,
             });
-            rev2.signature = None;
 
-            // rev2.signature = Some(RevisionSignature {
-            //     signature: sig,
-            //     public_key: pubk,
-            //     signature_hash: sig_hash.clone(),
-            //     wallet_address: addr,
-            // });
+            rev2.signature = None;
 
             let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
             rev2.metadata.time_stamp = timestamp_current.clone();
+
+            tracing::debug!(
+                "Current timestamp: {}, domain id: {}, previous Ver: {}",
+                timestamp_current,
+                doc.pages[0].domain_id,
+                ver1
+            );
 
             let metadata_hash_current =
                 metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
@@ -710,10 +711,12 @@ pub async fn explorer_witness_file(
                 &rev2.content.content_hash,
                 &metadata_hash_current,
                 None,
-                Some(&wallet_address_hash),
+                Some(&witness_hash), 
             );
 
-            // rev2.metadata.metadata_hash = metadata_hash_current;
+            rev2.metadata.metadata_hash = metadata_hash_current;
+            rev2.metadata.verification_hash = verification_hash_current;
+
             doc.pages[0]
                 .revisions
                 .push((verification_hash_current, rev2));
