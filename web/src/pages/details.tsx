@@ -28,41 +28,83 @@ const DetailsPage: Component = () => {
     });
 
 
+    const fileHashAndRevisionsDetails = () => {
+      return  <For each={filePageData()?.pages ?? []}>
+            {(item, index) =>
+                <>
+                    {fileChainsDisplay(item, index())}
+                </>
+            }
+
+        </For>
+    }
     const fileChainsDisplay = (pages: HashChain, index: number) => {
-        return <div>
-            <div class="p-3">
-                <div class="flex items-center gap-3">
-                    <div class="h-10 w-10 flex-shrink-0">
-                        {index + 1}
+        return <div class="p-3">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 flex-shrink-0">
+                    {index + 1}
+                </div>
+                <div class="flex-grow truncate">
+                    <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {pages.domain_id}
+
                     </div>
-                    <div class="flex-grow truncate">
-                        <div class="font-medium text-gray-900 dark:text-gray-300">Genesis Hash : {pages.genesis_hash}
-                            Obama
-                        </div>
-                        <p class="text-gray-600 dark:text-gray-400">barakobama@gmail.com</p>
+                    <p class="text-gray-600 dark:text-gray-400"> Hash : </p>
+                </div>
+
+                {/* <For each={filePageData()?.pages ?? []}>
+                    {(item, index) =>
+                        <>
+                            {fileRevisionsDisplay(item, index())}
+                        </>
+                    }
+
+                </For> */}
+
+            </div>
+        </div>
+    }
+    const fileRevisionsDisplay = (pages: Revision, index: number) => {
+        return <div class="p-3">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 flex-shrink-0">
+                    {index + 1}
+                </div>
+                <div class="flex-grow truncate">
+                    <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {pages.domain_id}
+
                     </div>
-                    <div
+                    <p class="text-gray-600 dark:text-gray-400"> Hash : </p>
+                </div>
+                {/* <div
                         class="px-3 py-1 md:block hidden rounded text-xs font-medium">Testing
                     </div>
                     <div class="ms-auto">
                         <div
                             class=" px-3 py-1 rounded text-xs font-medium bg-success/25 text-success">Complated
                         </div>
-                    </div>
-                </div>
+                    </div> */}
             </div>
         </div>
+
     }
     const filePreviewView = () => {
 
 
-        // const fileTypeInfo = fileType(appState.selectedFileFromApi!!);
+        const fileTypeInfo = fileType(appState.selectedFileFromApi!!);
 
-        // if (fileTypeInfo=="Image"){
-        //     const base64String = "data:image/png;base64,"
-        //     return <img  id="base64Image" alt="Base64 Image" src={base64String}></img>
-        // }
-        return <div class="text-center">
+
+        if (filePageData() && filePageData()?.pages != null && filePageData()?.pages.length > 0) {
+            const firstPage = filePageData()!.pages[0]; // Get the first page
+            const firstRevisionKey = Object.keys(firstPage.revisions)[0]; // Get the first revision key
+            const firstRevision = firstPage.revisions[firstRevisionKey]; // Get the first revision
+            const fileContent = firstRevision.content.file; // Get file content
+
+            if (fileContent && fileTypeInfo === "Image") {
+                const base64String = `data:image/png;base64,${fileContent.data}`;
+                return <img id="base64Image" alt="Base64 Image" src={base64String}></img>
+            }
+        }
+        return <div class="text-center m-5">
             <img id="base64Image" alt="Base64 Image" class="rounded  img-fluid" src="/images/preview.jpg"></img>
         </div>
     }
@@ -80,10 +122,10 @@ const DetailsPage: Component = () => {
 
     }
 
-    const fileRevisionsDisplay = (revision: Revision) => {
-        return <>
-        </>
-    }
+    // const fileRevisionsDisplay = (revision: Revision) => {
+    //     return <>
+    //     </>
+    // }
     return (
         <>
             <div class="flex wrapper">
@@ -154,6 +196,23 @@ const DetailsPage: Component = () => {
                                         </div>
                                     </div>
                                 </div>
+                                <br />
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="card-title">File Revisions</h6>
+                                    </div>
+
+                                    <div class="table overflow-hidden w-full">
+                                        <div
+                                            class="divide-y divide-gray-300 dark:divide-gray-700 overflow-auto w-full max-w-full">
+
+                                            {
+
+                                                fileHashAndRevisionsDetails()
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
 
@@ -166,40 +225,12 @@ const DetailsPage: Component = () => {
                                     <div class="table overflow-hidden w-full">
                                         <div class="divide-y divide-gray-300 dark:divide-gray-700 overflow-auto w-full max-w-full">
                                             {filePreviewView()}
-
-
-
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="col-span-2">
 
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h6 class="card-title">File Revisions</h6>
-                                    </div>
-
-                                    <div class="table overflow-hidden w-full">
-                                        <div
-                                            class="divide-y divide-gray-300 dark:divide-gray-700 overflow-auto w-full max-w-full">
-
-                                            {
-
-                                                <For each={filePageData()?.pages ?? []}>
-                                                    {(item, index) =>
-                                                        <>
-                                                            {fileChainsDisplay(item, index())}
-                                                        </>
-                                                    }
-
-                                                </For>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </main>
 
@@ -208,7 +239,7 @@ const DetailsPage: Component = () => {
                         <div class="flex justify-center w-full gap-4">
                             <div>
                                 <script>document.write(new Date().getFullYear())</script>
-                                © Konrix - <a href="https://coderthemes.com/" target="_blank">Coderthemes</a>
+                                ©  - <a href="https://github.com/inblockio" target="_blank">Inblock</a>
                             </div>
                         </div>
                     </footer>
