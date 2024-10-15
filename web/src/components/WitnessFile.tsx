@@ -21,11 +21,11 @@ function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) 
 }
 
 interface IWitnessFile {
-    pageVerificationHash: String
+    previousVerificationHash?: String | null
     filename: string
 }
 
-const WitnessFile = ({ pageVerificationHash, filename }: IWitnessFile) => {
+const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
 
     const witnessFileHandler = async () => {
         if (window.ethereum) {
@@ -61,7 +61,7 @@ const WitnessFile = ({ pageVerificationHash, filename }: IWitnessFile) => {
                         // automatically set by MetaMask.
                         // gas: '0x7cc0', // 30400
                         // gasPrice: '0x328400000',
-                        data: '0x9cef4ea1' + pageVerificationHash,
+                        data: '0x9cef4ea1' + previousVerificationHash,
                     },
                 ]
                 window.ethereum

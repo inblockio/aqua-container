@@ -424,6 +424,11 @@ const HomePage: Component = () => {
             return pageData.pages[0].revisions[revisionHashes[revisionHashes.length - 1]].metadata.verification_hash
         }
 
+        const getPreviousRevisionVerificationHash = () => {
+            const revisionHashes = Object.keys(pageData.pages[0].revisions)
+            return pageData.pages[0].revisions[revisionHashes[revisionHashes.length - 1]].metadata.previous_verification_hash
+        }
+
         return <tr >
             <td class="p-3.5 text-sm text-gray-700 dark:text-gray-400">
                 <a href="javascript: void(0);" class="font-medium">
@@ -471,7 +476,7 @@ const HomePage: Component = () => {
                         See Details
                     </div>
                     <SignFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
-                    <WitnessFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
+                    <WitnessFile previousVerificationHash={getPreviousRevisionVerificationHash()} filename={file.name} />
 
                 </div>
             </td>
