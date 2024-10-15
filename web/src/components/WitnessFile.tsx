@@ -1,8 +1,11 @@
 import axios from "axios";
 import { ethers } from "ethers";
 import { ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
+import sha3 from 'js-sha3'
+import { FileInfo } from "../models/FileInfo";
+import { appState, setAppState } from "../store/store";
 
-function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) {
+async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) {
 
     const formData = new URLSearchParams();
 
@@ -10,13 +13,28 @@ function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) 
     formData.append('tx_hash', txhash);
     formData.append('wallet_address', ownerAddress);
 
-    axios.post("http://localhost:3600/explorer_witness_file", formData, {
+
+
+    let response = await axios.post("http://localhost:3600/explorer_witness_file", formData, {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
-    }).then((resp: any) => {
-        alert("Witnessing successful")
     })
+
+    if (response.status === 200) {
+        let resp: FileInfo = await response.data
+        let array: FileInfo[] = [];
+        for (let index = 0; index < appState.filesFromApi.length; index++) {
+            const element = appState.filesFromApi[index];
+            if (element.name === resp.name) {
+                array.push(resp)
+            } else {
+                array.push(element)
+            }
+        }
+        setAppState("filesFromApi", array)
+        alert("Witnessed successfully")
+    }
 
 }
 
@@ -28,6 +46,9 @@ interface IWitnessFile {
 const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
 
     const witnessFileHandler = async () => {
+        console.log("Previous verification hash: ", previousVerificationHash)
+        const witness_event_verification_hash = sha3.sha3_512("a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26" + previousVerificationHash)
+        console.log("Witness event verification hash: ", witness_event_verification_hash)
         if (window.ethereum) {
             try {
                 // Connect wallet
@@ -61,7 +82,7 @@ const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
                         // automatically set by MetaMask.
                         // gas: '0x7cc0', // 30400
                         // gasPrice: '0x328400000',
-                        data: '0x9cef4ea1' + previousVerificationHash,
+                        data: '0x9cef4ea1' + witness_event_verification_hash,
                     },
                 ]
                 window.ethereum
@@ -71,7 +92,9 @@ const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
                     })
                     .then(txhash => {
                         console.log("Transaction hash is: ", txhash)
-                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress))
+                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress)).then(() => {
+                            console.log("State updated successfully")
+                        }).catch(() => { alert("Something went wrong") })
                     })
 
             } catch (error) {

@@ -15,11 +15,34 @@ export interface HashChain {
     revisions: Record<string, Revision>;  // Changed from Array<[string, Revision]>
 }
 
+export interface StructuredMerkleProof {
+    left_leaf: String;
+    right_leaf: String;
+    successor: String;
+}
+
+export interface RevisionWitness {
+    domain_snapshot_genesis_hash: String;
+    merkle_root: String;
+    witness_network: String;
+    witness_event_transaction_hash: String;
+    witness_event_verification_hash: String;
+    witness_hash: String;
+    structured_merkle_proof: StructuredMerkleProof[];
+}
+
+export interface RevisionSignature {
+    signature: String;
+    public_key: String;
+    signature_hash: String;
+    wallet_address: String;
+}
+
 export interface Revision {
     content: RevisionContent;
     metadata: RevisionMetadata;
-    signature: string | null;
-    witness: string | null;
+    signature: RevisionSignature | null;
+    witness: RevisionWitness | null;
 }
 
 export interface RevisionContent {
@@ -40,7 +63,7 @@ export interface FileContent {
 
 export interface RevisionMetadata {
     domain_id: string;
-    time_stamp:  string,//Timestamp, //string;  // Changed from Timestamp object to string
+    time_stamp: string,//Timestamp, //string;  // Changed from Timestamp object to string
     previous_verification_hash: string | null;
     metadata_hash: string;
     verification_hash: string;

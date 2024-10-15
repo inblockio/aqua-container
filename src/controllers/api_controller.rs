@@ -38,7 +38,7 @@ use std::time::SystemTime;
 use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 use verifier::v1_1::hashes::*;
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -497,6 +497,7 @@ pub async fn explorer_sign_revision(
             let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
 
             let mut rev2 = rev1.clone();
+            rev2.witness = None;
             rev2.metadata.previous_verification_hash = Some(*ver1);
 
             // Parse input data with proper error handling
@@ -677,17 +678,41 @@ pub async fn explorer_witness_file(
             );
             tracing::debug!("Tx hash after user: {}", txHash);
 
+            let mut merkle_tree_successor_hasher = sha3::Sha3_512::default();
+            merkle_tree_successor_hasher.update(format!(
+                "{}{}",
+                &rev1.metadata.verification_hash.to_string(),
+                make_empty_hash().to_string()
+            ));
+
+            let merkle_tree_successor = Hash::from(merkle_tree_successor_hasher.finalize());
+
             let mut merkle_tree = Vec::new();
             merkle_tree.push(MerkleNode {
                 left_leaf: rev1.metadata.verification_hash,
                 right_leaf: make_empty_hash(),
+                successor: merkle_tree_successor,
             });
+
+            let mut hasher_verification = sha3::Sha3_512::default();
+            hasher_verification.update(format!(
+                "{}{}",
+                domain_snapshot_genesis_hash.to_string(),
+                &rev1.metadata.verification_hash.to_string()
+            ));
+
+            let witness_event_verification_hash = Hash::from(hasher_verification.finalize());
+            tracing::debug!(
+                "Witness event verification hash: {}",
+                witness_event_verification_hash
+            );
 
             rev2.witness = Some(RevisionWitness {
                 domain_snapshot_genesis_hash: domain_snapshot_genesis_hash,
                 merkle_root: rev1.metadata.verification_hash,
                 witness_network: "sepolia".to_string(),
                 witness_event_transaction_hash: txHash,
+                witness_event_verification_hash: witness_event_verification_hash,
                 witness_hash: witness_hash,
                 structured_merkle_proof: merkle_tree,
             });
@@ -711,7 +736,7 @@ pub async fn explorer_witness_file(
                 &rev2.content.content_hash,
                 &metadata_hash_current,
                 None,
-                Some(&witness_hash), 
+                Some(&witness_hash),
             );
 
             rev2.metadata.metadata_hash = metadata_hash_current;

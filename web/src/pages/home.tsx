@@ -3,7 +3,7 @@ import { createEffect, createSignal, For } from "solid-js";
 import axios from "axios";
 import { ethers } from "ethers";
 import { FileInfo } from "../models/FileInfo";
-import { getTimestampSafe, PageData } from "../models/PageData";
+import { getTimestampSafe, PageData, Revision } from "../models/PageData";
 import {
     capitalizeFirstLetter,
     debugPageDataStructure, fileType,
@@ -274,6 +274,17 @@ const HomePage: Component = () => {
         try {
             // Parse the page_data string to a PageData object
             const pageData: PageData = JSON.parse(fileInfo.page_data);
+            
+            for (const page of pageData.pages) {
+                for (const revisionKey in page.revisions) {
+                    const revision = page.revisions[revisionKey];
+                    
+                    // Check if the revision has a witness and update witness_event_transaction_hash
+                    if (revision.witness && revision.witness.witness_event_transaction_hash) {
+                        revision.witness.witness_event_transaction_hash = `0x${revision.witness.witness_event_transaction_hash}`;
+                    }
+                }
+            }
 
             // Convert the PageData object to a formatted JSON string
             const jsonString = JSON.stringify(pageData, null, 2);
@@ -426,7 +437,7 @@ const HomePage: Component = () => {
 
         const getPreviousRevisionVerificationHash = () => {
             const revisionHashes = Object.keys(pageData.pages[0].revisions)
-            return pageData.pages[0].revisions[revisionHashes[revisionHashes.length - 1]].metadata.previous_verification_hash
+            return pageData.pages[0].revisions[revisionHashes[revisionHashes.length - 1]].metadata.verification_hash
         }
 
         return <tr >
@@ -635,7 +646,7 @@ const HomePage: Component = () => {
                                         <h4 class="text-xl">Folders</h4>
 
                                         <form class="ms-auto">
-                                           
+
 
                                             {
                                                 metaMaskAddress() == null ?

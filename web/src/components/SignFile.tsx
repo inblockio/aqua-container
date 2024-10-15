@@ -1,5 +1,7 @@
 import axios from "axios";
 import { ethers } from "ethers";
+import { FileInfo } from "../models/PageData";
+import { appState, setAppState } from "../store/store";
 
 interface ISignRevision {
     pageVerificationHash: String
@@ -54,7 +56,7 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
                             signature,
                         )
 
-                        console.log("PUblic key", publicKey)
+                        console.log("Public key", publicKey)
 
                         const formData = new URLSearchParams();
                         formData.append('filename', filename);
@@ -73,6 +75,18 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
                         });
 
                         if (response.status === 200) {
+                            let resp: FileInfo = await response.data
+                            console.log(resp)
+                            let array: FileInfo[] = [];
+                            for (let index = 0; index < appState.filesFromApi.length; index++) {
+                                const element = appState.filesFromApi[index];
+                                if (element.name === resp.name) {
+                                    array.push(resp)
+                                } else {
+                                    array.push(element)
+                                }
+                            }
+                            setAppState("filesFromApi", array)
                             alert("Revision signed successfully")
                         }
                         console.log(response)
