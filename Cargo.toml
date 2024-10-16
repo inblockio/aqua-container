@@ -13,9 +13,9 @@ license = "MIT OR Apache-2.0"
 axum = { git = "https://github.com/tokio-rs/axum", features = ["multipart"] }
 axum-extra = { git = "https://github.com/tokio-rs/axum" }
 bonsaidb = { git = "https://github.com/khonsulabs/bonsaidb", features = ["local"] }
-guardian-common = { git = "https://github.com/inblockio/aqua-guardian",branch = "quick-fix" }
+guardian-common = { git = "https://github.com/inblockio/aqua-guardian",branch = "fixes_2" }
 # rev = "2ae5c19" }
-verifier = { git = "https://github.com/inblockio/aqua-guardian", branch = "quick-fix" }
+verifier = { git = "https://github.com/inblockio/aqua-guardian", branch = "fixes_2" }
 
 # rev = "2ae5c19" }
 
