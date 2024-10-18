@@ -17,12 +17,12 @@ import app from "../App";
 import { useNavigate } from "@solidjs/router";
 import SignFile from '../components/SignFile';
 import WitnessFile from '../components/WitnessFile';
+import MainLayout from '../layout/MainLayout';
 
 const HomePage: Component = () => {
 
 
     const navigate = useNavigate();
-    const [metaMaskAddress, setMetaMaskAddress] = createSignal<string | null>(null);
     const [selectedFileForUpload, setSelectedFileForUpload] = createSignal<File | null>(null);
     // const [fileFromApi, setFilesFromApi] = createSignal<Array<FileInfo>>([]);
     const [allFilesSize, setAllFileSize] = createSignal<number>(0);
@@ -57,35 +57,7 @@ const HomePage: Component = () => {
 
     })
 
-    const signAndConnect = async () => {
-        if (window.ethereum) {
-            try {
-                // Connect wallet
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const walletAddress = accounts[0];
-
-                console.log('Connected account:', walletAddress);
-
-                // Message to sign
-                const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
-
-                // Sign the message
-                const signature = await window.ethereum.request({
-                    method: 'personal_sign',
-                    params: [message, walletAddress],
-                });
-
-                if (signature) {
-                    setMetaMaskAddress(walletAddress);
-                }
-
-            } catch (error) {
-                console.error('Error during wallet connection or signing:', error);
-            }
-        } else {
-            alert('MetaMask is not installed');
-        }
-    };
+   
 
 
     const uploadAquaJsonFile = async () => {
@@ -539,240 +511,226 @@ const HomePage: Component = () => {
         </tr>
     }
     return (
-        <div class="flex wrapper">
-            {/*   <!-- ==============================================================  --> */}
-            {/*   <!-- Start Page Content here  --> */}
-            {/*   <!-- ==============================================================  --> */}
-            <div class="page-content">
-                <main class="flex-grow p-6">
-                    <div class="flex">
-                        <div id="default-offcanvas"
-                            class="lg:block hidden top-0 left-0 transform h-full min-w-[16rem] me-6 card rounded-none lg:rounded-md fc-offcanvas-open:translate-x-0 lg:z-0 z-50 fixed lg:static lg:translate-x-0 -translate-x-full transition-all duration-300"
-                            tabindex="-1">
-                            <div class="p-5">
-                                <div class="relative">
+        <>
+            <div class="flex wrapper">
+                {/*   <!-- ==============================================================  --> */}
+                {/*   <!-- Start Page Content here  --> */}
+                {/*   <!-- ==============================================================  --> */}
+                <div class="page-content">
+                    <main class="flex-grow p-6">
+                        <div class="flex">
+                            <div id="default-offcanvas"
+                                class="lg:block hidden top-0 left-0 transform h-full min-w-[16rem] me-6 card rounded-none lg:rounded-md fc-offcanvas-open:translate-x-0 lg:z-0 z-50 fixed lg:static lg:translate-x-0 -translate-x-full transition-all duration-300"
+                                tabindex="-1">
+                                <div class="p-5">
+                                    <div class="relative">
 
-                                    <a href="javascript:void(0)" onClick={(e) => {
-                                        setFileTypeForUpload("file")
-                                        handleSelectFileForUploadClick()
-                                    }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                        type="button"
-                                        class="btn inline-flex justify-center items-center bg-primary text-white w-full mb-3">
-                                        <i class="mgc_add_line text-lg me-2"></i> Upload File
-                                    </a>
-                                    <br />
+                                        <a href="javascript:void(0)" onClick={(e) => {
+                                            setFileTypeForUpload("file")
+                                            handleSelectFileForUploadClick()
+                                        }} data-fc-type="dropdown" data-fc-placement="bottom"
+                                            type="button"
+                                            class="btn inline-flex justify-center items-center bg-primary text-white w-full mb-3">
+                                            <i class="mgc_add_line text-lg me-2"></i> Upload File
+                                        </a>
+                                        <br />
 
-                                    <a href="javascript:void(0)" onClick={(e) => {
-                                        setFileTypeForUpload("json")
-                                        handleSelectFileForUploadClick();
-                                    }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                        type="button"
-                                        class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
-                                        <i class="mgc_add_line text-lg me-2"></i> Verify Aqua-File
-                                    </a>
-                                    {/* Hidden file input */}
-                                    <input
-                                        type="file"
-                                        ref={el => fileInput = el} // Save reference to the input element
-                                        style={{ display: "none" }} // Hide the input element
-                                        onChange={handleFileSelect}
-                                    />
+                                        <a href="javascript:void(0)" onClick={(e) => {
+                                            setFileTypeForUpload("json")
+                                            handleSelectFileForUploadClick();
+                                        }} data-fc-type="dropdown" data-fc-placement="bottom"
+                                            type="button"
+                                            class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
+                                            <i class="mgc_add_line text-lg me-2"></i> Verify Aqua-File
+                                        </a>
+                                        {/* Hidden file input */}
+                                        <input
+                                            type="file"
+                                            ref={el => fileInput = el} // Save reference to the input element
+                                            style={{ display: "none" }} // Hide the input element
+                                            onChange={handleFileSelect}
+                                        />
 
-                                    <a onClick={(e) => {
-                                        e.preventDefault();
-                                        console.log("Woopsiiiee ...........");
-                                        navigate("/configuration")
-                                    }} href="javascript:void(0);" class="flex items-center py-2 px-4 text-sm rounded text-gray-500 hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 mt-5" id="headingOne">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear my-2" viewBox="0 0 16 16">
-                                            <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0" />
-                                            <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z" />
-                                        </svg>
-                                        &emsp;
-                                        <span>Config</span>
-                                    </a>
-                                </div>
-
-
-                                <div class="mt-6">
-                                    <h6 class="text-uppercase mt-3">Storage</h6>
-                                    <div
-                                        class="flex w-full h-1.5 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700 mt-4">
-                                        <div class="flex flex-col justify-center overflow-hidden bg-primary"
-                                            role="progressbar" style="width: 46%" aria-valuenow="46" aria-valuemin="0"
-                                            aria-valuemax="100"></div>
+                                        <a onClick={(e) => {
+                                            e.preventDefault();
+                                            console.log("Woopsiiiee ...........");
+                                            navigate("/configuration")
+                                        }} href="javascript:void(0);" class="flex items-center py-2 px-4 text-sm rounded text-gray-500 hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 mt-5" id="headingOne">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear my-2" viewBox="0 0 16 16">
+                                                <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0" />
+                                                <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z" />
+                                            </svg>
+                                            &emsp;
+                                            <span>Config</span>
+                                        </a>
                                     </div>
-                                    <p class="text-gray-500 mt-4 text-xs">{pageDataInfo()}</p>
+
+
+                                    <div class="mt-6">
+                                        <h6 class="text-uppercase mt-3">Storage</h6>
+                                        <div
+                                            class="flex w-full h-1.5 bg-gray-200 rounded-full overflow-hidden dark:bg-gray-700 mt-4">
+                                            <div class="flex flex-col justify-center overflow-hidden bg-primary"
+                                                role="progressbar" style="width: 46%" aria-valuenow="46" aria-valuemin="0"
+                                                aria-valuemax="100"></div>
+                                        </div>
+                                        <p class="text-gray-500 mt-4 text-xs">{pageDataInfo()}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="w-full">
-                            <div class="grid 2xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-6">
-                                <div class="2xl:col-span-4 sm:col-span-2">
-                                    {
-                                        error().length == 0 ? <div></div> :
-                                            <>
+                            <div class="w-full">
+                                <div class="grid 2xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-6">
+                                    <div class="2xl:col-span-4 sm:col-span-2">
+                                        {
+                                            error().length == 0 ? <div></div> :
+                                                <>
 
 
-                                                <div id="dismiss-alert"
-                                                    class="bg-red-500 text-sm text-white transition duration-300 bg-danger-50 border border-red-200 rounded-md p-4"
-                                                    role="alert">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="flex-shrink-0">
-                                                            <i class="mgc_-badge-check text-xl"></i>
-                                                        </div>
-                                                        <div class="flex-grow">
-                                                            <div class="text-sm text-white-800 font-medium">
-                                                                {error()}
-
+                                                    <div id="dismiss-alert"
+                                                        class="bg-red-500 text-sm text-white transition duration-300 bg-danger-50 border border-red-200 rounded-md p-4"
+                                                        role="alert">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="flex-shrink-0">
+                                                                <i class="mgc_-badge-check text-xl"></i>
                                                             </div>
-                                                        </div>
-                                                        <button onClick={(e) => {
-                                                            setError("");
-                                                            setSelectedFileForUpload(null)
-                                                        }} data-fc-dismiss="dismiss-alert" type="button"
-                                                            id="dismiss-test"
-                                                            class="ms-auto h-8 w-8 rounded-full bg-white-400 flex justify-center items-center">
-                                                            {/*<i class="mgc_close_line text-xl"></i>*/}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16"
-                                                                height="16" fill="currentColor" class="bi bi-x"
-                                                                viewBox="0 0 16 16">
-                                                                <path
-                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <br />
-                                            </>
-                                    }
+                                                            <div class="flex-grow">
+                                                                <div class="text-sm text-white-800 font-medium">
+                                                                    {error()}
 
-                                    {
-                                        success().length == 0 ? <div></div> :
-                                            <>
-
-
-                                                <div id="dismiss-alert"
-                                                    class="bg-green-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
-                                                    role="alert">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="flex-shrink-0">
-                                                            <i class="mgc_-badge-check text-xl"></i>
-                                                        </div>
-                                                        <div class="flex-grow">
-                                                            <div class="text-sm text-teal-800 font-medium">
-                                                                {success()}
-
+                                                                </div>
                                                             </div>
+                                                            <button onClick={(e) => {
+                                                                setError("");
+                                                                setSelectedFileForUpload(null)
+                                                            }} data-fc-dismiss="dismiss-alert" type="button"
+                                                                id="dismiss-test"
+                                                                class="ms-auto h-8 w-8 rounded-full bg-white-400 flex justify-center items-center">
+                                                                {/*<i class="mgc_close_line text-xl"></i>*/}
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                                                    height="16" fill="currentColor" class="bi bi-x"
+                                                                    viewBox="0 0 16 16">
+                                                                    <path
+                                                                        d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
+                                                                </svg>
+                                                            </button>
                                                         </div>
-                                                        <button onClick={(e) => {
-                                                            setSuccess("");
-                                                            setSelectedFileForUpload(null)
-                                                        }} data-fc-dismiss="dismiss-alert" type="button"
-                                                            id="dismiss-test"
-                                                            class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
-                                                            {/*<i class="mgc_close_line text-xl"></i>*/}
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16"
-                                                                height="16" fill="currentColor" class="bi bi-x"
-                                                                viewBox="0 0 16 16">
-                                                                <path
-                                                                    d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
-                                                            </svg>
-                                                        </button>
                                                     </div>
-                                                </div>
-                                                <br />
-                                            </>
-                                    }
+                                                    <br />
+                                                </>
+                                        }
 
-                                    <div class="flex items-center justify-between gap-4">
-                                        <div class="lg:hidden block">
-                                            <button data-fc-target="default-offcanvas" data-fc-type="offcanvas"
-                                                class="inline-flex items-center justify-center text-gray-700 border border-gray-300 rounded shadow hover:bg-slate-100 dark:text-gray-400 hover:dark:bg-gray-800 dark:border-gray-700 transition h-9 w-9 duration-100">
-                                                <div class="mgc_menu_line text-lg"></div>
-                                            </button>
+                                        {
+                                            success().length == 0 ? <div></div> :
+                                                <>
+
+
+                                                    <div id="dismiss-alert"
+                                                        class="bg-green-500 text-sm text-white transition duration-300 bg-teal-50 border border-teal-200 rounded-md p-4"
+                                                        role="alert">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="flex-shrink-0">
+                                                                <i class="mgc_-badge-check text-xl"></i>
+                                                            </div>
+                                                            <div class="flex-grow">
+                                                                <div class="text-sm text-teal-800 font-medium">
+                                                                    {success()}
+
+                                                                </div>
+                                                            </div>
+                                                            <button onClick={(e) => {
+                                                                setSuccess("");
+                                                                setSelectedFileForUpload(null)
+                                                            }} data-fc-dismiss="dismiss-alert" type="button"
+                                                                id="dismiss-test"
+                                                                class="ms-auto h-8 w-8 rounded-full bg-gray-200 flex justify-center items-center">
+                                                                {/*<i class="mgc_close_line text-xl"></i>*/}
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16"
+                                                                    height="16" fill="currentColor" class="bi bi-x"
+                                                                    viewBox="0 0 16 16">
+                                                                    <path
+                                                                        d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <br />
+                                                </>
+                                        }
+
+                                        <div class="flex items-center justify-between gap-4">
+                                            <div class="lg:hidden block">
+                                                <button data-fc-target="default-offcanvas" data-fc-type="offcanvas"
+                                                    class="inline-flex items-center justify-center text-gray-700 border border-gray-300 rounded shadow hover:bg-slate-100 dark:text-gray-400 hover:dark:bg-gray-800 dark:border-gray-700 transition h-9 w-9 duration-100">
+                                                    <div class="mgc_menu_line text-lg"></div>
+                                                </button>
+                                            </div>
+
+
+                                            <h4 class="text-xl">Folders</h4>
                                         </div>
-
-
-                                        <h4 class="text-xl">Folders</h4>
-
-                                        <form class="ms-auto">
-
-
-                                            {
-                                                metaMaskAddress() == null ?
-                                                    <button onClick={(e) => {
-                                                        signAndConnect()
-                                                    }} data-fc-type="dropdown" data-fc-placement="bottom"
-                                                        type="button"
-                                                        class="btn inline-flex justify-center items-center bg-info text-white w-full mt-4">
-                                                        <i class="mgc_add_line text-lg me-2"></i> Sign in with MetaMask
-                                                    </button> : <label>{metaMaskAddress()}</label>
-                                            }
-
-                                        </form>
                                     </div>
-                                </div>
 
-                                {showFileTypesCards()}
+                                    {showFileTypesCards()}
 
 
-                                <div class="2xl:col-span-4 sm:col-span-2">
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-300">Files</h4>
-                                        </div>
+                                    <div class="2xl:col-span-4 sm:col-span-2">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h4 class="text-lg font-semibold text-gray-800 dark:text-gray-300">Files</h4>
+                                            </div>
 
-                                        <div class="flex flex-col">
-                                            <div class="overflow-x-auto">
-                                                <div class="inline-block min-w-full align-middle">
-                                                    <div class="overflow-hidden">
-                                                        <table
-                                                            class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                                                            <thead class="bg-gray-50 dark:bg-gray-700">
-                                                                <tr class="text-gray-800 dark:text-gray-300">
-                                                                    <th scope="col"
-                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">File
-                                                                        Name
-                                                                    </th>
-                                                                    <th scope="col"
-                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">
-                                                                        Type
-                                                                    </th>
-                                                                    <th scope="col"
-                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">Uploaded
-                                                                        At
-                                                                    </th>
-                                                                    <th scope="col"
-                                                                        class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">File
-                                                                        Size
-                                                                    </th>
-                                                                    {/* <th scope="col"
+                                            <div class="flex flex-col">
+                                                <div class="overflow-x-auto">
+                                                    <div class="inline-block min-w-full align-middle">
+                                                        <div class="overflow-hidden">
+                                                            <table
+                                                                class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                                                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                                                    <tr class="text-gray-800 dark:text-gray-300">
+                                                                        <th scope="col"
+                                                                            class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">File
+                                                                            Name
+                                                                        </th>
+                                                                        <th scope="col"
+                                                                            class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">
+                                                                            Type
+                                                                        </th>
+                                                                        <th scope="col"
+                                                                            class="p-3.5 text-sm text-start font-semibold min-w-[10rem]">Uploaded
+                                                                            At
+                                                                        </th>
+                                                                        <th scope="col"
+                                                                            class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">File
+                                                                            Size
+                                                                        </th>
+                                                                        {/* <th scope="col"
                                                                         class="p-3.5 text-sm text-start font-semibold min-w-[8rem]">Owner
                                                                     </th> */}
-                                                                    {/*<th scope="col"*/}
-                                                                    {/*    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members*/}
-                                                                    {/*</th>*/}
-                                                                    <th scope="col"
-                                                                        class="p-3.5 text-sm text-start font-semibold">Action
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody
-                                                                class="divide-y divide-gray-200 dark:divide-gray-600">
+                                                                        {/*<th scope="col"*/}
+                                                                        {/*    class="p-3.5 text-sm text-start font-semibold min-w-[6rem]">Members*/}
+                                                                        {/*</th>*/}
+                                                                        <th scope="col"
+                                                                            class="p-3.5 text-sm text-start font-semibold">Action
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody
+                                                                    class="divide-y divide-gray-200 dark:divide-gray-600">
 
-                                                                <For each={appState.filesFromApi}>
-                                                                    {(item, index) =>
-                                                                        <>
-                                                                            {fileListDisplay(item)}
-                                                                        </>
-                                                                    }
+                                                                    <For each={appState.filesFromApi}>
+                                                                        {(item, index) =>
+                                                                            <>
+                                                                                {fileListDisplay(item)}
+                                                                            </>
+                                                                        }
 
-                                                                </For>
+                                                                    </For>
 
 
-                                                            </tbody>
-                                                        </table>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -781,26 +739,26 @@ const HomePage: Component = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </main>
+                    </main>
 
-                {/*   <!-- Footer Start  --> */}
-                <footer class="footer h-16 flex items-center px-6 bg-white shadow dark:bg-gray-800">
-                    <div class="flex justify-center w-full gap-4">
-                        <div>
-                            {/*<script>document.write(new Date().getFullYear())</script> © Konrix - <a href="https://coderthemes.com/" target="_blank">Coderthemes</a>*/}
+                    {/*   <!-- Footer Start  --> */}
+                    <footer class="footer h-16 flex items-center px-6 bg-white shadow dark:bg-gray-800">
+                        <div class="flex justify-center w-full gap-4">
+                            <div>
+                                {/*<script>document.write(new Date().getFullYear())</script> © Konrix - <a href="https://coderthemes.com/" target="_blank">Coderthemes</a>*/}
+                            </div>
                         </div>
-                    </div>
-                </footer>
-                {/*   <!-- Footer End  --> */}
+                    </footer>
+                    {/*   <!-- Footer End  --> */}
+
+                </div>
+
+                {/*    <!-- ==============================================================  --> */}
+                {/*   <!-- End Page content  --> */}
+                {/*   <!-- ==============================================================  --> */}
 
             </div>
-
-            {/*    <!-- ==============================================================  --> */}
-            {/*   <!-- End Page content  --> */}
-            {/*   <!-- ==============================================================  --> */}
-
-        </div>
+        </>
     );
 };
 
