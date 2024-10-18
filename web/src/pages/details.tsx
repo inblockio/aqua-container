@@ -89,9 +89,7 @@ const DetailsPage: Component = () => {
     }
     const filePreviewView = () => {
 
-
         const fileTypeInfo = fileType(appState.selectedFileFromApi!!);
-
 
         if (filePageData() && filePageData()?.pages != null && filePageData()?.pages.length > 0) {
             const firstPage = filePageData()!.pages[0]; // Get the first page

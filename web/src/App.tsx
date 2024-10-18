@@ -3,6 +3,7 @@ import type {Component} from 'solid-js';
 import HomePage from "./pages/home";
 import DetailsPage from "./pages/details"
 import {Route} from "@solidjs/router";
+import ConfigsPage from './pages/configuration';
 
 declare global {
     interface Window {
@@ -17,6 +18,7 @@ const App: Component = () => {
 
     return (
      <>
+         <Route path="/configuration" component={ConfigsPage}/>
          <Route path="/details" component={DetailsPage}/>
          <Route path="/" component={HomePage}/>
          <Route path="*" component={HomePage}/>
