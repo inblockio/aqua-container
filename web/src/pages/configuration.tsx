@@ -68,17 +68,23 @@ const ConfigsPage: Component = () => {
                             <div class="flex flex-col gap-3">
                                 <div class="">
                                     <label for="project-name" class="mb-2 block">Domain Name</label>
-                                    <input type="email" id="project-name" class="form-input" placeholder="Enter Title" aria-describedby="input-helper-text" />
+                                    <input type="email" 
+                                    id="project-name" 
+                                    class="form-input" 
+                                    placeholder="Enter Title"
+                                     value={domain()} onChange={(e)=>{setDomain(e.target.value)}} aria-describedby="input-helper-text" />
                                 </div>
 
 
                                 <div>
                                     <label for="select-label" class="mb-2 block">Selet chain</label>
-                                    <select id="select-label" class="form-select">
+                                    <select id="select-label" class="form-select" 
+                                     value={chainUsed()}
+                                    onChange={(e) => setChainUsed(e.target.value)}>
                                         <option selected>Open this select menu</option>
-                                        <option>Sepolia</option>
-                                        <option>Mainnet</option>
-                                        <option>Holesky</option>
+                                        <option value="sepolia">Sepolia</option>
+                                        <option value="mainnet">Mainnet</option>
+                                        <option value="holesky">Holesky</option>
                                     </select>
                                 </div>
                             </div>
