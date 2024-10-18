@@ -80,8 +80,14 @@ impl IntoResponse for UploadError {
 
 pub async fn fetch_explorer_files(
     State(server_database): State<Db>,
-) -> (StatusCode, Json<Vec<FileInfo>>) {
+) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("fetch_explorer_files");
+    let mut log_data : Vec<String> = Vec::new();
+    let mut res : ApiResponse = ApiResponse {
+        logs: log_data,
+        file: None,
+        files: Vec::new()
+    };
 
     // Initialize an empty Vec to hold the result
     let mut pages: Vec<FileInfo> = Vec::new();
@@ -105,15 +111,19 @@ pub async fn fetch_explorer_files(
             }
 
             if pages.is_empty() {
-                return (StatusCode::NOT_FOUND, Json::from(pages));
+                res.logs.push("No pages found".to_string());
+                return (StatusCode::NOT_FOUND, Json::from(res));
             }
 
+            res.files = pages;
             // Return the populated list of pages
-            (StatusCode::OK, Json(pages))
+            (StatusCode::OK, Json::from(res))
         }
         Err(e) => {
             tracing::error!("Failed to fetch records: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json::from(pages))
+            res.logs.push(format!("Error: Failed to fetch records: {:?}", e));
+            res.files = pages;
+            (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
         }
     }
 }
@@ -121,17 +131,24 @@ pub async fn fetch_explorer_files(
 pub async fn explorer_file_verify_hash_upload(
     State(server_database): State<Db>,
     mut multipart: Multipart,
-) -> (StatusCode, Json<Option<String>>) {
+) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_file_verify_hash_upload fn");
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res : ApiResponse = ApiResponse {
+        logs: log_data,
+        file: None,
+        files: Vec::new()
+    };
 
     while let Ok(Some(field)) = multipart.next_field().await {
         let name = match field.name() {
             Some(name) => name.to_string(),
             None => {
                 tracing::error!("Field name missing");
+                res.logs.push("Field name missing".to_string());
                 return (
                     StatusCode::BAD_REQUEST,
-                    Json(Some("Field missing".to_string())),
+                    Json(res),
                 );
             }
         };
@@ -147,9 +164,10 @@ pub async fn explorer_file_verify_hash_upload(
                     != Some("json")
                 {
                     tracing::error!("Uploaded file is not a JSON file");
+                    res.logs.push("Error: Uploaded file is not a JSON file".to_string());
                     return (
                         StatusCode::BAD_REQUEST,
-                        Json(Some("File not JSON".to_string())),
+                        Json(res),
                     );
                 }
 
@@ -158,9 +176,10 @@ pub async fn explorer_file_verify_hash_upload(
                     Ok(data) => data,
                     Err(e) => {
                         tracing::error!("Failed to read file data: {:?}", e);
+                        res.logs.push(format!("Error: Failed to read file data: {:?}", e));
                         return (
                             StatusCode::BAD_REQUEST,
-                            Json(Some("JSON broken".to_string())),
+                            Json(res),
                         );
                     }
                 };
@@ -222,9 +241,10 @@ pub async fn explorer_file_verify_hash_upload(
                                 }
                                 Err(err) => {
                                     tracing::error!("Error compute_content_hash {} ", err);
+                                    res.logs.push("AQUA Chain valid".to_string());
                                     return (
                                         StatusCode::OK,
-                                        Json(Some("AQUA Chain valid".to_string())),
+                                        Json(res),
                                     );
                                 }
                             }
@@ -232,17 +252,20 @@ pub async fn explorer_file_verify_hash_upload(
                         tracing::error!("Loop ends");
                         return if matches {
                             tracing::error!("Returning true");
-                            (StatusCode::OK, Json(Some("AQUA Chain valid".to_string())))
+                            res.logs.push("AQUA Chain valid".to_string());
+                            (StatusCode::OK, Json(res))
                         } else {
                             tracing::error!("Returning false");
-                            (StatusCode::BAD_REQUEST, Json(Some(failure_reason)))
+                            res.logs.push(failure_reason);
+                            (StatusCode::BAD_REQUEST, Json(res))
                         };
                     }
                     Err(e) => {
                         tracing::error!("Failed to parse JSON: {:?}", e);
+                        res.logs.push(format!("Failed to parse JSON: {:?}", e));
                         return (
                             StatusCode::BAD_REQUEST,
-                            Json(Some("Failed to parse JSON".to_string())),
+                            Json(res),
                         );
                     }
                 }
@@ -252,14 +275,21 @@ pub async fn explorer_file_verify_hash_upload(
     }
 
     // Return an error if no file was found
-    (StatusCode::BAD_REQUEST, Json(None))
+    (StatusCode::BAD_REQUEST, Json(res))
 }
 
 pub async fn explorer_file_upload(
     State(server_database): State<Db>,
     mut multipart: Multipart,
-) -> (StatusCode, Json<Option<FileInfo>>) {
+) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_file_upload fn");
+
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res : ApiResponse = ApiResponse {
+        logs: log_data,
+        file: None,
+        files: Vec::new()
+    };
 
     let mut account = None;
     let mut file_info = None;
@@ -271,7 +301,8 @@ pub async fn explorer_file_upload(
             Ok(None) => break,
             Err(e) => {
                 tracing::error!("Multipart error: {}", e);
-                return (StatusCode::BAD_REQUEST, Json(None));
+                res.logs.push(format!("Multipart error: {}", e));
+                return (StatusCode::BAD_REQUEST, Json(res));
             }
         };
 
@@ -279,7 +310,8 @@ pub async fn explorer_file_upload(
             Some(name) => name.to_string(),
             None => {
                 tracing::error!("Field name missing");
-                return (StatusCode::BAD_REQUEST, Json(None));
+                res.logs.push("Field name missing".to_string());
+                return (StatusCode::BAD_REQUEST, Json(res));
             }
         };
 
@@ -290,7 +322,8 @@ pub async fn explorer_file_upload(
                     Ok(text) => Some(text),
                     Err(e) => {
                         tracing::error!("Failed to read account field: {}", e);
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        res.logs.push(format!("Failed to read account field: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
             }
@@ -299,21 +332,24 @@ pub async fn explorer_file_upload(
                     Some(name) => name.to_string(),
                     None => {
                         tracing::error!("File name missing");
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        res.logs.push("File name missing".to_string());
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
                 let content_type = match field.content_type() {
                     Some(ct) => ct.to_string(),
                     None => {
                         tracing::error!("Content type missing");
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        res.logs.push("Content type missing".to_string());
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
                 let body_bytes = match field.bytes().await {
                     Ok(bytes) => bytes.to_vec(),
                     Err(e) => {
                         tracing::error!("Failed to read file bytes: {}", e);
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        res.logs.push(format!("Failed to read file bytes: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
 
@@ -321,13 +357,15 @@ pub async fn explorer_file_upload(
                     Ok(size) => size,
                     Err(_) => {
                         tracing::error!("File size exceeds u32::MAX");
-                        return (StatusCode::BAD_REQUEST, Json(None));
+                        res.logs.push("File size exceeds u32::MAX".to_string());
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
 
                 if file_size > MAX_FILE_SIZE {
                     tracing::error!("File size {} exceeds maximum allowed size", file_size);
-                    return (StatusCode::BAD_REQUEST, Json(None));
+                    res.logs.push(format!("File size {} exceeds maximum allowed size", file_size));
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
 
                 file_info = Some((file_name, content_type, body_bytes, file_size));
@@ -343,14 +381,16 @@ pub async fn explorer_file_upload(
         Some(acc) => acc,
         None => {
             tracing::error!("Account information missing");
-            return (StatusCode::BAD_REQUEST, Json(None));
+            res.logs.push("Account information missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
         }
     };
     let (file_name, content_type, body_bytes, file_size) = match file_info {
         Some(info) => info,
         None => {
             tracing::error!("File information missing");
-            return (StatusCode::BAD_REQUEST, Json(None));
+            res.logs.push("File information missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
         }
     };
 
@@ -428,7 +468,8 @@ pub async fn explorer_file_upload(
         Ok(json) => json,
         Err(e) => {
             tracing::error!("Failed to serialize page data: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+            res.logs.push(format!("Failed to serialize page data: {}", e));
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
@@ -453,11 +494,13 @@ pub async fn explorer_file_upload(
                 extension: content_type,
                 page_data: json_string,
             };
-            (StatusCode::CREATED, Json(Some(file_info)))
+            res.file = Some(file_info);
+            (StatusCode::CREATED, Json(res))
         }
         Err(e) => {
             tracing::error!("Failed to insert page: {}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+            res.logs.push(format!("Failed to insert page: {}", e));
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }
     }
 }
@@ -477,6 +520,7 @@ pub async fn explorer_sign_revision(
         let res : ApiResponse = ApiResponse {
             logs: log_data,
             file: None,
+            files: Vec::new()
         };
         return (StatusCode::BAD_REQUEST, Json(res));
     };
@@ -504,6 +548,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -532,6 +577,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -550,6 +596,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -568,6 +615,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -618,6 +666,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
 
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
@@ -645,6 +694,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: Some(file_info),
+                        files: Vec::new()
                     };
                     (StatusCode::OK, Json(res))
                 }
@@ -655,6 +705,7 @@ pub async fn explorer_sign_revision(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
                     (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
                 }
@@ -669,6 +720,7 @@ pub async fn explorer_sign_revision(
             let res : ApiResponse = ApiResponse {
                 logs: log_data,
                 file: None,
+                files: Vec::new()
             };
             (StatusCode::NOT_FOUND, Json(res))
         },
@@ -681,6 +733,7 @@ pub async fn explorer_sign_revision(
             let res : ApiResponse = ApiResponse {
                 logs: log_data,
                 file: None,
+                files: Vec::new()
             };
 
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
@@ -704,6 +757,7 @@ pub async fn explorer_delete_file(
         let res : ApiResponse = ApiResponse {
             logs: log_data,
             file: None,
+            files: Vec::new()
         };
         return (StatusCode::BAD_REQUEST, Json(res));
     };
@@ -722,6 +776,7 @@ pub async fn explorer_delete_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
                     return (StatusCode::OK, Json(res));
                 } else {
@@ -731,6 +786,7 @@ pub async fn explorer_delete_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
                     return (StatusCode::NOT_FOUND, Json(res));
                 }
@@ -741,6 +797,7 @@ pub async fn explorer_delete_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
                 (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
             }
@@ -764,6 +821,7 @@ pub async fn explorer_witness_file(
         let res : ApiResponse = ApiResponse {
             logs: log_data,
             file: None,
+            files: Vec::new()
         };
         return (StatusCode::BAD_REQUEST, Json(res));
     };
@@ -802,6 +860,7 @@ pub async fn explorer_witness_file(
                    let res : ApiResponse = ApiResponse {
                     logs: log_data,
                     file: None,
+                    files: Vec::new()
                 };
 
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
@@ -825,6 +884,7 @@ pub async fn explorer_witness_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
+                        files: Vec::new()
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -843,6 +903,7 @@ pub async fn explorer_witness_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data ,
                         file: None,
+                        files: Vec::new()
                     };
                     return (StatusCode::BAD_REQUEST, Json(res));
                 }
@@ -947,6 +1008,7 @@ pub async fn explorer_witness_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data ,
                         file: None,
+                        files: Vec::new()
                     };
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -974,6 +1036,7 @@ pub async fn explorer_witness_file(
                    let res : ApiResponse =  ApiResponse{
                     logs: log_data ,
                     file: Some(file_info),
+                    files: Vec::new()
                 };
                     (StatusCode::OK, Json(res))
                 }
@@ -984,6 +1047,7 @@ pub async fn explorer_witness_file(
                     let res : ApiResponse = ApiResponse {
                         logs: log_data ,
                         file: None,
+                        files: Vec::new()
                     };
                     (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
                 }
@@ -997,6 +1061,7 @@ pub async fn explorer_witness_file(
             let res : ApiResponse = ApiResponse {
                 logs: log_data ,
                 file: None,
+                files: Vec::new()
             };
             (StatusCode::NOT_FOUND, Json(res))
         },
@@ -1008,6 +1073,7 @@ pub async fn explorer_witness_file(
             let res : ApiResponse = ApiResponse {
                 logs: log_data ,
                 file: None,
+                files: Vec::new()
             };
             
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))

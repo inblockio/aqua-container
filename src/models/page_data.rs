@@ -11,6 +11,7 @@ pub struct PageDataContainer {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiResponse {
     pub logs :  Vec<String>,
-    pub file :  Option<FileInfo>
+    pub file :  Option<FileInfo>,
+    pub files : Vec<FileInfo>,
 }
 
