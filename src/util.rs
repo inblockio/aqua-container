@@ -35,7 +35,16 @@ pub async fn db_set_up() -> Pool<Sqlite> {
 pub fn check_or_generate_domain() {
     // Check if API_DOMAIN is set
     let api_domain = env::var("API_DOMAIN").unwrap_or_default();
+    let chain = env::var("CHAIN").unwrap_or_default();
 
+    if chain.is_empty() {
+        // Update the .env file with the new API_DOMAIN
+        if let Err(e) = update_env_file("CHAIN", "sepolia") {
+            println!("Failed to update .env file: {}", e);
+        }
+    }else {
+        println!("chain is set: {}", chain);
+    }
     if api_domain.is_empty() {
         println!("API_DOMAIN is empty, generating a random one...");
 
@@ -46,18 +55,7 @@ pub fn check_or_generate_domain() {
             .map(char::from)
             .collect();
 
-        // //Generate a random private key
-        // let mut rng =  thread_rng();
-        // let wallet = LocalWallet::new(&mut rng);
-        //
-        // // Get the wallet's address
-        // let address = wallet.address();
-        // let private_key = wallet.signer().to_string();
-        //
-        // // Output the wallet details
-        // println!("Wallet Address: {:?}", address);
-        // println!("Private Key: {:?}", private_key);
-
+       
         println!("Generated API_DOMAIN: {:?}", random_domain);
 
         // Update the .env file with the new API_DOMAIN
@@ -70,7 +68,7 @@ pub fn check_or_generate_domain() {
 }
 
 // Function to update the .env file with the new API_DOMAIN
-fn update_env_file(key: &str, value: &str) -> std::io::Result<()> {
+pub fn update_env_file(key: &str, value: &str) -> std::io::Result<()> {
     // Read the existing .env file contents
     let mut env_content = std::fs::read_to_string(".env").unwrap_or_default();
 

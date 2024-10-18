@@ -10,7 +10,7 @@ use axum::{
 use ethaddr::address;
 use chrono::{DateTime, NaiveDateTime, Utc};
 use ethers::core::k256::sha2::Sha256;
-use crate::models::input::{RevisionInput, WitnessInput, DeleteInput};
+use crate::models::input::{RevisionInput, WitnessInput, DeleteInput, UpdateConfigurationInput};
 use crate::models::page_data::{PageDataContainer, ApiResponse};
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
@@ -19,6 +19,7 @@ use crate::util::{
      compute_content_hash, 
      db_set_up,
      make_empty_hash,
+     update_env_file
 };
 use crate::Db;
 use axum::response::{IntoResponse, Response};
@@ -42,6 +43,8 @@ use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 use verifier::v1_1::hashes::*;
+use std::collections::HashMap;
+use std::env;
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 #[derive(Debug)]
@@ -509,7 +512,7 @@ pub async fn explorer_file_upload(
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
-) -> (StatusCode, Json<ApiResponse>) { //Option<FileInfo>
+) -> (StatusCode, Json<ApiResponse>) {
     let mut log_data : Vec<String> = Vec::new();
 
     tracing::debug!("explorer_sign_revision");
@@ -742,6 +745,55 @@ pub async fn explorer_sign_revision(
 }
 
 
+pub async fn explorer_delete_all_files(
+    State(server_database): State<Db>,
+) -> (StatusCode, Json<ApiResponse>) {
+
+    let mut log_data : Vec<String> = Vec::new();
+
+    let result = sqlx::query!("DELETE FROM pages ", )
+        .execute(& server_database.sqliteDb)
+        .await;
+
+        match result {
+            Ok(result_data) => {
+                   // Check the number of affected rows
+                if result_data.rows_affected() > 0 {
+                    tracing::error!("Successfully deleted all the row with name");
+                    log_data.push("Error : files data is deleted ".to_string());
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                        files: Vec::new()
+                    };
+                    return (StatusCode::OK, Json(res));
+                } else {
+                    tracing::error!("Error : No row deleted");
+
+                    log_data.push("Error : No data deleted".to_string());
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                        files: Vec::new()
+                    };
+                    return (StatusCode::OK, Json(res));
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to delete page data: {:?}", e);
+                log_data.push(format!("Error occurred {}", e));
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                        files: Vec::new()
+                    };
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+            }
+        }
+
+
+}
+
 pub async fn explorer_delete_file(
     State(server_database): State<Db>,
     Form(input): Form<DeleteInput>,
@@ -806,6 +858,8 @@ pub async fn explorer_delete_file(
 
 
 }
+
+
 pub async fn explorer_witness_file(
     State(server_database): State<Db>,
     Form(input): Form<WitnessInput>,
@@ -1079,4 +1133,51 @@ pub async fn explorer_witness_file(
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }
     }
+}
+
+
+
+pub async fn explorer_fetch_configuration(
+    State(server_database): State<Db>,
+) -> (StatusCode, Json<HashMap<String, String>>) {
+    let mut config_data = HashMap::new();
+
+    tracing::debug!("explorer_sign_revision");
+
+    let api_domain = env::var("API_DOMAIN").unwrap_or_default();
+    let chain = env::var("CHAIN").unwrap_or_default();
+
+    config_data.insert("chain".to_string(), chain);
+    config_data.insert("domain".to_string(), api_domain);
+
+    return (StatusCode::OK, Json(config_data));
+}
+
+pub async fn explorer_update_configuration(
+    State(server_database): State<Db>,
+    Form(input): Form<UpdateConfigurationInput>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let mut log_data : Vec<String> = Vec::new();
+
+    // Log the input
+    log_data.push(format!("Updating configuration with chain: {} and domain: {}", input.chain, input.domain));
+
+    // Update the .env file with the new chain and domain
+    if let Err(e) = update_env_file("CHAIN", &input.chain) {
+        log_data.push(format!("Failed to update CHAIN in .env file: {}", e));
+    }
+
+    if let Err(e) = update_env_file("API_DOMAIN", &input.domain) {
+        log_data.push(format!("Failed to update API_DOMAIN in .env file: {}", e));
+    }
+
+    // Prepare the response
+    let res = ApiResponse {
+        logs: log_data,
+        file: None,
+        files: Vec::new()
+    };
+
+    (StatusCode::OK, Json(res))
+
 }

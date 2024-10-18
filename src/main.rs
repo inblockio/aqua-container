@@ -39,7 +39,7 @@ use serde_json::json;
 use verifier::v1_1::hashes::*;
 use crate::util::{check_or_generate_domain, db_set_up};
 use controllers::form_controller::{show_form, save_request_body, save_json_file, get_verification_hash_for_file, add_signature_hash_for_file };
-use  controllers::api_controller::{fetch_explorer_files, explorer_file_upload, explorer_sign_revision, explorer_witness_file, explorer_delete_file};
+use  controllers::api_controller::{fetch_explorer_files, explorer_file_upload, explorer_sign_revision, explorer_witness_file, explorer_delete_file,  explorer_delete_all_files, explorer_fetch_configuration, explorer_update_configuration};
 use crate::controllers::api_controller::explorer_file_verify_hash_upload;
 
 const UPLOADS_DIRECTORY: &str = "uploads";
@@ -96,6 +96,9 @@ async fn main() {
         .route("/explorer_sign_revision", post(explorer_sign_revision))
         .route("/explorer_witness_file", post(explorer_witness_file))
         .route("/explorer_delete_file", post(explorer_delete_file))
+        .route("/explorer_delete_all_files", get(explorer_delete_all_files))
+        .route("/explorer_fetch_configuration", get(explorer_fetch_configuration))
+        .route("/explorer_update_configuration", post(explorer_update_configuration))
 
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
