@@ -172,3 +172,16 @@ export class DateFormatter {
         return date.toLocaleString('en-US', formatOptions[format]);
     }
 }
+
+
+export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
+    if(!address) return "NO ADDRESS"
+    if (address?.length < (start + end)) {
+        // throw new Error(`Address must be at least ${start + end} characters long.`);
+        return address
+    }
+
+    const firstPart = address?.slice(0, start);
+    const lastPart = address?.slice(-end);
+    return `${firstPart}...${lastPart}`;
+}

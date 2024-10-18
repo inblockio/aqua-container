@@ -81,11 +81,6 @@ const ConfigsPage: Component = () => {
                                         <option>Holesky</option>
                                     </select>
                                 </div>
-
-                                <div>
-                                    <label for="budget" class="mb-2 block">Budget</label>
-                                    <input type="text" id="budget" class="form-input" placeholder="Enter Project Budget"></input>
-                                </div>
                             </div>
 
                             <div class="lg:col-span-4 mt-5">
