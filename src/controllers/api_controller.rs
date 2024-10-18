@@ -1136,7 +1136,6 @@ pub async fn explorer_witness_file(
 }
 
 
-
 pub async fn explorer_fetch_configuration(
     State(server_database): State<Db>,
 ) -> (StatusCode, Json<HashMap<String, String>>) {
@@ -1152,6 +1151,7 @@ pub async fn explorer_fetch_configuration(
 
     return (StatusCode::OK, Json(config_data));
 }
+
 
 pub async fn explorer_update_configuration(
     State(server_database): State<Db>,
