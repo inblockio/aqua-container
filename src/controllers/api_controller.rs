@@ -467,6 +467,8 @@ pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
 ) -> (StatusCode, Json<ApiResponse>) { //Option<FileInfo>
+    let mut log_data : Vec<String> = Vec::new();
+
     tracing::debug!("explorer_sign_revision");
 
     // Get the name parameter from the input
@@ -492,10 +494,18 @@ pub async fn explorer_sign_revision(
         Ok(Some(row)) => {
             // Deserialize page data
             let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
-                Ok(data) => data,
+                Ok(data) => {
+                    log_data.push("Success  : parse page data".to_string());
+                    data
+                },
                 Err(e) => {
                     tracing::error!("Failed to parse page data record: {:?}", e);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+                    log_data.push(format!("error : Failed to parse page data record: {:?}", e));
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
             };
 
@@ -510,24 +520,57 @@ pub async fn explorer_sign_revision(
 
             // Parse input data with proper error handling
             let sig = match input.signature.parse::<Signature>() {
-                Ok(s) => s,
+                Ok(s) => {
+                
+                    log_data.push("Success :  signature  parse successfully".to_string());
+                    s
+                },
                 Err(e) => {
                     tracing::error!("Failed to parse signature: {:?}", e);
-                    return (StatusCode::BAD_REQUEST, Json(None));
+
+                    log_data.push(format!("error : Failed to parse  signature: {:?}", e));
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
             let pubk = match input.publickey.parse::<PublicKey>() {
-                Ok(p) => p,
+                Ok(p) => {
+                    log_data.push("Success : public  key  parsed successfully".to_string());
+                
+                    p
+                },
                 Err(e) => {
                     tracing::error!("Failed to parse public key: {:?}", e);
-                    return (StatusCode::BAD_REQUEST, Json(None));
+
+                    log_data.push(format!("error : Failed to parse  public key: {:?}", e));
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
             let addr = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
-                Ok(a) => a,
+                Ok(a) => {
+                    log_data.push("wallet address parsed successfully".to_string());
+                    
+                    a
+                },
                 Err(e) => {
                     tracing::error!("Failed to parse wallet address: {:?}", e);
-                    return (StatusCode::BAD_REQUEST, Json(None));
+                    log_data.push(format!("Failed to parse wallet address: {:?}", e));
+                    
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
 
@@ -562,10 +605,22 @@ pub async fn explorer_sign_revision(
 
             // Serialize the updated document
             let page_data_new = match serde_json::to_string(&doc) {
-                Ok(data) => data,
+                Ok(data) => {
+                    log_data.push("revision  serialized  successfully".to_string());
+                    
+                    data
+                },
                 Err(e) => {
                     tracing::error!("Failed to serialize updated page data: {:?}", e);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+
+                    log_data.push(format!("Failed to serialize updated page data : {:?}", e));
+
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
             };
 
@@ -587,18 +642,48 @@ pub async fn explorer_sign_revision(
                         extension: row.extension,
                         page_data: page_data_new,
                     };
-                    (StatusCode::OK, Json(Some(file_info)))
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: Some(file_info),
+                    };
+                    (StatusCode::OK, Json(res))
                 }
                 Err(e) => {
                     tracing::error!("Failed to update page data: {:?}", e);
-                    (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+                    log_data.push(format!("Failed to update page data : {:?}", e));
+
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
                 }
             }
         }
-        Ok(None) => (StatusCode::NOT_FOUND, Json(None)),
+        Ok(None) => {
+
+            tracing::error!("Failed not found ", );
+
+            log_data.push("Failed data not found in database".to_string());
+
+            let res : ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+            };
+            (StatusCode::NOT_FOUND, Json(res))
+        },
         Err(e) => {
             tracing::error!("Failed to fetch record: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+            
+            log_data.push(format!("Failed to fetch record : {:?}", e));
+
+
+            let res : ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+            };
+
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }
     }
 }
