@@ -466,12 +466,17 @@ pub async fn explorer_file_upload(
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
-) -> (StatusCode, Json<Option<FileInfo>>) {
+) -> (StatusCode, Json<ApiResponse>) { //Option<FileInfo>
     tracing::debug!("explorer_sign_revision");
 
     // Get the name parameter from the input
     if input.filename.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(None));
+        log_data.push("Error : file name is empty".to_string());
+        let res : ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+        };
+        return (StatusCode::BAD_REQUEST, Json(res));
     };
 
     // Fetch a single row from the 'pages' table where name matches
@@ -679,8 +684,6 @@ pub async fn explorer_witness_file(
     };
 
     log_data.push("Success : file name is not  empty".to_string());
-
-    
 
     // Fetch a single row from the 'pages' table where name matches
     let row = sqlx::query!(
