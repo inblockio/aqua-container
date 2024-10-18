@@ -8,11 +8,9 @@ use axum::{
     BoxError, Form, Json, Router,
 };
 use ethaddr::address;
-
 use chrono::{DateTime, NaiveDateTime, Utc};
 use ethers::core::k256::sha2::Sha256;
-
-use crate::models::input::{RevisionInput, WitnessInput};
+use crate::models::input::{RevisionInput, WitnessInput, DeleteInput};
 use crate::models::page_data::{PageDataContainer, ApiResponse};
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
@@ -603,10 +601,10 @@ pub async fn explorer_sign_revision(
 
 pub async fn explorer_delete_file(
     State(server_database): State<Db>,
-    Form(input): Form<WitnessInput>,
+    Form(input): Form<DeleteInput>,
 ) -> (StatusCode, Json<ApiResponse>) {
 
-    tracing::debug!("explorer_witness_file");
+    tracing::debug!("explorer_delete_file");
     let mut log_data : Vec<String> = Vec::new();
 
     // Get the name parameter from the input

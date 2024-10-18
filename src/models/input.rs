@@ -16,3 +16,10 @@ pub struct WitnessInput {
     pub tx_hash: String,
     pub wallet_address: String,
 }
+
+#[derive(Deserialize, Serialize, Debug)]
+#[allow(dead_code)]
+pub struct DeleteInput {
+    pub filename: String,
+   
+}
