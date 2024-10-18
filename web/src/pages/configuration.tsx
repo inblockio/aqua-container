@@ -1,6 +1,7 @@
 import { useNavigate } from '@solidjs/router';
 import { Component, createEffect, createSignal, For } from "solid-js";
 import axios from "axios";
+import { API_BASE_ENDPOINT } from '../config/constants';
 
 const ConfigsPage: Component = () => {
 
@@ -10,7 +11,7 @@ const ConfigsPage: Component = () => {
 
     createEffect(async () => {
         //fetch conf
-        const response = await axios.get("http://localhost:3600/explorer_fetch_configuration", {
+        const response = await axios.get(`${API_BASE_ENDPOINT}/explorer_fetch_configuration`, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
@@ -23,7 +24,7 @@ const ConfigsPage: Component = () => {
     })
 
     const deleteAllFiles = async () => {
-        const response = await axios.get("http://localhost:3600/explorer_delete_all_files", {
+        const response = await axios.get(`${API_BASE_ENDPOINT}/explorer_delete_all_files`, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
@@ -40,7 +41,7 @@ const ConfigsPage: Component = () => {
         formData.append('domain', domain());
 
 
-        const response = await axios.post("http://localhost:3600/explorer_update_configuration", formData, {
+        const response = await axios.post(`${API_BASE_ENDPOINT}/explorer_update_configuration`, formData, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }

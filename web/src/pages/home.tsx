@@ -18,6 +18,7 @@ import { useNavigate } from "@solidjs/router";
 import SignFile from '../components/SignFile';
 import WitnessFile from '../components/WitnessFile';
 import MainLayout from '../layout/MainLayout';
+import { API_BASE_ENDPOINT } from '../config/constants';
 
 const HomePage: Component = () => {
 
@@ -480,7 +481,7 @@ const HomePage: Component = () => {
                         const formData = new URLSearchParams();
                         formData.append('filename', file.name);
 
-                        const response = await axios.post("http://localhost:3600/explorer_delete_file", formData, {
+                        const response = await axios.post(`${API_BASE_ENDPOINT}/explorer_delete_file`, formData, {
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }

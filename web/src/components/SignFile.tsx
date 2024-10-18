@@ -2,6 +2,7 @@ import axios from "axios";
 import { ethers } from "ethers";
 import { FileInfo } from "../models/PageData";
 import { appState, setAppState } from "../store/store";
+import { API_BASE_ENDPOINT } from "../config/constants";
 
 interface ISignRevision {
     pageVerificationHash: String
@@ -68,7 +69,7 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
                         formData.append('publickey', publicKey)
                         formData.append('wallet_address', ethers.getAddress(walletAddress));
 
-                        const response = await axios.post("http://localhost:3600/explorer_sign_revision", formData, {
+                        const response = await axios.post(`${API_BASE_ENDPOINT}/explorer_sign_revision`, formData, {
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }

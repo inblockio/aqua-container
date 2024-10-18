@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ethers } from "ethers";
-import { ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
+import { API_BASE_ENDPOINT, ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
 import sha3 from 'js-sha3'
 import { FileInfo } from "../models/FileInfo";
 import { appState, setAppState } from "../store/store";
@@ -15,7 +15,7 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
 
 
 
-    let response = await axios.post("http://localhost:3600/explorer_witness_file", formData, {
+    let response = await axios.post(`${API_BASE_ENDPOINT}/explorer_witness_file`, formData, {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
