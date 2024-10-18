@@ -23,3 +23,13 @@ pub struct DeleteInput {
     pub filename: String,
    
 }
+
+
+
+#[derive(Deserialize, Serialize, Debug)]
+#[allow(dead_code)]
+pub struct UpdateConfigurationInput {
+    pub chain: String,
+    pub domain: String,
+   
+}
