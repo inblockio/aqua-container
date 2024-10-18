@@ -1,6 +1,55 @@
-import type { Component } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
+import { Component, createEffect, createSignal, For } from "solid-js";
+import axios from "axios";
 
 const ConfigsPage: Component = () => {
+
+    const navigate = useNavigate();
+    const [chainUsed, setChainUsed] = createSignal<string>("");
+    const [domain, setDomain] = createSignal<string>("");
+
+    createEffect(async () => {
+        //fetch conf
+        const response = await axios.get("http://localhost:3600/explorer_fetch_configuration", {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        if (response.status === 200) {
+            setChainUsed(response.data.chain)
+            setDomain(response.data.domain)
+        }
+    })
+
+    const deleteAllFiles = async () => {
+        const response = await axios.get("http://localhost:3600/explorer_delete_all_files", {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        if (response.status === 200) {
+            alert("All files deleted")
+        }
+    }
+
+    const updateConfiguration = async () => {
+        const formData = new URLSearchParams();
+        formData.append('chain', chainUsed());
+        formData.append('domain', domain());
+
+
+        const response = await axios.post("http://localhost:3600/explorer_update_configuration", formData, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        if (response.status === 200) {
+            alert("Configuration update success")
+        }
+    }
 
     return (
         <>
@@ -41,8 +90,11 @@ const ConfigsPage: Component = () => {
 
                             <div class="lg:col-span-4 mt-5">
                                 <div class="flex justify-end gap-3">
-                                    
-                                    <button type="button" class="inline-flex items-center rounded-md border border-transparent bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-500 focus:outline-none">
+
+                                    <button onClick={(e) => {
+                                        e.preventDefault();
+                                        updateConfiguration();
+                                    }} type="button" class="inline-flex items-center rounded-md border border-transparent bg-green-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-500 focus:outline-none">
                                         Save
                                     </button>
                                 </div>
@@ -52,10 +104,12 @@ const ConfigsPage: Component = () => {
                         <div class="card p-6">
                             <div class="flex justify-between items-center mb-4">
                                 <p class="card-title">Delete all  Data</p>
-                               
+
                                 <div class="lg:col-span-4 mt-5">
                                     <div class="flex justify-end gap-3">
-                                        <button type="button" class="inline-flex items-center rounded-md border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-500 focus:outline-none">
+                                        <button onClick={(e)=>{
+                                            deleteAllFiles()
+                                        }} type="button" class="inline-flex items-center rounded-md border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-500 focus:outline-none">
                                             Delete
                                         </button>
                                     </div>
