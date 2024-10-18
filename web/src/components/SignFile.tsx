@@ -74,8 +74,14 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
                             }
                         });
 
+                        let res = await response.data;
+                        let logs: Array<string> = res.logs
+                        logs.forEach((item) => {
+                            console.log("**>" + item + "\n.")
+                        })
+
                         if (response.status === 200) {
-                            let resp: FileInfo = await response.data
+                            let resp: FileInfo = res.file
                             console.log(resp)
                             let array: FileInfo[] = [];
                             for (let index = 0; index < appState.filesFromApi.length; index++) {

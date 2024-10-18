@@ -222,13 +222,20 @@ const HomePage: Component = () => {
 
             setSelectedFileForUpload(null);
 
+            const res = response.data
+
+            let logs: Array<string> = res.logs
+            logs.forEach((item) => {
+                console.log("**>" + item + "\n.")
+            })
+
 
             // Assuming the API returns an array of FileInfo objects
             const file: FileInfo = {
-                id: response.data.id,
-                name: response.data.name,
-                extension: response.data.extension,
-                page_data: response.data.page_data
+                id: res.file.id,
+                name: res.file.name,
+                extension: res.file.extension,
+                page_data: res.file.page_data
             };
 
             setAppState("filesFromApi", [...appState.filesFromApi, file])
@@ -243,16 +250,23 @@ const HomePage: Component = () => {
 
     async function fetchFiles(): Promise<Array<FileInfo>> {
         try {
-            const response = await fetch("http://127.0.0.1:3600/explorer_files");
+            const query = await fetch("http://127.0.0.1:3600/explorer_files");
+            const response = await query.json()
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (!query.ok) {
+                throw new Error(`HTTP error! status: ${query.status}`);
             }
+
+            let res = response;
+            let logs: Array<string> = res.logs
+            logs.forEach((item) => {
+                console.log("**>" + item + "\n.")
+            })
 
             console.log("fetchFiles Response " + response.body)
 
             // Parse the response body as JSON
-            const data = await response.json();
+            const data = res.files;
 
             // Assuming the API returns an array of FileInfo objects
             const files: Array<FileInfo> = data.map((item: any) => ({

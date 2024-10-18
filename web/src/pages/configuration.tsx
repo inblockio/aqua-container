@@ -107,7 +107,7 @@ const ConfigsPage: Component = () => {
 
                                 <div class="lg:col-span-4 mt-5">
                                     <div class="flex justify-end gap-3">
-                                        <button onClick={(e)=>{
+                                        <button onClick={(e) => {
                                             deleteAllFiles()
                                         }} type="button" class="inline-flex items-center rounded-md border border-transparent bg-red-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-500 focus:outline-none">
                                             Delete
