@@ -224,3 +224,11 @@ pub fn compute_content_hash(contentPar: &RevisionContent) -> Result<Hash, String
 
     Ok(content_hash_current)
 }
+
+
+pub fn make_empty_hash() -> Hash {
+    let mut hasher = sha3::Sha3_512::default();
+    hasher.update("");
+    let empty_hash = Hash::from(hasher.finalize());
+    empty_hash
+}

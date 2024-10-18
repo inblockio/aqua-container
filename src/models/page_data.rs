@@ -6,4 +6,11 @@ use bonsaidb::core::schema::{Collection, SerializedCollection};
 #[collection(name = "page")]
 pub struct PageDataContainer {
     pub pages: Vec<HashChain>,
-} 
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ApiResponse {
+    pub logs :  Vec<String>,
+    pub file :  Option<FileInfo>
+}
+

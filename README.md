@@ -15,16 +15,16 @@ Functionality milestones Fileupload & Hasher:
 
 UI-Interface:
 1) [done] Beautify website with CSS
-2) [todo] Make it mobile-responsive
+2) [done] Make it mobile-responsive
 
 Functionality milestones Verifier: 
-1) [todo] Upload Aqua-Chain for verification
-2) [todo] Verification of Aqua-Chain (print to console)
-3) [todo] Display verification results on the website
+1) [done] Upload Aqua-Chain for verification
+2) [done] Verification of Aqua-Chain (print to console)
+3) [done] Display verification results on the website
 
 Pages:
-1) [in progress] Hasher
-2) [todo] Verifier
+1) [done] Hasher
+2) [done] Verifier
 3) [todo] Config (configure Witness, see version of Software etc.)
 
 

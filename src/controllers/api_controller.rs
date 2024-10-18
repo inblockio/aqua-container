@@ -13,10 +13,14 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use ethers::core::k256::sha2::Sha256;
 
 use crate::models::input::{RevisionInput, WitnessInput};
-use crate::models::page_data::PageDataContainer;
+use crate::models::page_data::{PageDataContainer, ApiResponse};
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
-    check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash, db_set_up,
+    check_if_page_data_revision_are_okay, 
+    check_or_generate_domain,
+     compute_content_hash, 
+     db_set_up,
+     make_empty_hash,
 };
 use crate::Db;
 use axum::response::{IntoResponse, Response};
@@ -460,6 +464,7 @@ pub async fn explorer_file_upload(
     }
 }
 
+
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
@@ -595,23 +600,89 @@ pub async fn explorer_sign_revision(
     }
 }
 
-pub fn make_empty_hash() -> Hash {
-    let mut hasher = sha3::Sha3_512::default();
-    hasher.update("");
-    let empty_hash = Hash::from(hasher.finalize());
-    empty_hash
-}
 
-pub async fn explorer_witness_file(
+pub async fn explorer_delete_file(
     State(server_database): State<Db>,
     Form(input): Form<WitnessInput>,
-) -> (StatusCode, Json<Option<FileInfo>>) {
+) -> (StatusCode, Json<ApiResponse>) {
+
     tracing::debug!("explorer_witness_file");
+    let mut log_data : Vec<String> = Vec::new();
 
     // Get the name parameter from the input
     if input.filename.is_empty() {
-        return (StatusCode::BAD_REQUEST, Json(None));
+
+        log_data.push("Error : file name is empty".to_string());
+        let res : ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+        };
+        return (StatusCode::BAD_REQUEST, Json(res));
     };
+
+  
+        let result = sqlx::query!("DELETE FROM pages WHERE name = ?", input.filename)
+        .execute(& server_database.sqliteDb)
+        .await;
+
+        match result {
+            Ok(result_data) => {
+                   // Check the number of affected rows
+                if result_data.rows_affected() > 0 {
+                    tracing::error!("Successfully deleted the row with name: {}", input.filename);
+                    log_data.push("Error : file data is deleted ".to_string());
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+                    return (StatusCode::OK, Json(res));
+                } else {
+                    tracing::error!("No row found with ID: {}", input.filename);
+
+                    log_data.push(format!("Error : No row found with name {}", input.filename));
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+                    return (StatusCode::NOT_FOUND, Json(res));
+                }
+            }
+            Err(e) => {
+                tracing::error!("Failed to update page data: {:?}", e);
+                log_data.push(format!("Error occurred {}", e));
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+            }
+        }
+
+
+
+}
+pub async fn explorer_witness_file(
+    State(server_database): State<Db>,
+    Form(input): Form<WitnessInput>,
+) -> (StatusCode, Json<ApiResponse>) {
+
+    tracing::debug!("explorer_witness_file");
+    let mut log_data : Vec<String> = Vec::new();
+
+    // Get the name parameter from the input
+    if input.filename.is_empty() {
+
+        log_data.push("Error : file name is empty".to_string());
+        let res : ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+        };
+        return (StatusCode::BAD_REQUEST, Json(res));
+    };
+
+    log_data.push("Success : file name is not  empty".to_string());
+
+    
 
     // Fetch a single row from the 'pages' table where name matches
     let row = sqlx::query!(
@@ -624,12 +695,30 @@ pub async fn explorer_witness_file(
     // Handle database result errors
     match row {
         Ok(Some(row)) => {
+            log_data.push (format!("Success :  Page data for {} not found in database", input.filename));
+
             // Deserialize page data
             let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
-                Ok(data) => data,
+                Ok(data) => {
+                    
+                    log_data.push("Success :  Page Data Object parse".to_string());
+            
+                    data
+                },
                 Err(e) => {
                     tracing::error!("Failed to parse page data record: {:?}", e);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+
+                    
+
+                    log_data.push("Error : Failure to parse Page Data Object".to_string());
+            
+                  
+                   let res : ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                };
+
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
             };
 
@@ -645,19 +734,35 @@ pub async fn explorer_witness_file(
                 Ok(s) => s,
                 Err(e) => {
                     tracing::error!("Failed to parse tx hash: {:?}", e);
-                    return (StatusCode::BAD_REQUEST, Json(None));
+                    log_data.push (format!("Error :  Failed to to parse tx hash: {:?}", e));
+
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                    };
+
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
 
+            log_data.push (format!("Success :  Parsed tx hash: {:?}", txHash));
             tracing::debug!("Tx hash: {}", txHash);
 
             let wallet_address = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
                 Ok(a) => a,
                 Err(e) => {
                     tracing::error!("Failed to parse wallet address: {:?}", e);
-                    return (StatusCode::BAD_REQUEST, Json(None));
+                    log_data.push (format!("Error :  Failed to parse wallet address: {:?}", e));
+
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data ,
+                        file: None,
+                    };
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
+            log_data.push (format!("Success  :  parsed wallet address: {:?}", wallet_address));
+
 
             let domain_snapshot_genesis_string = &deserialized.pages.get(0).unwrap().genesis_hash;
 
@@ -751,7 +856,13 @@ pub async fn explorer_witness_file(
                 Ok(data) => data,
                 Err(e) => {
                     tracing::error!("Failed to serialize updated page data: {:?}", e);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+                    log_data.push (format!("Error :  Failed to serialize updated page data {:?} ", e));
+
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data ,
+                        file: None,
+                    };
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
             };
 
@@ -773,18 +884,47 @@ pub async fn explorer_witness_file(
                         extension: row.extension,
                         page_data: page_data_new,
                     };
-                    (StatusCode::OK, Json(Some(file_info)))
+
+                   let res : ApiResponse =  ApiResponse{
+                    logs: log_data ,
+                    file: Some(file_info),
+                };
+                    (StatusCode::OK, Json(res))
                 }
                 Err(e) => {
                     tracing::error!("Failed to update page data: {:?}", e);
-                    (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+                    log_data.push (format!("Error :  unable to update database with Page data for {} ", input.filename));
+
+                    let res : ApiResponse = ApiResponse {
+                        logs: log_data ,
+                        file: None,
+                    };
+                    (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
                 }
             }
         }
-        Ok(None) => (StatusCode::NOT_FOUND, Json(None)),
+        
+        Ok(None) => {
+
+            log_data.push (format!("Error :  Page data for {} not found in database", input.filename));
+
+            let res : ApiResponse = ApiResponse {
+                logs: log_data ,
+                file: None,
+            };
+            (StatusCode::NOT_FOUND, Json(res))
+        },
         Err(e) => {
+            
             tracing::error!("Failed to fetch record: {:?}", e);
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(None))
+            log_data.push (format!("Error :  Failed to fetch record {:?}", e));
+
+            let res : ApiResponse = ApiResponse {
+                logs: log_data ,
+                file: None,
+            };
+            
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }
     }
 }
