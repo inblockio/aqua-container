@@ -274,11 +274,11 @@ const HomePage: Component = () => {
         try {
             // Parse the page_data string to a PageData object
             const pageData: PageData = JSON.parse(fileInfo.page_data);
-            
+
             for (const page of pageData.pages) {
                 for (const revisionKey in page.revisions) {
                     const revision = page.revisions[revisionKey];
-                    
+
                     // Check if the revision has a witness and update witness_event_transaction_hash
                     if (revision.witness && revision.witness.witness_event_transaction_hash) {
                         revision.witness.witness_event_transaction_hash = `0x${revision.witness.witness_event_transaction_hash}`;
@@ -486,27 +486,27 @@ const HomePage: Component = () => {
                         </svg>
                         See Details
                     </div>
-                  
+
                     <SignFile pageVerificationHash={getLastRevisionVerificationHash()} filename={file.name} />
                     <WitnessFile previousVerificationHash={getPreviousRevisionVerificationHash()} filename={file.name} />
 
                     <div onClick={async (e) => {
                         const formData = new URLSearchParams();
                         formData.append('filename', file.name);
-                      
+
                         const response = await axios.post("http://localhost:3600/explorer_delete_file", formData, {
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }
                         });
-                        console.log("Files Delete  response code "+response.status + "\n ");
-                        
+                        console.log("Files Delete  response code " + response.status + "\n ");
+
                         if (response.status === 200) {
-                            let files= appState.filesFromApi
-                            let filesNew :  Array<FileInfo> = [];
+                            let files = appState.filesFromApi
+                            let filesNew: Array<FileInfo> = [];
                             for (let index = 0; index < files.length; index++) {
                                 const element = files[index];
-                                if (element.name !=  file.name) {
+                                if (element.name != file.name) {
                                     filesNew.push(element)
                                 }
                             }
@@ -515,8 +515,8 @@ const HomePage: Component = () => {
                     }} class="rounded bg-danger/25 px-2 mx-4 " style="display: inline-flex; align-items: center;">
 
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash m-2" viewBox="0 0 16 16">
-                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
-                        <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+                            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
                         </svg>
                         Delete
                     </div>
@@ -563,7 +563,13 @@ const HomePage: Component = () => {
                                         style={{ display: "none" }} // Hide the input element
                                         onChange={handleFileSelect}
                                     />
+
+                                    <a href="javascript:void(0);" class="flex items-center py-2 px-4 text-sm rounded text-gray-500 hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 mt-5" id="headingOne">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash me-3.5 w-4"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        <span>Conf</span>
+                                    </a>
                                 </div>
+
 
                                 <div class="mt-6">
                                     <h6 class="text-uppercase mt-3">Storage</h6>
