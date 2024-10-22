@@ -128,12 +128,12 @@ const DetailsPage: Component = () => {
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(revision.metadata.time_stamp)}  </p>
 
                     <br />
-                    {revision.signature == null ? <span>No signature</span> : <div >
+                    {revision.signature == null ? <h2 style={{"margin-bottom" : "18px"}}>No signature</h2> : <div style={{"margin-bottom" : "18px"}} >
                         <h6 style={{"margin-block": "20px"}}>Signature details</h6>
                         {revisionSignatureDisplay(revision.signature)}
                     </div>}
                     <br />
-                    {revision.witness == null ? <span>No witness</span> : <div >
+                    {revision.witness == null ? <h2 style={{"margin-bottom" : "18px"}}>No witness</h2> : <div style={{"margin-bottom" : "18px"}} >
                         <h6 style={{"margin-block": "20px"}}>Witness details</h6>
                         {revisionWitnessDisplay(revision.witness)}
                     </div>}
