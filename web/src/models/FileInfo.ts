@@ -1,4 +1,4 @@
-export  interface FileInfo {
+export  interface ApiFileInfo {
     id: number,
     name: string,
     extension: string,

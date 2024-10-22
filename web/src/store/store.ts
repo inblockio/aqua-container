@@ -1,9 +1,9 @@
-import {FileInfo} from "../models/FileInfo";
+import {ApiFileInfo} from "../models/FileInfo";
 import {createStore} from "solid-js/store";
 
 export interface AppState {
-    filesFromApi: Array<FileInfo>;
-    selectedFileFromApi : FileInfo |  undefined,
+    filesFromApi: Array<ApiFileInfo>;
+    selectedFileFromApi : ApiFileInfo |  undefined,
     metaMaskAddress: string | null
 }
 

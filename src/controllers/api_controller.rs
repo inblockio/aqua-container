@@ -103,21 +103,21 @@ pub async fn fetch_explorer_files(
     let query_string : String = match headers.get("public_key") {
         Some(value) => match value.to_str() {
             Ok(key) => {
-               format!("SELECT id, name, extension, page_data FROM pages where mode ='pulic' or  owner = '{}'",key) 
+               format!("SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='pulic' or  owner = '{}'",key) 
             },
             Err(err) => {
 
                 // return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid public_key header"})))
 
                 tracing::debug!("error {} ", err);
-                "SELECT id, name, extension, page_data FROM pages where mode ='public'".to_string()
+                "SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='public'".to_string()
             },
         },
         None => {
             // return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
 
             tracing::debug!("public_key header missing ");
-            "SELECT id, name, extension, page_data FROM pages where mode ='public'".to_string()
+            "SELECT id, name, extension, page_data , owner , mode  FROM pages where mode ='public'".to_string()
         },
     };
 
@@ -143,8 +143,8 @@ pub async fn fetch_explorer_files(
                     name: row.get("name"),       // Get name from the row
                     extension: row.get("extension"), // Get extension from the row
                     page_data: row.get("page_data"), // Get page_data from the row
-                    // mode: row.get("mode"), // Get owner from the row
-                    // owner: row.get("owner"), // Get owner from the row
+                    mode: row.get("mode"), // Get owner from the row
+                    owner: row.get("owner"), // Get owner from the row
                     
                 });
             }
@@ -319,8 +319,9 @@ pub async fn explorer_file_verify_hash_upload(
 
 pub async fn explorer_file_upload(
     State(server_database): State<Db>,
-    mut multipart: Multipart,
     headers: HeaderMap,
+    mut multipart: Multipart,
+   
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_file_upload fn");
 
@@ -333,21 +334,26 @@ pub async fn explorer_file_upload(
 
 
     // Extract the 'public_key' header
-    let query_string  = match headers.get("public_key") {
+    let public_key  = match headers.get("public_key") {
         Some(value) => match value.to_str() {
             Ok(key) => {
-            key  
+               key  
             },
             Err(err) => {
 
-                tracing::debug!("error {} ", err);
-                return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid public_key header"})))
+                tracing::error!("headers get error {} ", err);
+                // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid public_key header"})))
+            
+                res.logs.push(format!("Error: Meta mask public key  error: {:?}", err));
+                return (StatusCode::BAD_REQUEST, Json(res));
             },
         },
         None => {
 
             tracing::debug!("public_key header missing ");
-            return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
+            res.logs.push("Error: Meta mask public key  missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
 
         },
     };
@@ -535,16 +541,24 @@ pub async fn explorer_file_upload(
         }
     };
 
+    let mut mode = "private".to_string(); 
+    let file_mode = env::var("FILE_MODE").unwrap_or_default();
+
+    if !file_mode.is_empty() {
+    mode = file_mode;
+    }
     // Insert into database
     match sqlx::query!(
         r#"
-        INSERT INTO pages (name, extension, page_data)
-        VALUES (?, ?, ?)
+        INSERT INTO pages (name, extension, page_data, mode, owner)
+        VALUES (?, ?, ?, ? , ?)
         RETURNING id
         "#,
         file_name,
         content_type,
         json_string,
+        mode,
+        public_key
     )
     .fetch_one(&server_database.sqliteDb)
     .await
@@ -555,6 +569,8 @@ pub async fn explorer_file_upload(
                 name: file_name,
                 extension: content_type,
                 page_data: json_string,
+               mode: mode,
+               owner:  public_key.to_string()
             };
             res.file = Some(file_info);
             (StatusCode::CREATED, Json(res))
@@ -589,7 +605,7 @@ pub async fn explorer_sign_revision(
 
     // Fetch a single row from the 'pages' table where name matches
     let row = sqlx::query!(
-        "SELECT id, name, extension, page_data FROM pages WHERE name = ? LIMIT 1",
+        "SELECT id, name, extension, page_data, owner, mode FROM pages WHERE name = ? LIMIT 1",
         input.filename
     )
     .fetch_optional(&server_database.sqliteDb)
@@ -752,6 +768,8 @@ pub async fn explorer_sign_revision(
                         name: row.name,
                         extension: row.extension,
                         page_data: page_data_new,
+                        owner : row.owner,
+                        mode : row.mode
                     };
                     let res : ApiResponse = ApiResponse {
                         logs: log_data,
@@ -943,7 +961,7 @@ pub async fn explorer_witness_file(
 
     // Fetch a single row from the 'pages' table where name matches
     let row = sqlx::query!(
-        "SELECT id, name, extension, page_data FROM pages WHERE name = ? LIMIT 1",
+        "SELECT id, name, extension, page_data , owner , mode FROM pages WHERE name = ? LIMIT 1",
         input.filename
     )
     .fetch_optional(&server_database.sqliteDb)
@@ -1144,6 +1162,8 @@ pub async fn explorer_witness_file(
                         name: row.name,
                         extension: row.extension,
                         page_data: page_data_new,
+                        owner : row.owner,
+                        mode : row.mode
                     };
 
                    let res : ApiResponse =  ApiResponse{
@@ -1204,9 +1224,11 @@ pub async fn explorer_fetch_configuration(
 
     let api_domain = env::var("API_DOMAIN").unwrap_or_default();
     let chain = env::var("CHAIN").unwrap_or_default();
+    let mode = env::var("FILE_MODE").unwrap_or_default();
 
     config_data.insert("chain".to_string(), chain);
     config_data.insert("domain".to_string(), api_domain);
+    config_data.insert("mode".to_string(), mode);
 
     return (StatusCode::OK, Json(config_data));
 }
@@ -1219,7 +1241,7 @@ pub async fn explorer_update_configuration(
     let mut log_data : Vec<String> = Vec::new();
 
     // Log the input
-    log_data.push(format!("Updating configuration with chain: {} and domain: {}", input.chain, input.domain));
+    log_data.push(format!("Updating configuration with chain: {} and domain: {} mode : {}", input.chain, input.domain, input.mode));
 
     // Update the .env file with the new chain and domain
     if let Err(e) = update_env_file("CHAIN", &input.chain) {
@@ -1228,6 +1250,10 @@ pub async fn explorer_update_configuration(
 
     if let Err(e) = update_env_file("API_DOMAIN", &input.domain) {
         log_data.push(format!("Failed to update API_DOMAIN in .env file: {}", e));
+    }
+
+    if let Err(e) = update_env_file("FILE_MODE", &input.mode) {
+        log_data.push(format!("Failed to update FILE_MODE in .env file: {}", e));
     }
 
     // Prepare the response

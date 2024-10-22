@@ -1,6 +1,6 @@
-import { FileInfo } from "../models/FileInfo";
+import { ApiFileInfo } from "../models/FileInfo";
 
-export async function fetchFiles(publicMetaMaskAddress : string): Promise<Array<FileInfo>> {
+export async function fetchFiles(publicMetaMaskAddress : string): Promise<Array<ApiFileInfo>> {
     try {
         const query = await fetch("http://127.0.0.1:3600/explorer_files", {
             method: 'GET',
@@ -26,11 +26,13 @@ export async function fetchFiles(publicMetaMaskAddress : string): Promise<Array<
         const data = res.files;
 
         // Assuming the API returns an array of FileInfo objects
-        const files: Array<FileInfo> = data.map((item: any) => ({
+        const files: Array<ApiFileInfo> = data.map((item: any) => ({
             id: item.id,
             name: item.name,
             extension: item.extension,
-            page_data: item.page_data
+            page_data: item.page_data,
+            mode:item.mode,
+            owner:item.owner,            
         }));
 
         return files;

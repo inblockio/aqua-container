@@ -3,6 +3,8 @@ import { createEffect, createSignal } from "solid-js";
 import { formatCryptoAddress } from "../util";
 import { fetchFiles } from "../network/api";
 import { appState, setAppState } from "../store/store";
+import { FileInfo } from "../models/PageData";
+import { ApiFileInfo } from "../models/FileInfo";
 
 
 const CustomNavbar = () => {
@@ -26,10 +28,13 @@ const CustomNavbar = () => {
                 });
 
                 if (signature) {
-                    setAppState("metaMaskAddress",walletAddress);
+                    setAppState("metaMaskAddress", walletAddress);
+
+                    let files = await fetchFiles(walletAddress);
+                    setAppState('filesFromApi', files);
                 }
 
-            } catch (error : any) {
+            } catch (error: any) {
                 console.error('Error during wallet connection or signing:', error);
                 alert(error.message);
             }
@@ -43,7 +48,7 @@ const CustomNavbar = () => {
         if (window.ethereum) {
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             const walletAddress = accounts[0];
-            setAppState("metaMaskAddress",walletAddress);
+            setAppState("metaMaskAddress", walletAddress);
 
             let files = await fetchFiles(walletAddress);
             setAppState('filesFromApi', files);
@@ -53,7 +58,17 @@ const CustomNavbar = () => {
 
     const disconnect = () => {
 
-        setAppState("metaMaskAddress",null)
+        let newFiles: Array<ApiFileInfo> = [];
+
+        let files = appState.filesFromApi;
+        for (let index = 0; index < files.length; index++) {
+            const element = files[index];
+            if (element.mode == "public") {
+                newFiles.push(element)
+            }
+        }
+        setAppState("filesFromApi", newFiles);
+        setAppState("metaMaskAddress", null);
     }
 
     createEffect(async () => {
