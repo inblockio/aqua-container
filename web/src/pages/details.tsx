@@ -1,6 +1,6 @@
 import { Component, createEffect, createSignal, For, JSX, onCleanup } from "solid-js";
 import { appState, setAppState } from "../store/store";
-import { HashChain, PageData, Revision } from "../models/PageData";
+import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
 import { FileInfo } from "../models/FileInfo";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
@@ -74,7 +74,7 @@ const DetailsPage: Component = () => {
 
 
             </div>
-            <div class="ms-5 mt-5 ps-5">
+            <div class="ms-5 mt-5 ps-5" style={{ "margin-left": "30px" }}>
                 <hr />
                 <br />
                 <h6>Revisions</h6>
@@ -113,36 +113,63 @@ const DetailsPage: Component = () => {
             return <div>No revisions found</div>
         }
     }
-    const fileRevisionsDisplayItem = (revision: Revision, index: number, revisionHash : string) => {
-        return <div class="p-3">
+    const fileRevisionsDisplayItem = (revision: Revision, index: number, revisionHash: string) => {
+        return <div class="p-3 ms-5">
             <div class="flex items-center gap-3">
                 <div class="h-10 w-10 flex-shrink-0">
                     {index + 1}
                 </div>
                 <div class="flex-grow truncate">
-                    {/* <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {}
 
-                    </div> */}
-                    <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(revisionHash, 20 ,5)}  </p>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Content Hash : {formatCryptoAddress(revision.content.content_hash, 20 ,5)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(revisionHash, 20, 5)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Previous Verification Hash : {formatCryptoAddress(revision.metadata.previous_verification_hash ?? "", 20, 5)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Content Hash : {formatCryptoAddress(revision.content.content_hash, 20, 5)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Metadat Hash : {formatCryptoAddress(revision.metadata.metadata_hash, 20, 5)}  </p>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(revision.metadata.time_stamp)}  </p>
-                </div>
-                {/* <div
-                        class="px-3 py-1 md:block hidden rounded text-xs font-medium">Testing
-                    </div>
-                    <div class="ms-auto">
-                        <div
-                            class=" px-3 py-1 rounded text-xs font-medium bg-success/25 text-success">Complated
-                        </div>
-                    </div> */}
 
-             
+                    <br />
+                    {revision.signature == null ? <span>No signature</span> : <div >
+                        <h6 style={{"margin-block": "20px"}}>Signature details</h6>
+                        {revisionSignatureDisplay(revision.signature)}
+                    </div>}
+                    <br />
+                    {revision.witness == null ? <span>No witness</span> : <div >
+                        <h6 style={{"margin-block": "20px"}}>Witness details</h6>
+                        {revisionWitnessDisplay(revision.witness)}
+                    </div>}
+
+                </div>
 
             </div>
-            <hr/>
+            <hr />
             <br></br>
         </div>
 
+    }
+
+    const revisionSignatureDisplay = (signature: RevisionSignature) => {
+        return <div style={{ "margin-left": "30px" }}>
+            <div class="flex-grow truncate">
+
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Signature : {formatCryptoAddress(signature.signature, 20, 5)}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Signature Hash : {formatCryptoAddress(signature.signature_hash, 20, 5)}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' ">  wallet Address  : {formatCryptoAddress(signature.wallet_address, 20, 5)}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' ">  public key  : {formatCryptoAddress(signature.public_key, 20, 5)}  </p>
+            </div>
+
+        </div>
+    }
+    const revisionWitnessDisplay = (witnnes: RevisionWitness) => {
+        return <div style={{ "margin-left": "30px" }}>
+        <div class="flex-grow truncate">
+            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witeness network : {witnnes.witness_network}  </p>
+            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness hash : {formatCryptoAddress(witnnes.witness_hash, 20, 5)}  </p>
+            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness domain snapshot genesis hash : {formatCryptoAddress(witnnes.domain_snapshot_genesis_hash, 20, 5)}  </p>
+            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  transaction hash : {formatCryptoAddress(witnnes.witness_event_transaction_hash ,20, 5)}  </p>
+            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  verifiction hash : {formatCryptoAddress(witnnes.witness_event_verification_hash, 20, 5)}  </p>
+        </div>
+
+    </div>
     }
     const filePreviewView = () => {
 

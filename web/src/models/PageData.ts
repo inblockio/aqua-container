@@ -16,26 +16,26 @@ export interface HashChain {
 }
 
 export interface StructuredMerkleProof {
-    left_leaf: String;
-    right_leaf: String;
-    successor: String;
+    left_leaf: string;
+    right_leaf: string;
+    successor: string;
 }
 
 export interface RevisionWitness {
-    domain_snapshot_genesis_hash: String;
-    merkle_root: String;
-    witness_network: String;
-    witness_event_transaction_hash: String;
-    witness_event_verification_hash: String;
-    witness_hash: String;
+    domain_snapshot_genesis_hash: string;
+    merkle_root: string;
+    witness_network: string;
+    witness_event_transaction_hash: string;
+    witness_event_verification_hash: string;
+    witness_hash: string;
     structured_merkle_proof: StructuredMerkleProof[];
 }
 
 export interface RevisionSignature {
-    signature: String;
-    public_key: String;
-    signature_hash: String;
-    wallet_address: String;
+    signature: string;
+    public_key: string;
+    signature_hash: string;
+    wallet_address: string;
 }
 
 export interface Revision {
