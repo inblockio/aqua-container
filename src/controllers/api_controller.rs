@@ -2,7 +2,7 @@ use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
     handler::HandlerWithoutStateExt,
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Html, Redirect},
     routing::{get, post},
     BoxError, Form, Json, Router,
@@ -45,6 +45,8 @@ use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInit
 use verifier::v1_1::hashes::*;
 use std::collections::HashMap;
 use std::env;
+use sqlx::Row;
+
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 #[derive(Debug)]
@@ -83,6 +85,7 @@ impl IntoResponse for UploadError {
 
 pub async fn fetch_explorer_files(
     State(server_database): State<Db>,
+    headers: HeaderMap, 
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("fetch_explorer_files");
     let mut log_data : Vec<String> = Vec::new();
@@ -95,8 +98,34 @@ pub async fn fetch_explorer_files(
     // Initialize an empty Vec to hold the result
     let mut pages: Vec<FileInfo> = Vec::new();
 
+
+    // Extract the 'public_key' header
+    let query_string : String = match headers.get("public_key") {
+        Some(value) => match value.to_str() {
+            Ok(key) => {
+               format!("SELECT id, name, extension, page_data FROM pages where mode ='pulic' or  owner = '{}'",key) 
+            },
+            Err(err) => {
+
+                // return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid public_key header"})))
+
+                tracing::debug!("error {} ", err);
+                "SELECT id, name, extension, page_data FROM pages where mode ='public'".to_string()
+            },
+        },
+        None => {
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
+
+            tracing::debug!("public_key header missing ");
+            "SELECT id, name, extension, page_data FROM pages where mode ='public'".to_string()
+        },
+    };
+
+
+    tracing::debug!("Sql query ==>  {}",query_string);
+
     // Fetch all rows from the 'pages' table
-    let rows = sqlx::query!("SELECT id, name, extension, page_data FROM pages")
+    let rows = sqlx::query(&query_string)
         .fetch_all(&server_database.sqliteDb)
         .await;
 
@@ -104,12 +133,19 @@ pub async fn fetch_explorer_files(
     match rows {
         Ok(records) => {
             // Loop through the records and populate the pages vector
+            // id: row.id,
+                    // name: row.name,
+                    // extension: row.extension,
+                    // page_data: row.page_data,
             for row in records {
                 pages.push(FileInfo {
-                    id: row.id,
-                    name: row.name,
-                    extension: row.extension,
-                    page_data: row.page_data,
+                    id: row.get("id"),           // Get id from the row
+                    name: row.get("name"),       // Get name from the row
+                    extension: row.get("extension"), // Get extension from the row
+                    page_data: row.get("page_data"), // Get page_data from the row
+                    // mode: row.get("mode"), // Get owner from the row
+                    // owner: row.get("owner"), // Get owner from the row
+                    
                 });
             }
 
@@ -284,6 +320,7 @@ pub async fn explorer_file_verify_hash_upload(
 pub async fn explorer_file_upload(
     State(server_database): State<Db>,
     mut multipart: Multipart,
+    headers: HeaderMap,
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_file_upload fn");
 
@@ -293,6 +330,28 @@ pub async fn explorer_file_upload(
         file: None,
         files: Vec::new()
     };
+
+
+    // Extract the 'public_key' header
+    let query_string  = match headers.get("public_key") {
+        Some(value) => match value.to_str() {
+            Ok(key) => {
+            key  
+            },
+            Err(err) => {
+
+                tracing::debug!("error {} ", err);
+                return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid public_key header"})))
+            },
+        },
+        None => {
+
+            tracing::debug!("public_key header missing ");
+            return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
+
+        },
+    };
+
 
     let mut account = None;
     let mut file_info = None;

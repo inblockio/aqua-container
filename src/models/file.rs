@@ -5,4 +5,6 @@ pub struct FileInfo {
     pub name : String,
     pub extension: String,
     pub page_data : String,
+    // pub mode : String,
+    // pub owner: String
 }

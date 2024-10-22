@@ -1,10 +1,11 @@
 import { A } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
 import { formatCryptoAddress } from "../util";
+import { fetchFiles } from "../network/api";
+import { appState, setAppState } from "../store/store";
 
 
 const CustomNavbar = () => {
-    const [metaMaskAddress, setMetaMaskAddress] = createSignal<string | null>(null);
 
     const signAndConnect = async () => {
         if (window.ethereum) {
@@ -25,11 +26,12 @@ const CustomNavbar = () => {
                 });
 
                 if (signature) {
-                    setMetaMaskAddress(walletAddress);
+                    setAppState("metaMaskAddress",walletAddress);
                 }
 
-            } catch (error) {
+            } catch (error : any) {
                 console.error('Error during wallet connection or signing:', error);
+                alert(error.message);
             }
         } else {
             alert('MetaMask is not installed');
@@ -41,14 +43,17 @@ const CustomNavbar = () => {
         if (window.ethereum) {
             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
             const walletAddress = accounts[0];
-            setMetaMaskAddress(walletAddress);
+            setAppState("metaMaskAddress",walletAddress);
+
+            let files = await fetchFiles(walletAddress);
+            setAppState('filesFromApi', files);
         }
 
     }
 
     const disconnect = () => {
 
-        setMetaMaskAddress(null)
+        setAppState("metaMaskAddress",null)
     }
 
     createEffect(async () => {
@@ -72,7 +77,7 @@ const CustomNavbar = () => {
 
             <div class="ms-auto">
                 {
-                    metaMaskAddress() == null ?
+                    appState.metaMaskAddress == null ?
                         <button onClick={(e) => {
                             signAndConnect()
                         }} data-fc-type="dropdown" data-fc-placement="bottom"
@@ -81,7 +86,7 @@ const CustomNavbar = () => {
                             <i class="mgc_add_line text-lg me-2"></i> Sign in with MetaMask
                         </button> :
                         <button onclick={disconnect} class="btn rounded-full bg-primary/25 text-primary hover:bg-primary hover:text-white">
-                            <label>{formatCryptoAddress(metaMaskAddress())} - Disconnect</label>
+                            <label>{formatCryptoAddress(appState.metaMaskAddress)} - Disconnect</label>
                         </button>
                 }
             </div>

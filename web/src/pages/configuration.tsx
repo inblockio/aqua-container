@@ -7,6 +7,7 @@ const ConfigsPage: Component = () => {
 
     const navigate = useNavigate();
     const [chainUsed, setChainUsed] = createSignal<string>("");
+    const [fileMode, setFileMode] = createSignal<string>("");
     const [domain, setDomain] = createSignal<string>("");
 
     createEffect(async () => {
@@ -20,6 +21,7 @@ const ConfigsPage: Component = () => {
         if (response.status === 200) {
             setChainUsed(response.data.chain)
             setDomain(response.data.domain)
+            setFileMode(response.data.file_mode)
         }
     })
 
@@ -39,6 +41,7 @@ const ConfigsPage: Component = () => {
         const formData = new URLSearchParams();
         formData.append('chain', chainUsed());
         formData.append('domain', domain());
+        formData.append('file_mode', fileMode());
 
 
         const response = await axios.post(`${API_BASE_ENDPOINT}/explorer_update_configuration`, formData, {
@@ -86,6 +89,17 @@ const ConfigsPage: Component = () => {
                                         <option value="sepolia">Sepolia</option>
                                         <option value="mainnet">Mainnet</option>
                                         <option value="holesky">Holesky</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="select-label" class="mb-2 block">Default File mode (is a file public or private by default)</label>
+                                    <select id="select-label" class="form-select" 
+                                     value={fileMode()}
+                                    onChange={(e) => setFileMode(e.target.value)}>
+                                        <option selected>Open this select menu</option>
+                                        <option value="public">Public</option>
+                                        <option value="private">private</option>
                                     </select>
                                 </div>
                             </div>

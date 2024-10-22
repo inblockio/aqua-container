@@ -19,6 +19,7 @@ import SignFile from '../components/SignFile';
 import WitnessFile from '../components/WitnessFile';
 import MainLayout from '../layout/MainLayout';
 import { API_BASE_ENDPOINT } from '../config/constants';
+import { fetchFiles } from '../network/api';
 
 const HomePage: Component = () => {
 
@@ -37,7 +38,7 @@ const HomePage: Component = () => {
 
     createEffect(async () => {
 
-        let files = await fetchFiles();
+        let files = await fetchFiles("");
         setAppState('filesFromApi', files);
 
         let size = 0;
@@ -54,11 +55,31 @@ const HomePage: Component = () => {
         let hSize = humanReadableFileSize(size)
         let info = `${files.length} files (${hSize})`
         setPageDataInfo(info)
-
-
     })
 
-   
+
+    createEffect(async () => {
+
+        
+        let files = appState.filesFromApi;
+        let size = 0;
+        for (const element of files) {
+            const pageData: PageData = JSON.parse(element.page_data);
+            // Debug the structure
+            debugPageDataStructure(pageData);
+
+            let currentSize = sumFileContentSizes(pageData)
+            size += currentSize
+        }
+
+        setAllFileSize(size)
+        let hSize = humanReadableFileSize(size)
+        let info = `${files.length} files (${hSize})`
+        setPageDataInfo(info)
+
+    }, [appState.filesFromApi])
+
+
 
 
     const uploadAquaJsonFile = async () => {
@@ -188,6 +209,7 @@ const HomePage: Component = () => {
             const response = await axios.post('http://127.0.0.1:3600/explorer_file_upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
+                    "public_key": appState.metaMaskAddress
                 },
             });
             console.log('File uploaded successfully:', JSON.stringify(response.data));
@@ -221,40 +243,6 @@ const HomePage: Component = () => {
         }
     };
 
-    async function fetchFiles(): Promise<Array<FileInfo>> {
-        try {
-            const query = await fetch("http://127.0.0.1:3600/explorer_files");
-            const response = await query.json()
-
-            if (!query.ok) {
-                throw new Error(`HTTP error! status: ${query.status}`);
-            }
-
-            let res = response;
-            let logs: Array<string> = res.logs
-            logs.forEach((item) => {
-                console.log("**>" + item + "\n.")
-            })
-
-            console.log("fetchFiles Response " + response.body)
-
-            // Parse the response body as JSON
-            const data = res.files;
-
-            // Assuming the API returns an array of FileInfo objects
-            const files: Array<FileInfo> = data.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                extension: item.extension,
-                page_data: item.page_data
-            }));
-
-            return files;
-        } catch (error) {
-            console.error("Error fetching files:", error);
-            return [];
-        }
-    }
 
 
     const downloadAquaJson = (fileInfo: FileInfo) => {
@@ -527,6 +515,10 @@ const HomePage: Component = () => {
                                     <div class="relative">
 
                                         <a href="javascript:void(0)" onClick={(e) => {
+                                            if(appState.metaMaskAddress == null){
+                                                setError("Please sign in with meta mask wallet address to upload a file");
+                                                return;
+                                            }
                                             setFileTypeForUpload("file")
                                             handleSelectFileForUploadClick()
                                         }} data-fc-type="dropdown" data-fc-placement="bottom"

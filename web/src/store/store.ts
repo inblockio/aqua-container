@@ -3,14 +3,15 @@ import {createStore} from "solid-js/store";
 
 export interface AppState {
     filesFromApi: Array<FileInfo>;
-    selectedFileFromApi : FileInfo |  undefined
+    selectedFileFromApi : FileInfo |  undefined,
+    metaMaskAddress: string | null
 }
 
 
 const initialState : AppState = {
     filesFromApi: [],
-    selectedFileFromApi: undefined
-
+    selectedFileFromApi: undefined,
+    metaMaskAddress: null
 }
 
 export const [appState, setAppState] = createStore(initialState);
