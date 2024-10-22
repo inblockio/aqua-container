@@ -29,7 +29,7 @@ const DetailsPage: Component = () => {
 
 
     const fileHashAndRevisionsDetails = () => {
-      return  <For each={filePageData()?.pages ?? []}>
+        return <For each={filePageData()?.pages ?? []}>
             {(item, index) =>
                 <>
                     {fileChainsDisplay(item, index())}
@@ -117,13 +117,50 @@ const DetailsPage: Component = () => {
             console.log("revisions are null ...")
             return 0;
         }
+    }
+
+    const fileSignersText = () => {
+        let signersCount = 0;
+        let totalRevisions = filePageData()?.pages[0].revisions;
+        if (totalRevisions != null) {
+
+            console.log("revisions are not empty ")
+
+            for (const [key, revision] of Object.entries(totalRevisions)) {
+                console.log(`Revision Key: ${key}, Revision ID: ${revision.witness}, Content: ${revision.content}`);
+                // You can add any processing logic you want here
+                if (revision.signature != null) {
+                    signersCount += 1
+                }
+            }
+        }
+        return signersCount;
+
 
     }
 
-    // const fileRevisionsDisplay = (revision: Revision) => {
-    //     return <>
-    //     </>
-    // }
+
+    const fileWitnessText = () => {
+        let witnessCount = 0;
+        let totalRevisions = filePageData()?.pages[0].revisions;
+        if (totalRevisions != null) {
+
+            console.log("revisions are not empty ")
+
+            for (const [key, revision] of Object.entries(totalRevisions)) {
+                console.log(`Revision Key: ${key}, Revision ID: ${revision.witness}, Content: ${revision.content}`);
+                // You can add any processing logic you want here
+                if (revision.witness != null) {
+                    witnessCount += 1
+                }
+            }
+        }
+        return witnessCount;
+
+
+    }
+
+
     return (
         <>
             <div class="flex wrapper">
@@ -170,7 +207,7 @@ const DetailsPage: Component = () => {
                                             <div class="flex items-center gap-5">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check-square h-10 w-10"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
                                                 <div class="">
-                                                    <h4 class="text-lg text-gray-700 dark:text-gray-300 font-medium">0</h4>
+                                                    <h4 class="text-lg text-gray-700 dark:text-gray-300 font-medium">{fileSignersText()}</h4>
                                                     <span class="text-sm">Total Signers</span>
                                                 </div>
                                             </div>
@@ -179,7 +216,7 @@ const DetailsPage: Component = () => {
                                             <div class="flex items-center gap-5">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users h-10 w-10"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                                                 <div class="">
-                                                    <h4 class="text-lg text-gray-700 dark:text-gray-300 font-medium">0</h4>
+                                                    <h4 class="text-lg text-gray-700 dark:text-gray-300 font-medium">{fileWitnessText()}</h4>
                                                     <span class="text-sm">Total Witness</span>
                                                 </div>
                                             </div>

@@ -1,9 +1,9 @@
-export interface FileInfo {
-    id: number;
-    name: string;
-    extension: string;
-    page_data: string;
-}
+// export interface FileInfo {
+//     id: number;
+//     name: string;
+//     extension: string;
+//     page_data: string;
+// }
 
 export interface HashChain {
     genesis_hash: string;
