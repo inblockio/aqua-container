@@ -1,9 +1,9 @@
-import { Component, createEffect, createSignal, For, onCleanup } from "solid-js";
+import { Component, createEffect, createSignal, For, JSX, onCleanup } from "solid-js";
 import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision } from "../models/PageData";
 import { FileInfo } from "../models/FileInfo";
 import { useNavigate } from "@solidjs/router";
-import { fileType } from "../util";
+import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
 
 
 const DetailsPage: Component = () => {
@@ -15,7 +15,7 @@ const DetailsPage: Component = () => {
             const pageData: PageData = JSON.parse(appState.selectedFileFromApi.page_data);
             setFilePageData(pageData)
         } else {
-            // navigate("/details");
+            navigate("/details");
         }
 
 
@@ -27,6 +27,16 @@ const DetailsPage: Component = () => {
         });
     });
 
+    createEffect(() => {
+
+        if (appState.selectedFileFromApi != undefined) {
+            const pageData: PageData = JSON.parse(appState.selectedFileFromApi.page_data);
+            setFilePageData(pageData)
+        } else {
+            navigate("/details");
+        }
+
+    }, [appState.selectedFileFromApi]);
 
     const fileHashAndRevisionsDetails = () => {
         return <For each={filePageData()?.pages ?? []}>
@@ -44,36 +54,78 @@ const DetailsPage: Component = () => {
                 <div class="h-10 w-10 flex-shrink-0">
                     {index + 1}
                 </div>
-                <div class="flex-grow truncate">
-                    <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {pages.domain_id}
-
+                <div class="flex-grow truncate mb-5">
+                    <div class="font-medium text-gray-900 dark:text-gray-300 truncate mb-3"> Domain :  {pages.domain_id}                    </div>
+                    <div class="font-medium text-gray-900 dark:text-gray-300 flex items-center">
+                        Genesis Hash: {formatCryptoAddress(pages.genesis_hash)}
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            fill="currentColor"
+                            class="bi bi-copy ml-2"  // added margin-left to space it
+                            viewBox="0 0 16 16"
+                        >
+                            <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
+                        </svg>
                     </div>
-                    <p class="text-gray-600 dark:text-gray-400"> Hash : </p>
+                    {/* <p class="text-gray-600 dark:text-gray-400"> </p> */}
                 </div>
 
-                {/* <For each={filePageData()?.pages ?? []}>
+
+            </div>
+            <div class="ms-5 mt-5 ps-5">
+                <hr />
+                <br />
+                <h6>Revisions</h6>
+                <br />
+                <For each={filePageData()?.pages ?? []}>
                     {(item, index) =>
                         <>
-                            {fileRevisionsDisplay(item, index())}
+                            {fileRevisionsDisplay(index())}
                         </>
                     }
 
-                </For> */}
-
+                </For>
             </div>
         </div>
     }
-    const fileRevisionsDisplay = (pages: Revision, index: number) => {
+
+
+    const fileRevisionsDisplay = (indexPar: number) => {
+        let totalRevisions = filePageData()?.pages[indexPar].revisions;
+        if (totalRevisions != null) {
+
+            console.log("revisions are not empty ");
+            let index = 0;
+            const revisionsJSXArray: JSX.Element[] = [];
+            for (const [key, revision] of Object.entries(totalRevisions)) {
+                console.log(`Revision Key: ${key}, Revision ID: ${revision.witness}, Content: ${revision.content}`);
+                // You can add any processing logic you want here
+                let rev = fileRevisionsDisplayItem(revision, index, key);
+                revisionsJSXArray.push(rev);
+                index++;
+            }
+
+            return <div>{revisionsJSXArray}</div>;
+
+        } else {
+            return <div>No revisions found</div>
+        }
+    }
+    const fileRevisionsDisplayItem = (revision: Revision, index: number, revisionHash : string) => {
         return <div class="p-3">
             <div class="flex items-center gap-3">
                 <div class="h-10 w-10 flex-shrink-0">
                     {index + 1}
                 </div>
                 <div class="flex-grow truncate">
-                    <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {pages.domain_id}
+                    {/* <div class="font-medium text-gray-900 dark:text-gray-300 truncate"> Domain :  {}
 
-                    </div>
-                    <p class="text-gray-600 dark:text-gray-400"> Hash : </p>
+                    </div> */}
+                    <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(revisionHash, 20 ,5)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Content Hash : {formatCryptoAddress(revision.content.content_hash, 20 ,5)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(revision.metadata.time_stamp)}  </p>
                 </div>
                 {/* <div
                         class="px-3 py-1 md:block hidden rounded text-xs font-medium">Testing
@@ -83,13 +135,23 @@ const DetailsPage: Component = () => {
                             class=" px-3 py-1 rounded text-xs font-medium bg-success/25 text-success">Complated
                         </div>
                     </div> */}
+
+             
+
             </div>
+            <hr/>
+            <br></br>
         </div>
 
     }
     const filePreviewView = () => {
 
-        const fileTypeInfo = fileType(appState.selectedFileFromApi!!);
+        if (appState.selectedFileFromApi == undefined) {
+            return <div>
+
+            </div>
+        }
+        const fileTypeInfo = fileType(appState.selectedFileFromApi);
 
         if (filePageData() && filePageData()?.pages != null && filePageData()?.pages.length > 0) {
             const firstPage = filePageData()!.pages[0]; // Get the first page
@@ -108,15 +170,13 @@ const DetailsPage: Component = () => {
     }
     const fileRevisionsText = () => {
         let totalRevisions = filePageData()?.pages[0].revisions;
+        let fileRevisionsCount = 0;
         if (totalRevisions != null) {
-
-            let length = Object.keys(totalRevisions).length;
-
-            return length;
-        } else {
-            console.log("revisions are null ...")
-            return 0;
+            fileRevisionsCount = Object.keys(totalRevisions).length;
         }
+
+        return fileRevisionsCount;
+
     }
 
     const fileSignersText = () => {

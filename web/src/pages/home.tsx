@@ -36,26 +36,26 @@ const HomePage: Component = () => {
 
     let fileInput: HTMLInputElement;
 
-    createEffect(async () => {
+    // createEffect(async () => {
 
-        let files = await fetchFiles("");
-        setAppState('filesFromApi', files);
+    //     let files = await fetchFiles("");
+    //     setAppState('filesFromApi', files);
 
-        let size = 0;
-        for (const element of files) {
-            const pageData: PageData = JSON.parse(element.page_data);
-            // Debug the structure
-            debugPageDataStructure(pageData);
+    //     let size = 0;
+    //     for (const element of files) {
+    //         const pageData: PageData = JSON.parse(element.page_data);
+    //         // Debug the structure
+    //         debugPageDataStructure(pageData);
 
-            let currentSize = sumFileContentSizes(pageData)
-            size += currentSize
-        }
+    //         let currentSize = sumFileContentSizes(pageData)
+    //         size += currentSize
+    //     }
 
-        setAllFileSize(size)
-        let hSize = humanReadableFileSize(size)
-        let info = `${files.length} files (${hSize})`
-        setPageDataInfo(info)
-    })
+    //     setAllFileSize(size)
+    //     let hSize = humanReadableFileSize(size)
+    //     let info = `${files.length} files (${hSize})`
+    //     setPageDataInfo(info)
+    // })
 
 
     createEffect(async () => {
@@ -209,7 +209,7 @@ const HomePage: Component = () => {
             const response = await axios.post('http://127.0.0.1:3600/explorer_file_upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    "public_key": appState.metaMaskAddress
+                    "metamask_address": appState.metaMaskAddress
                 },
             });
             console.log('File uploaded successfully:', JSON.stringify(response.data));

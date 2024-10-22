@@ -5,7 +5,7 @@ export async function fetchFiles(publicMetaMaskAddress : string): Promise<Array<
         const query = await fetch("http://127.0.0.1:3600/explorer_files", {
             method: 'GET',
             headers: {
-                'public_key': publicMetaMaskAddress
+                'metamask_address': publicMetaMaskAddress
               },
         });
         const response = await query.json()

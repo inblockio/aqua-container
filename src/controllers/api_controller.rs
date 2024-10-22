@@ -99,24 +99,24 @@ pub async fn fetch_explorer_files(
     let mut pages: Vec<FileInfo> = Vec::new();
 
 
-    // Extract the 'public_key' header
-    let query_string : String = match headers.get("public_key") {
+    // Extract the 'metamask_address' header
+    let query_string : String = match headers.get("metamask_address") {
         Some(value) => match value.to_str() {
             Ok(key) => {
                format!("SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='pulic' or  owner = '{}'",key) 
             },
             Err(err) => {
 
-                // return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid public_key header"})))
+                // return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid metamask_address header"})))
 
                 tracing::debug!("error {} ", err);
                 "SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='public'".to_string()
             },
         },
         None => {
-            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
 
-            tracing::debug!("public_key header missing ");
+            tracing::debug!("metamask_address header missing ");
             "SELECT id, name, extension, page_data , owner , mode  FROM pages where mode ='public'".to_string()
         },
     };
@@ -151,7 +151,7 @@ pub async fn fetch_explorer_files(
 
             if pages.is_empty() {
                 res.logs.push("No pages found".to_string());
-                return (StatusCode::NOT_FOUND, Json::from(res));
+                return (StatusCode::OK, Json::from(res));
             }
 
             res.files = pages;
@@ -333,8 +333,8 @@ pub async fn explorer_file_upload(
     };
 
 
-    // Extract the 'public_key' header
-    let public_key  = match headers.get("public_key") {
+    // Extract the 'metamask_address' header
+    let metamask_address  = match headers.get("metamask_address") {
         Some(value) => match value.to_str() {
             Ok(key) => {
                key  
@@ -342,7 +342,7 @@ pub async fn explorer_file_upload(
             Err(err) => {
 
                 tracing::error!("headers get error {} ", err);
-                // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid public_key header"})))
+                // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid metamask_address header"})))
             
                 res.logs.push(format!("Error: Meta mask public key  error: {:?}", err));
                 return (StatusCode::BAD_REQUEST, Json(res));
@@ -350,8 +350,8 @@ pub async fn explorer_file_upload(
         },
         None => {
 
-            tracing::debug!("public_key header missing ");
-            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "public_key header missing"})))
+            tracing::debug!("metamask_address header missing ");
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
             res.logs.push("Error: Meta mask public key  missing".to_string());
             return (StatusCode::BAD_REQUEST, Json(res));
 
@@ -558,7 +558,7 @@ pub async fn explorer_file_upload(
         content_type,
         json_string,
         mode,
-        public_key
+        metamask_address
     )
     .fetch_one(&server_database.sqliteDb)
     .await
@@ -570,7 +570,7 @@ pub async fn explorer_file_upload(
                 extension: content_type,
                 page_data: json_string,
                mode: mode,
-               owner:  public_key.to_string()
+               owner:  metamask_address.to_string()
             };
             res.file = Some(file_info);
             (StatusCode::CREATED, Json(res))
