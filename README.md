@@ -5,27 +5,28 @@ This project has  an axum web server (with ssr  web page) and  a solid js fronte
 Features:
 
 Functionality milestones Fileupload & Hasher:
-1) [done] Upload file to Database
-2) [done] Turn file into Aqua-Chain 
-3) [done] Export Aqua-Chain (no signature, no witness) as JSON
-4) [done] Sign Aqua-Chain with Metamask-Wallet
-5) [todo] Import Aqua-Chain
-6) [done] Extend existing Aqua-Chain with new Signature 
-7) [todo] Witness Aqua-Chain on Chain
+1) [DONE] Upload file to Database [Support: doc,ots,pdf,png,jpg, more...]
+2) [DONE] Turn file into Aqua-Chain
+3) [DONE] Export Aqua-Chain (no signature, no witness) as JSON
+4) [DONE] Sign Aqua-Chain with Metamask-Wallet
+5) [TODO] Import Aqua-Chain
+6) [DONE] Extend existing Aqua-Chain with new Signature 
+7) [DONE] Witness Aqua-Chain on Chain
+8) [ONGOIN] Allow for choosing witness network from config.
 
 UI-Interface:
-1) [done] Beautify website with CSS
-2) [done] Make it mobile-responsive
+1) [DONE] Beautify website with CSS
+2) [DONE] Make it mobile-responsive
 
 Functionality milestones Verifier: 
-1) [done] Upload Aqua-Chain for verification
-2) [done] Verification of Aqua-Chain (print to console)
-3) [done] Display verification results on the website
+1) [DONE] Upload Aqua-Chain for verification
+2) [DONE] Verification of Aqua-Chain (print to console)
+3) [DONE] Display verification results on the website
 
 Pages:
-1) [done] Hasher
-2) [done] Verifier
-3) [todo] Config (configure Witness, see version of Software etc.)
+1) [DONE][v1.2] Hasher 
+2) [DONE][v1.2] Verifier
+3) [ONGOIN] Config (configure Witness, see version of Software etc.)
 
 
 
