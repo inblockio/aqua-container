@@ -22,6 +22,7 @@ Functionality milestones Verifier:
 1) [DONE] Upload Aqua-Chain for verification
 2) [DONE] Verification of Aqua-Chain (print to console)
 3) [DONE] Display verification results on the website
+4) [ONGOING] Independent upload for verification. Show verification with detailed verification details.
 
 Pages:
 1) [DONE][v1.2] Hasher 
