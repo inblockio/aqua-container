@@ -2,7 +2,7 @@
 Aqua container is a rust implmentation of aqua protocol.It enables data to be signed , witnessed and verified.
 This project has  an axum web server (with ssr  web page) and  a solid js frontend to display  the above capabilities.
 
-Features:
+## Phase 1 - Features:
 
 Functionality milestones Fileupload & Hasher:
 1) [DONE] Upload file to Database [Support: doc,ots,pdf,png,jpg, more...]
@@ -29,7 +29,12 @@ Pages:
 2) [DONE][v1.2] Verifier
 3) [ONGOIN] Config (configure Witness, see version of Software etc.)
 
+## Phase 2 - Features:
 
+Multi-User File-Management
+1) Support multi-user access rights for DB
+2) Integrate SIWE-OIDC login functionality
+3) File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
 
 ## Requirements
 
