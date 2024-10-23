@@ -32,9 +32,9 @@ Pages:
 ## Phase 2 - Features:
 
 Multi-User File-Management
-1) Support multi-user access rights for DB
-2) Integrate SIWE-OIDC login functionality
-3) File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
+1) [DONE] Support multi-user access rights for DB
+2) [TODO] Integrate SIWE-OIDC login functionality
+3) [TODO] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
 
 ## Requirements
 
