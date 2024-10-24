@@ -30,7 +30,7 @@ use tower_http::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
-use bonsaidb::core::{circulate::Message, keyvalue::{KeyStatus, KeyValue}};
+use bonsaidb::core::{keyvalue::{KeyStatus, KeyValue}};
 use bonsaidb::core::schema::{Collection, SerializedCollection};
 use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
