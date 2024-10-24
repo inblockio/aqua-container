@@ -9,3 +9,4 @@ pages.db-wal
 .idea
 node_modules
 .env
+.vscode

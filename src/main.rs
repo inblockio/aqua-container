@@ -3,7 +3,9 @@
 mod models;
 mod util;
 mod controllers;
+pub mod auth;
 
+use auth::siwe_sign_in;
 use axum::{body::Bytes, extract::{DefaultBodyLimit, Multipart, Path, Request, State}, handler::HandlerWithoutStateExt, http::StatusCode, response::{Html, Redirect}, routing::{get, post}, BoxError, Form, Router, Json};
 use ethaddr::address;
 
@@ -28,7 +30,7 @@ use tower_http::{
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::{Any, CorsLayer};
-use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
+use bonsaidb::core::{circulate::Message, keyvalue::{KeyStatus, KeyValue}};
 use bonsaidb::core::schema::{Collection, SerializedCollection};
 use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
@@ -99,7 +101,8 @@ async fn main() {
         .route("/explorer_delete_all_files", get(explorer_delete_all_files))
         .route("/explorer_fetch_configuration", get(explorer_fetch_configuration))
         .route("/explorer_update_configuration", post(explorer_update_configuration))
-
+        .route("/siwe", post(siwe_sign_in))
+        
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())

@@ -1,5 +1,5 @@
-{
-    "rust-analyzer.linkedProjects": [
-        "./aqua-guardian/Cargo.toml"
-    ]
-}
+// {
+//     "rust-analyzer.linkedProjects": [
+//         "./aqua-guardian/Cargo.toml"
+//     ]
+// }
