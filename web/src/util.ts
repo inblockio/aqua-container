@@ -101,7 +101,7 @@ export function capitalizeFirstLetter(str: string, forceLowerRest: boolean = fal
 export function timeToHumanFriendly(utcTime: string): string {
     // Extract the date components
     let year = utcTime.substring(0, 4);
-    let month = utcTime.substring(4, 6) - 1; // Months are zero-indexed in JS
+    let month = Number(utcTime.substring(4, 6)) - 1; // Months are zero-indexed in JS
     let day = utcTime.substring(6, 8);
     let hours = utcTime.substring(8, 10);
     let minutes = utcTime.substring(10, 12);
