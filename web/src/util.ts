@@ -185,3 +185,13 @@ export function formatCryptoAddress(address?: string, start: number = 10, end: n
     const lastPart = address?.slice(-end);
     return `${firstPart}...${lastPart}`;
 }
+
+export function remove0xPrefix(input: string): string {
+    // Check if the input string starts with '0x'
+    if (input.startsWith('0x')) {
+        // Remove the prefix and return the remaining string
+        return input.slice(2);
+    }
+    // Return the original string if it doesn't start with '0x'
+    return input;
+}

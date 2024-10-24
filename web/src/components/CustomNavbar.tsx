@@ -1,37 +1,75 @@
 import { A } from "@solidjs/router";
 import { createEffect, createSignal } from "solid-js";
-import { formatCryptoAddress } from "../util";
+import { formatCryptoAddress, remove0xPrefix } from "../util";
 import { fetchFiles } from "../network/api";
 import { appState, setAppState } from "../store/store";
 import { FileInfo } from "../models/PageData";
 import { ApiFileInfo } from "../models/FileInfo";
+import axios from "axios";
+import { API_BASE_ENDPOINT, ETH_CHAINID_MAP } from "../config/constants";
+import { generateNonce, SiweMessage } from "siwe";
+import { BrowserProvider, ethers } from "ethers";
 
+const SignInButton = () => {
 
-const CustomNavbar = () => {
+    function createSiweMessage(address: string, statement: string) {
+
+        const scheme = window.location.protocol.slice(0, -1);
+        const domain = window.location.host;
+        const origin = window.location.origin;
+        console.log("Scheme: ", scheme,)
+        const message = new SiweMessage({
+            // Setting scheme is giving out lots of headaches
+            // scheme: scheme,
+            domain,
+            address,
+            statement,
+            uri: origin,
+            version: '1',
+            chainId: 1,
+            nonce: generateNonce()
+        });
+        return message.prepareMessage();
+    }
 
     const signAndConnect = async () => {
         if (window.ethereum) {
+            const provider = new BrowserProvider(window.ethereum);
             try {
                 // Connect wallet
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const walletAddress = accounts[0];
+                const signer = await provider.getSigner();
 
-                console.log('Connected account:', walletAddress);
+                // Create a SIWE msg for signing
+                const message = createSiweMessage(
+                    signer.address,
+                    'Sign in with Ethereum to the app.'
+                );
 
-                // Message to sign
-                const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
+                let signature = await signer.signMessage(message);
 
-                // Sign the message
-                const signature = await window.ethereum.request({
-                    method: 'personal_sign',
-                    params: [message, walletAddress],
+                const formData = new URLSearchParams();
+
+                formData.append('message', message);
+                formData.append('signature', remove0xPrefix(signature));
+
+                console.log("Message for backend: ", message)
+
+                const response = await axios.post(`${API_BASE_ENDPOINT}/siwe`, formData, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
                 });
 
-                if (signature) {
-                    setAppState("metaMaskAddress", walletAddress);
+                if (response.status === 200) {
+                    if (signature) {
+                        const responseData = response.data
+                        const walletAddress = responseData?.address
+                        setAppState("metaMaskAddress", walletAddress);
 
-                    let files = await fetchFiles(walletAddress);
-                    setAppState('filesFromApi', files);
+                        let files = await fetchFiles(walletAddress);
+                        setAppState('filesFromApi', files);
+                    }
                 }
 
             } catch (error: any) {
@@ -43,6 +81,104 @@ const CustomNavbar = () => {
         }
     };
 
+    return (
+        <button onClick={(e) => {
+            signAndConnect()
+        }} data-fc-type="dropdown" data-fc-placement="bottom"
+            type="button"
+            class="btn rounded-full inline-flex justify-center items-center bg-info text-white w-full">
+            <i class="mgc_add_line text-lg me-2"></i> Sign in with MetaMask
+        </button>
+    )
+}
+
+
+const CustomNavbar = () => {
+
+    // const signAndConnect = async () => {
+    //     if (window.ethereum) {
+    //         try {
+    //             // Connect wallet
+    //             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    //             const walletAddress = accounts[0];
+
+    //             console.log('Connected account:', walletAddress);
+
+    //             // Message to sign
+    //             const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
+
+    //             // Sign the message
+    //             const signature = await window.ethereum.request({
+    //                 method: 'personal_sign',
+    //                 params: [message, walletAddress],
+    //             });
+
+    //             if (signature) {
+    //                 setAppState("metaMaskAddress", walletAddress);
+
+    //                 let files = await fetchFiles(walletAddress);
+    //                 setAppState('filesFromApi', files);
+    //             }
+
+    //         } catch (error: any) {
+    //             console.error('Error during wallet connection or signing:', error);
+    //             alert(error.message);
+    //         }
+    //     } else {
+    //         alert('MetaMask is not installed');
+    //     }
+    // };
+
+    // const signAndConnect = async () => {
+    //     if (window.ethereum) {
+    //         try {
+    //             // Connect wallet
+    //             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    //             const walletAddress = accounts[0];
+
+    //             console.log('Connected account:', walletAddress);
+
+    //             // Message to sign
+    //             const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
+
+    //             // Sign the message
+    //             const signature = await window.ethereum.request({
+    //                 method: 'personal_sign',
+    //                 params: [message, walletAddress],
+    //             });
+
+    //             console.log(signature)
+
+    //             const formData = new URLSearchParams();
+
+    //             formData.append('message', message);
+    //             formData.append('signature', signature);
+    //             formData.append('user_address', ethers.getAddress(walletAddress));
+
+    //             const response = await axios.post(`${API_BASE_ENDPOINT}/siwe`, formData, {
+    //                 headers: {
+    //                     'Content-Type': 'application/x-www-form-urlencoded'
+    //                 }
+    //             });
+
+    //             console.log(response)
+
+    //             if (signature) {
+    //                 setAppState("metaMaskAddress", walletAddress);
+
+    //                 let files = await fetchFiles(walletAddress);
+    //                 setAppState('filesFromApi', files);
+    //             }
+
+    //         } catch (error: any) {
+    //             console.error('Error during wallet connection or signing:', error);
+    //             alert(error.message);
+    //         }
+    //     } else {
+    //         alert('MetaMask is not installed');
+    //     }
+    // };
+
 
     const autoConnectWallet = async () => {
         if (window.ethereum) {
@@ -53,7 +189,6 @@ const CustomNavbar = () => {
             let files = await fetchFiles(walletAddress);
             setAppState('filesFromApi', files);
         }
-
     }
 
     const disconnect = () => {
@@ -71,9 +206,9 @@ const CustomNavbar = () => {
         setAppState("metaMaskAddress", null);
     }
 
-    createEffect(async () => {
-        autoConnectWallet()
-    })
+    // createEffect(async () => {
+    //     autoConnectWallet()
+    // })
 
 
     return (
@@ -93,13 +228,8 @@ const CustomNavbar = () => {
             <div class="ms-auto">
                 {
                     appState.metaMaskAddress == null ?
-                        <button onClick={(e) => {
-                            signAndConnect()
-                        }} data-fc-type="dropdown" data-fc-placement="bottom"
-                            type="button"
-                            class="btn rounded-full inline-flex justify-center items-center bg-info text-white w-full">
-                            <i class="mgc_add_line text-lg me-2"></i> Sign in with MetaMask
-                        </button> :
+                        <SignInButton />
+                        :
                         <button onclick={disconnect} class="btn rounded-full bg-primary/25 text-primary hover:bg-primary hover:text-white">
                             <label>{formatCryptoAddress(appState.metaMaskAddress)} - Disconnect</label>
                         </button>
