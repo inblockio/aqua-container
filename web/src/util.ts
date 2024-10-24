@@ -1,12 +1,12 @@
-import {FileInfo} from "./models/FileInfo";
-import {PageData, Timestamp} from "./models/PageData";
+import { ApiFileInfo } from "./models/FileInfo";
+import { PageData, Timestamp } from "./models/PageData";
 
 export const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml"];
 export const documentTypes = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
 export const musicTypes = ["audio/mpeg", "audio/wav"];
 export const videoTypes = ["video/mp4", "video/mpeg", "video/webm"];
 
-export function filterFilesByType(files: FileInfo[], fileType: string): FileInfo[] { // "image" | "document" | "music" | "video"
+export function filterFilesByType(files: ApiFileInfo[], fileType: string): ApiFileInfo[] { // "image" | "document" | "music" | "video"
 
     switch (fileType) {
         case "image":
@@ -24,7 +24,7 @@ export function filterFilesByType(files: FileInfo[], fileType: string): FileInfo
     }
 }
 
-export function fileType(file: FileInfo): string {
+export function fileType(file: ApiFileInfo): string {
     if (imageTypes.includes(file.extension.replace(/\s+/g, ''))) {
         return "Image";
     } else if (documentTypes.includes(file.extension.replace(/\s+/g, ''))) {
@@ -98,7 +98,7 @@ export function capitalizeFirstLetter(str: string, forceLowerRest: boolean = fal
 }
 
 
-export  function timeToHumanFriendly(utcTime : string): string{
+export function timeToHumanFriendly(utcTime: string): string {
     // Extract the date components
     let year = utcTime.substring(0, 4);
     let month = utcTime.substring(4, 6) - 1; // Months are zero-indexed in JS
@@ -107,12 +107,12 @@ export  function timeToHumanFriendly(utcTime : string): string{
     let minutes = utcTime.substring(10, 12);
     let seconds = utcTime.substring(12, 14);
 
-// Create a new Date object
+    // Create a new Date object
     let date = new Date(Date.UTC(Number(year), month, Number(day), Number(hours), Number(minutes), Number(seconds)));
 
-// Format the date in a human-friendly way
+    // Format the date in a human-friendly way
     let options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-    return  date.toLocaleDateString('en-US', options)
+    return date.toLocaleDateString('en-US', options)
 }
 
 
@@ -175,7 +175,7 @@ export class DateFormatter {
 
 
 export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
-    if(!address) return "NO ADDRESS"
+    if (!address) return "NO ADDRESS"
     if (address?.length < (start + end)) {
         // throw new Error(`Address must be at least ${start + end} characters long.`);
         return address

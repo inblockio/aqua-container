@@ -5,13 +5,20 @@ import DetailsPage from "./pages/details"
 import { Route, Router } from "@solidjs/router";
 import ConfigsPage from './pages/configuration';
 import MainLayout from './layout/MainLayout';
+import { ethers } from 'ethers';
+
+// declare global {
+//   interface Window {
+//     ethereum?: {
+//       isMetaMask?: boolean;
+//       request?: (args: { method: string; params?: Array<any> }) => Promise<any>;
+//     };
+//   }
+// }
 
 declare global {
   interface Window {
-    ethereum?: {
-      isMetaMask?: boolean;
-      request?: (args: { method: string; params?: Array<any> }) => Promise<any>;
-    };
+    ethereum?: ethers.Eip1193Provider;
   }
 }
 

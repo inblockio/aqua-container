@@ -1,14 +1,11 @@
-import { A } from "@solidjs/router";
-import { createEffect, createSignal } from "solid-js";
 import { formatCryptoAddress, remove0xPrefix } from "../util";
 import { fetchFiles } from "../network/api";
 import { appState, setAppState } from "../store/store";
-import { FileInfo } from "../models/PageData";
 import { ApiFileInfo } from "../models/FileInfo";
 import axios from "axios";
-import { API_BASE_ENDPOINT, ETH_CHAINID_MAP } from "../config/constants";
+import { API_BASE_ENDPOINT } from "../config/constants";
 import { generateNonce, SiweMessage } from "siwe";
-import { BrowserProvider, ethers } from "ethers";
+import { BrowserProvider } from "ethers";
 
 const SignInButton = () => {
 
@@ -94,90 +91,6 @@ const SignInButton = () => {
 
 
 const CustomNavbar = () => {
-
-    // const signAndConnect = async () => {
-    //     if (window.ethereum) {
-    //         try {
-    //             // Connect wallet
-    //             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    //             const walletAddress = accounts[0];
-
-    //             console.log('Connected account:', walletAddress);
-
-    //             // Message to sign
-    //             const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
-
-    //             // Sign the message
-    //             const signature = await window.ethereum.request({
-    //                 method: 'personal_sign',
-    //                 params: [message, walletAddress],
-    //             });
-
-    //             if (signature) {
-    //                 setAppState("metaMaskAddress", walletAddress);
-
-    //                 let files = await fetchFiles(walletAddress);
-    //                 setAppState('filesFromApi', files);
-    //             }
-
-    //         } catch (error: any) {
-    //             console.error('Error during wallet connection or signing:', error);
-    //             alert(error.message);
-    //         }
-    //     } else {
-    //         alert('MetaMask is not installed');
-    //     }
-    // };
-
-    // const signAndConnect = async () => {
-    //     if (window.ethereum) {
-    //         try {
-    //             // Connect wallet
-    //             const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    //             const walletAddress = accounts[0];
-
-    //             console.log('Connected account:', walletAddress);
-
-    //             // Message to sign
-    //             const message = `Please sign this message to prove ownership of the wallet: ${walletAddress}`;
-
-    //             // Sign the message
-    //             const signature = await window.ethereum.request({
-    //                 method: 'personal_sign',
-    //                 params: [message, walletAddress],
-    //             });
-
-    //             console.log(signature)
-
-    //             const formData = new URLSearchParams();
-
-    //             formData.append('message', message);
-    //             formData.append('signature', signature);
-    //             formData.append('user_address', ethers.getAddress(walletAddress));
-
-    //             const response = await axios.post(`${API_BASE_ENDPOINT}/siwe`, formData, {
-    //                 headers: {
-    //                     'Content-Type': 'application/x-www-form-urlencoded'
-    //                 }
-    //             });
-
-    //             console.log(response)
-
-    //             if (signature) {
-    //                 setAppState("metaMaskAddress", walletAddress);
-
-    //                 let files = await fetchFiles(walletAddress);
-    //                 setAppState('filesFromApi', files);
-    //             }
-
-    //         } catch (error: any) {
-    //             console.error('Error during wallet connection or signing:', error);
-    //             alert(error.message);
-    //         }
-    //     } else {
-    //         alert('MetaMask is not installed');
-    //     }
-    // };
 
 
     const autoConnectWallet = async () => {
