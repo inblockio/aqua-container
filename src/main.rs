@@ -41,7 +41,7 @@ use serde_json::json;
 use verifier::v1_1::hashes::*;
 use crate::util::{check_or_generate_domain, db_set_up};
 use controllers::form_controller::{show_form, save_request_body, save_json_file, get_verification_hash_for_file, add_signature_hash_for_file };
-use  controllers::api_controller::{fetch_explorer_files, explorer_file_upload, explorer_sign_revision, explorer_witness_file, explorer_delete_file,  explorer_delete_all_files, explorer_fetch_configuration, explorer_update_configuration};
+use  controllers::api_controller::{fetch_explorer_files, explorer_file_upload, explorer_aqua_file_upload, explorer_sign_revision, explorer_witness_file, explorer_delete_file,  explorer_delete_all_files, explorer_fetch_configuration, explorer_update_configuration};
 use crate::controllers::api_controller::explorer_file_verify_hash_upload;
 
 const UPLOADS_DIRECTORY: &str = "uploads";
@@ -94,6 +94,7 @@ async fn main() {
         .route("/signrevision", post(add_signature_hash_for_file))
         .route("/explorer_files", get(fetch_explorer_files))
         .route("/explorer_file_upload", post(explorer_file_upload))
+        .route("/explorer_aqua_file_upload", post(explorer_aqua_file_upload))
         .route("/explorer_verify_hash", post(explorer_file_verify_hash_upload))
         .route("/explorer_sign_revision", post(explorer_sign_revision))
         .route("/explorer_witness_file", post(explorer_witness_file))

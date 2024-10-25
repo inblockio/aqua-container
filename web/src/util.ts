@@ -6,6 +6,26 @@ export const documentTypes = ["application/pdf", "application/msword", "applicat
 export const musicTypes = ["audio/mpeg", "audio/wav"];
 export const videoTypes = ["video/mp4", "video/mpeg", "video/webm"];
 
+export function isJsonFileContent(file: File) : Promise<boolean>{
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+            try {
+                JSON.parse(reader.result);
+                resolve(true); // Valid JSON
+            } catch (e) {
+                resolve(false); // Not JSON
+            }
+        };
+        
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+
+
 export function filterFilesByType(files: ApiFileInfo[], fileType: string): ApiFileInfo[] { // "image" | "document" | "music" | "video"
 
     switch (fileType) {

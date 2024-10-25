@@ -9,7 +9,8 @@ import {
     debugPageDataStructure, fileType,
     filterFilesByType,
     humanReadableFileSize,
-    sumFileContentSizes, timeToHumanFriendly
+    sumFileContentSizes, timeToHumanFriendly,
+    isJsonFileContent
 } from "../util";
 import { UiFileTypes } from "../models/UiFileTypes";
 import { appState, setAppState } from "../store/store";
@@ -82,7 +83,7 @@ const HomePage: Component = () => {
 
 
 
-    const uploadAquaJsonFile = async () => {
+    const verifyAquaJsonFile = async () => {
         const file = selectedFileForUpload();
         console.log("Uploading")
         if (!file) {
@@ -168,9 +169,10 @@ const HomePage: Component = () => {
         const fileName = file.name;
         console.log('Selected file:', fileName);
 
-        let exists = appState.filesFromApi.find((e) => e.name == fileName);
-
-        if (exists != undefined && fileTypeForUpload() !== "json") {
+        
+        if(fileTypeForUpload() == "upload_file"){
+            let exists = appState.filesFromApi.find((e) => e.name == fileName);
+        if (exists != undefined ) {
 
             setSelectedFileForUpload(null);
             setError('Rename the file, a file with name ' + fileName + ' already exists');
@@ -178,20 +180,52 @@ const HomePage: Component = () => {
             input.value = '';
             return;
 
-        } else {
+        } 
+    }
+
+    if(fileTypeForUpload() == "verify_aqua_json"){
+
+
+       if (!fileName .endsWith('.json')){
+        setSelectedFileForUpload(null);
+        setError('Please select a json file , a file with name ' + fileName + ' is not json (file name)');
+        return;
+       }
+       isJsonFileContent(file)
+            .then((isJson) => {
+                console.log(isJson ? "This is a JSON file." : "This is not a JSON file.");
+                if (!isJson){
+                    setSelectedFileForUpload(null);
+                    setError('Please select a json file , a file with name ' + fileName + ' is not json (file contenets)');
+                 return;
+                }
+            })
+            .catch((error) => {
+                console.error("Error reading the file:", error);
+                setSelectedFileForUpload(null);
+                setError('Please select a json file , a file with name ' + fileName + ' cannot be read ' + JSON.stringify(error));
+                return;
+            });
+    }
+
             setSelectedFileForUpload(file);
             setError('');
 
             console.log("Type: ", fileTypeForUpload())
-            if (fileTypeForUpload() === "json") {
+            if (fileTypeForUpload() === "verify_aqua_json") {
+                console.log("verify  json")
+                verifyAquaJsonFile()
+            }else  if (fileTypeForUpload() === "upload_aqua_json") {
                 console.log("Uploading json")
                 uploadAquaJsonFile()
-            } else {
+            } else if (fileTypeForUpload() == "upload_file") {
                 //upload the file
                 console.log("Uploading file")
                 uploadFile()
+            }else{
+                alert("Error failed .....");
             }
-        }
+        
     };
 
     const uploadFile = async () => {
@@ -207,6 +241,56 @@ const HomePage: Component = () => {
 
         try {
             const response = await axios.post('http://127.0.0.1:3600/explorer_file_upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    "metamask_address": appState.metaMaskAddress
+                },
+            });
+            console.log('File uploaded successfully:', JSON.stringify(response.data));
+
+
+            setSelectedFileForUpload(null);
+
+            const res = response.data
+
+            let logs: Array<string> = res.logs
+            logs.forEach((item) => {
+                console.log("**>" + item + "\n.")
+            })
+
+
+            // Assuming the API returns an array of FileInfo objects
+            const file: FileInfo = {
+                id: res.file.id,
+                name: res.file.name,
+                extension: res.file.extension,
+                page_data: res.file.page_data
+            };
+
+            setAppState("filesFromApi", [...appState.filesFromApi, file])
+
+            setFileTypeForUpload("")
+            return;
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            setError('Failed to upload file');
+        }
+    };
+
+
+    const uploadAquaJsonFile = async () => {
+        const file = selectedFileForUpload();
+        if (!file) {
+            setError('No file selected');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('account', "example");
+
+        try {
+            const response = await axios.post('http://127.0.0.1:3600/explorer_aqua_file_upload', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     "metamask_address": appState.metaMaskAddress
@@ -519,7 +603,7 @@ const HomePage: Component = () => {
                                                 setError("Please sign in with meta mask wallet address to upload a file");
                                                 return;
                                             }
-                                            setFileTypeForUpload("file")
+                                            setFileTypeForUpload("upload_file")
                                             handleSelectFileForUploadClick()
                                         }} data-fc-type="dropdown" data-fc-placement="bottom"
                                             type="button"
@@ -529,7 +613,7 @@ const HomePage: Component = () => {
                                         <br />
 
                                         <a href="javascript:void(0)" onClick={(e) => {
-                                            setFileTypeForUpload("json")
+                                            setFileTypeForUpload("verify_aqua_json")
                                             handleSelectFileForUploadClick();
                                         }} data-fc-type="dropdown" data-fc-placement="bottom"
                                             type="button"
@@ -544,9 +628,24 @@ const HomePage: Component = () => {
                                             onChange={handleFileSelect}
                                         />
 
+                                        <a href="javascript:void(0)" onClick={(e) => {
+                                            setFileTypeForUpload("upload_aqua_json")
+                                            handleSelectFileForUploadClick();
+                                        }} data-fc-type="dropdown" data-fc-placement="bottom"
+                                            type="button"
+                                            class="btn inline-flex justify-center items-center bg-primary text-white w-full mt-4">
+                                            <i class="mgc_add_line text-lg me-2"></i> Import Aqua-File
+                                        </a>
+                                        {/* Hidden file input */}
+                                        <input
+                                            type="file"
+                                            ref={el => fileInput = el} // Save reference to the input element
+                                            style={{ display: "none" }} // Hide the input element
+                                            onChange={handleFileSelect}
+                                        />
+
                                         <a onClick={(e) => {
                                             e.preventDefault();
-                                            console.log("Woopsiiiee ...........");
                                             navigate("/configuration")
                                         }} href="javascript:void(0);" class="flex items-center py-2 px-4 text-sm rounded text-gray-500 hover:bg-slate-100 hover:text-slate-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-300 mt-5" id="headingOne">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-gear my-2" viewBox="0 0 16 16">

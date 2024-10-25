@@ -1,3 +1,11 @@
+use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
+use crate::models::page_data::{ApiResponse, PageDataContainer};
+use crate::models::{file::FileInfo, page_data};
+use crate::util::{
+    check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash, db_set_up, get_file_info,  make_empty_hash, update_env_file
+};
+use crate::Db;
+use axum::response::{IntoResponse, Response};
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -7,45 +15,32 @@ use axum::{
     routing::{get, post},
     BoxError, Form, Json, Router,
 };
-use ethaddr::address;
-use chrono::{DateTime, NaiveDateTime, Utc};
-use ethers::core::k256::sha2::Sha256;
-use crate::models::input::{RevisionInput, WitnessInput, DeleteInput, UpdateConfigurationInput};
-use crate::models::page_data::{PageDataContainer, ApiResponse};
-use crate::models::{file::FileInfo, page_data};
-use crate::util::{
-    check_if_page_data_revision_are_okay, 
-    check_or_generate_domain,
-     compute_content_hash, 
-     db_set_up,
-     make_empty_hash,
-     update_env_file
-};
-use crate::Db;
-use axum::response::{IntoResponse, Response};
 use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
 use bonsaidb::core::schema::{Collection, SerializedCollection};
 use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
+use chrono::{DateTime, NaiveDateTime, Utc};
+use ethaddr::address;
+use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
 use guardian_common::{crypt, custom_types::*};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha3::{Digest, Sha3_512};
+use sqlx::Row;
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
-use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::env;
 use std::fs;
 use std::io;
 use std::net::SocketAddr;
 use std::time::SystemTime;
+use std::{collections::BTreeMap, time::UNIX_EPOCH};
 use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 use verifier::v1_1::hashes::*;
-use std::collections::HashMap;
-use std::env;
-use sqlx::Row;
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -85,44 +80,42 @@ impl IntoResponse for UploadError {
 
 pub async fn fetch_explorer_files(
     State(server_database): State<Db>,
-    headers: HeaderMap, 
+    headers: HeaderMap,
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("fetch_explorer_files");
-    let mut log_data : Vec<String> = Vec::new();
-    let mut res : ApiResponse = ApiResponse {
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
         logs: log_data,
         file: None,
-        files: Vec::new()
+        files: Vec::new(),
     };
 
     // Initialize an empty Vec to hold the result
     let mut pages: Vec<FileInfo> = Vec::new();
 
-
     // Extract the 'metamask_address' header
-    let query_string : String = match headers.get("metamask_address") {
+    let query_string: String = match headers.get("metamask_address") {
         Some(value) => match value.to_str() {
             Ok(key) => {
-               format!("SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='pulic' or  owner = '{}'",key) 
-            },
+                format!("SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='pulic' or  owner = '{}'",key)
+            }
             Err(err) => {
-
                 // return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid metamask_address header"})))
 
                 tracing::debug!("error {} ", err);
                 "SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='public'".to_string()
-            },
+            }
         },
         None => {
             // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
 
             tracing::debug!("metamask_address header missing ");
-            "SELECT id, name, extension, page_data , owner , mode  FROM pages where mode ='public'".to_string()
-        },
+            "SELECT id, name, extension, page_data , owner , mode  FROM pages where mode ='public'"
+                .to_string()
+        }
     };
 
-
-    tracing::debug!("Sql query ==>  {}",query_string);
+    tracing::debug!("Sql query ==>  {}", query_string);
 
     // Fetch all rows from the 'pages' table
     let rows = sqlx::query(&query_string)
@@ -134,18 +127,17 @@ pub async fn fetch_explorer_files(
         Ok(records) => {
             // Loop through the records and populate the pages vector
             // id: row.id,
-                    // name: row.name,
-                    // extension: row.extension,
-                    // page_data: row.page_data,
+            // name: row.name,
+            // extension: row.extension,
+            // page_data: row.page_data,
             for row in records {
                 pages.push(FileInfo {
-                    id: row.get("id"),           // Get id from the row
-                    name: row.get("name"),       // Get name from the row
+                    id: row.get("id"),               // Get id from the row
+                    name: row.get("name"),           // Get name from the row
                     extension: row.get("extension"), // Get extension from the row
                     page_data: row.get("page_data"), // Get page_data from the row
-                    mode: row.get("mode"), // Get owner from the row
-                    owner: row.get("owner"), // Get owner from the row
-                    
+                    mode: row.get("mode"),           // Get owner from the row
+                    owner: row.get("owner"),         // Get owner from the row
                 });
             }
 
@@ -160,7 +152,8 @@ pub async fn fetch_explorer_files(
         }
         Err(e) => {
             tracing::error!("Failed to fetch records: {:?}", e);
-            res.logs.push(format!("Error: Failed to fetch records: {:?}", e));
+            res.logs
+                .push(format!("Error: Failed to fetch records: {:?}", e));
             res.files = pages;
             (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
         }
@@ -173,10 +166,10 @@ pub async fn explorer_file_verify_hash_upload(
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_file_verify_hash_upload fn");
     let mut log_data: Vec<String> = Vec::new();
-    let mut res : ApiResponse = ApiResponse {
+    let mut res: ApiResponse = ApiResponse {
         logs: log_data,
         file: None,
-        files: Vec::new()
+        files: Vec::new(),
     };
 
     while let Ok(Some(field)) = multipart.next_field().await {
@@ -185,10 +178,7 @@ pub async fn explorer_file_verify_hash_upload(
             None => {
                 tracing::error!("Field name missing");
                 res.logs.push("Field name missing".to_string());
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(res),
-                );
+                return (StatusCode::BAD_REQUEST, Json(res));
             }
         };
 
@@ -203,11 +193,9 @@ pub async fn explorer_file_verify_hash_upload(
                     != Some("json")
                 {
                     tracing::error!("Uploaded file is not a JSON file");
-                    res.logs.push("Error: Uploaded file is not a JSON file".to_string());
-                    return (
-                        StatusCode::BAD_REQUEST,
-                        Json(res),
-                    );
+                    res.logs
+                        .push("Error: Uploaded file is not a JSON file".to_string());
+                    return (StatusCode::BAD_REQUEST, Json(res));
                 }
 
                 // Read the field into a byte vector
@@ -215,11 +203,9 @@ pub async fn explorer_file_verify_hash_upload(
                     Ok(data) => data,
                     Err(e) => {
                         tracing::error!("Failed to read file data: {:?}", e);
-                        res.logs.push(format!("Error: Failed to read file data: {:?}", e));
-                        return (
-                            StatusCode::BAD_REQUEST,
-                            Json(res),
-                        );
+                        res.logs
+                            .push(format!("Error: Failed to read file data: {:?}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
 
@@ -281,10 +267,7 @@ pub async fn explorer_file_verify_hash_upload(
                                 Err(err) => {
                                     tracing::error!("Error compute_content_hash {} ", err);
                                     res.logs.push("AQUA Chain valid".to_string());
-                                    return (
-                                        StatusCode::OK,
-                                        Json(res),
-                                    );
+                                    return (StatusCode::OK, Json(res));
                                 }
                             }
                         }
@@ -302,10 +285,7 @@ pub async fn explorer_file_verify_hash_upload(
                     Err(e) => {
                         tracing::error!("Failed to parse JSON: {:?}", e);
                         res.logs.push(format!("Failed to parse JSON: {:?}", e));
-                        return (
-                            StatusCode::BAD_REQUEST,
-                            Json(res),
-                        );
+                        return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 }
             }
@@ -317,47 +297,282 @@ pub async fn explorer_file_verify_hash_upload(
     (StatusCode::BAD_REQUEST, Json(res))
 }
 
+pub async fn explorer_aqua_file_upload(
+    State(server_database): State<Db>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> (StatusCode, Json<ApiResponse>) {
+    tracing::debug!("explorer_aqua_file_upload fn");
+
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        file: None,
+        files: Vec::new(),
+    };
+
+    // Extract the 'metamask_address' header
+    let metamask_address = match headers.get("metamask_address") {
+        Some(value) => match value.to_str() {
+            Ok(key) => key,
+            Err(err) => {
+                tracing::error!("headers get error {} ", err);
+                // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid metamask_address header"})))
+
+                res.logs
+                    .push(format!("Error: Meta mask public key  error: {:?}", err));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        },
+        None => {
+            tracing::debug!("metamask_address header missing ");
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
+            res.logs
+                .push("Error: Meta mask public key  missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    let mut account: Option<String> = None;
+    let mut aqua_json: Option<PageDataContainer> = None;
+
+    // Process only two fields: account and file
+    for _ in 0..2 {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                tracing::error!("Multipart error: {}", e);
+                res.logs.push(format!("Multipart error: {}", e));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        };
+
+        let name = match field.name() {
+            Some(name) => name.to_string(),
+            None => {
+                tracing::error!("Field name missing");
+                res.logs.push("Field name missing".to_string());
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        };
+
+        tracing::debug!("Processing field: {}", name);
+        match name.as_str() {
+            "account" => {
+                account = match field.text().await {
+                    Ok(text) => Some(text),
+                    Err(e) => {
+                        tracing::error!("Failed to read account field: {}", e);
+                        res.logs
+                            .push(format!("Failed to read account field: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+            }
+            "file" => {
+                // Read the file content
+                let file_content = match field.bytes().await {
+                    Ok(content) => content,
+                    Err(e) => {
+                        tracing::error!("Failed to read file content: {}", e);
+                        res.logs.push(format!("Failed to read file content: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+
+                // Parse JSON content into AquaData struct
+                aqua_json = match serde_json::from_slice::<PageDataContainer>(&file_content) {
+                    Ok(data) => Some(data),
+                    Err(e) => {
+                        tracing::error!("Failed to parse JSON: {}", e);
+                        res.logs.push(format!("Failed to parse JSON: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+            }
+            _ => {
+                tracing::warn!("Unexpected field: {}", name);
+            }
+        }
+    }
+
+    // Verify we have both account and file
+    let account = match account {
+        Some(acc) => acc,
+        None => {
+            tracing::error!("Account information missing");
+            res.logs.push("Account information missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    // Verify we have both account and file
+    let aqua_json = match aqua_json {
+        Some(acc) => acc,
+        None => {
+            tracing::error!("Aqua JSON data erorr");
+            res.logs.push("Aqua JSON data erorr".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+    //todo..
+
+    tracing::debug!(
+        "Processing aqua  upload Account {} - File data {:#?} ",
+        account,
+        aqua_json,
+    );
+
+    let mut mode = "private".to_string();
+    let file_mode = env::var("FILE_MODE").unwrap_or_default();
+
+    if !file_mode.is_empty() {
+        mode = file_mode;
+    }
+
+    let start = SystemTime::now();
+    let timestamp = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs();
+    println!("Current Unix timestamp: {}", timestamp);
+
+    let mut file_name = format!("{}", timestamp);
+    // if (aqua_json.pages.get(0).)
+
+    let chain: Option<&HashChain> = aqua_json.pages.get(0);
+
+    if (chain.is_none()) {
+        tracing::error!("Aqua JSON data erorr first chain not found");
+        res.logs
+            .push("Aqua data data erorr first chain not found".to_string());
+        return (StatusCode::BAD_REQUEST, Json(res));
+    }
+
+    let genesis_revision = chain
+        .unwrap()
+        .revisions
+        .iter()
+        .find_map(|(hash, revision)| {
+            if hash.to_string() == chain.unwrap().genesis_hash {
+                tracing::info!("Found geneisis revision");
+                Some(revision)
+            } else {
+                tracing::error!("genesis revision not found");
+                None
+            }
+        });
+    if (genesis_revision.is_none()) {
+        tracing::error!("Aqua JSON data erorr genesis revision not found");
+        res.logs
+            .push("Aqua data data erorr genesis revision not found".to_string());
+        return (StatusCode::BAD_REQUEST, Json(res));
+    }
+    if ( genesis_revision.unwrap().content.file.is_none()){
+        tracing::error!("Aqua JSON data erorr genesis revision does not contain file info");
+        res.logs
+            .push("Aqua data data erorr genesis revision does not contain file info".to_string());
+        return (StatusCode::BAD_REQUEST, Json(res));
+    }
+    let file_name = genesis_revision.unwrap().content.file.clone().unwrap().filename;
+
+    let file_data_info = get_file_info(genesis_revision.unwrap().content.file.clone().unwrap().data.to_string());
+
+    let content_type =  match file_data_info{
+        Ok(data)=>{
+
+            tracing::error!("file type found   {} the gerenal result is  {:#?}", data.file_type, data);
+            data.file_type
+        }
+        Err(err) =>{
+            tracing::error!("Failed infer file type  {}", err);
+            "unknown".to_string()
+        }
+    };
+       // Convert struct to JSON string
+    let json_string = match serde_json::to_string(&aqua_json) {
+        Ok(json) => json,
+        Err(e) => {
+            tracing::error!("Failed to serialize page data: {}", e);
+            res.logs
+                .push(format!("Failed to serialize page data: {}", e));
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+   
+    // Insert into database
+    match sqlx::query!(
+        r#"
+        INSERT INTO pages (name, extension, page_data, mode, owner)
+        VALUES (?, ?, ?, ? , ?)
+        RETURNING id
+        "#,
+        file_name,
+        content_type,
+        json_string,
+        mode,
+        metamask_address
+    )
+    .fetch_one(&server_database.sqliteDb)
+    .await
+    {
+        Ok(record) => {
+            let file_info = FileInfo {
+                id: record.id,
+                name: file_name,
+                extension: content_type,
+                page_data: json_string,
+                mode: mode,
+                owner: metamask_address.to_string(),
+            };
+            res.file = Some(file_info);
+            (StatusCode::CREATED, Json(res))
+        }
+        Err(e) => {
+            tracing::error!("Failed to insert page: {}", e);
+            res.logs.push(format!("Failed to insert page: {}", e));
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+        }
+    }
+}
+
 pub async fn explorer_file_upload(
     State(server_database): State<Db>,
     headers: HeaderMap,
     mut multipart: Multipart,
-   
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_file_upload fn");
 
     let mut log_data: Vec<String> = Vec::new();
-    let mut res : ApiResponse = ApiResponse {
+    let mut res: ApiResponse = ApiResponse {
         logs: log_data,
         file: None,
-        files: Vec::new()
+        files: Vec::new(),
     };
-
 
     // Extract the 'metamask_address' header
-    let metamask_address  = match headers.get("metamask_address") {
+    let metamask_address = match headers.get("metamask_address") {
         Some(value) => match value.to_str() {
-            Ok(key) => {
-               key  
-            },
+            Ok(key) => key,
             Err(err) => {
-
                 tracing::error!("headers get error {} ", err);
                 // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid metamask_address header"})))
-            
-                res.logs.push(format!("Error: Meta mask public key  error: {:?}", err));
+
+                res.logs
+                    .push(format!("Error: Meta mask public key  error: {:?}", err));
                 return (StatusCode::BAD_REQUEST, Json(res));
-            },
+            }
         },
         None => {
-
             tracing::debug!("metamask_address header missing ");
             // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
-            res.logs.push("Error: Meta mask public key  missing".to_string());
+            res.logs
+                .push("Error: Meta mask public key  missing".to_string());
             return (StatusCode::BAD_REQUEST, Json(res));
-
-        },
+        }
     };
-
 
     let mut account = None;
     let mut file_info = None;
@@ -390,7 +605,8 @@ pub async fn explorer_file_upload(
                     Ok(text) => Some(text),
                     Err(e) => {
                         tracing::error!("Failed to read account field: {}", e);
-                        res.logs.push(format!("Failed to read account field: {}", e));
+                        res.logs
+                            .push(format!("Failed to read account field: {}", e));
                         return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
@@ -432,7 +648,10 @@ pub async fn explorer_file_upload(
 
                 if file_size > MAX_FILE_SIZE {
                     tracing::error!("File size {} exceeds maximum allowed size", file_size);
-                    res.logs.push(format!("File size {} exceeds maximum allowed size", file_size));
+                    res.logs.push(format!(
+                        "File size {} exceeds maximum allowed size",
+                        file_size
+                    ));
                     return (StatusCode::BAD_REQUEST, Json(res));
                 }
 
@@ -536,16 +755,17 @@ pub async fn explorer_file_upload(
         Ok(json) => json,
         Err(e) => {
             tracing::error!("Failed to serialize page data: {}", e);
-            res.logs.push(format!("Failed to serialize page data: {}", e));
+            res.logs
+                .push(format!("Failed to serialize page data: {}", e));
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
-    let mut mode = "private".to_string(); 
+    let mut mode = "private".to_string();
     let file_mode = env::var("FILE_MODE").unwrap_or_default();
 
     if !file_mode.is_empty() {
-    mode = file_mode;
+        mode = file_mode;
     }
     // Insert into database
     match sqlx::query!(
@@ -569,8 +789,8 @@ pub async fn explorer_file_upload(
                 name: file_name,
                 extension: content_type,
                 page_data: json_string,
-               mode: mode,
-               owner:  metamask_address.to_string()
+                mode: mode,
+                owner: metamask_address.to_string(),
             };
             res.file = Some(file_info);
             (StatusCode::CREATED, Json(res))
@@ -583,22 +803,21 @@ pub async fn explorer_file_upload(
     }
 }
 
-
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
 ) -> (StatusCode, Json<ApiResponse>) {
-    let mut log_data : Vec<String> = Vec::new();
+    let mut log_data: Vec<String> = Vec::new();
 
     tracing::debug!("explorer_sign_revision");
 
     // Get the name parameter from the input
     if input.filename.is_empty() {
         log_data.push("Error : file name is empty".to_string());
-        let res : ApiResponse = ApiResponse {
+        let res: ApiResponse = ApiResponse {
             logs: log_data,
             file: None,
-            files: Vec::new()
+            files: Vec::new(),
         };
         return (StatusCode::BAD_REQUEST, Json(res));
     };
@@ -619,14 +838,14 @@ pub async fn explorer_sign_revision(
                 Ok(data) => {
                     log_data.push("Success  : parse page data".to_string());
                     data
-                },
+                }
                 Err(e) => {
                     tracing::error!("Failed to parse page data record: {:?}", e);
                     log_data.push(format!("error : Failed to parse page data record: {:?}", e));
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -644,18 +863,17 @@ pub async fn explorer_sign_revision(
             // Parse input data with proper error handling
             let sig = match input.signature.parse::<Signature>() {
                 Ok(s) => {
-                
                     log_data.push("Success :  signature  parse successfully".to_string());
                     s
-                },
+                }
                 Err(e) => {
                     tracing::error!("Failed to parse signature: {:?}", e);
 
                     log_data.push(format!("error : Failed to parse  signature: {:?}", e));
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -664,17 +882,17 @@ pub async fn explorer_sign_revision(
             let pubk = match input.publickey.parse::<PublicKey>() {
                 Ok(p) => {
                     log_data.push("Success : public  key  parsed successfully".to_string());
-                
+
                     p
-                },
+                }
                 Err(e) => {
                     tracing::error!("Failed to parse public key: {:?}", e);
 
                     log_data.push(format!("error : Failed to parse  public key: {:?}", e));
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -683,17 +901,17 @@ pub async fn explorer_sign_revision(
             let addr = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
                 Ok(a) => {
                     log_data.push("wallet address parsed successfully".to_string());
-                    
+
                     a
-                },
+                }
                 Err(e) => {
                     tracing::error!("Failed to parse wallet address: {:?}", e);
                     log_data.push(format!("Failed to parse wallet address: {:?}", e));
-                    
-                    let res : ApiResponse = ApiResponse {
+
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
@@ -733,18 +951,18 @@ pub async fn explorer_sign_revision(
             let page_data_new = match serde_json::to_string(&doc) {
                 Ok(data) => {
                     log_data.push("revision  serialized  successfully".to_string());
-                    
+
                     data
-                },
+                }
                 Err(e) => {
                     tracing::error!("Failed to serialize updated page data: {:?}", e);
 
                     log_data.push(format!("Failed to serialize updated page data : {:?}", e));
 
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
 
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
@@ -768,13 +986,13 @@ pub async fn explorer_sign_revision(
                         name: row.name,
                         extension: row.extension,
                         page_data: page_data_new,
-                        owner : row.owner,
-                        mode : row.mode
+                        owner: row.owner,
+                        mode: row.mode,
                     };
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: Some(file_info),
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
                     (StatusCode::OK, Json(res))
                 }
@@ -782,38 +1000,36 @@ pub async fn explorer_sign_revision(
                     tracing::error!("Failed to update page data: {:?}", e);
                     log_data.push(format!("Failed to update page data : {:?}", e));
 
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
                     (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
                 }
             }
         }
         Ok(None) => {
-
-            tracing::error!("Failed not found ", );
+            tracing::error!("Failed not found ",);
 
             log_data.push("Failed data not found in database".to_string());
 
-            let res : ApiResponse = ApiResponse {
+            let res: ApiResponse = ApiResponse {
                 logs: log_data,
                 file: None,
-                files: Vec::new()
+                files: Vec::new(),
             };
             (StatusCode::NOT_FOUND, Json(res))
-        },
+        }
         Err(e) => {
             tracing::error!("Failed to fetch record: {:?}", e);
-            
+
             log_data.push(format!("Failed to fetch record : {:?}", e));
 
-
-            let res : ApiResponse = ApiResponse {
+            let res: ApiResponse = ApiResponse {
                 logs: log_data,
                 file: None,
-                files: Vec::new()
+                files: Vec::new(),
             };
 
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
@@ -821,138 +1037,125 @@ pub async fn explorer_sign_revision(
     }
 }
 
-
 pub async fn explorer_delete_all_files(
     State(server_database): State<Db>,
 ) -> (StatusCode, Json<ApiResponse>) {
+    let mut log_data: Vec<String> = Vec::new();
 
-    let mut log_data : Vec<String> = Vec::new();
-
-    let result = sqlx::query!("DELETE FROM pages ", )
-        .execute(& server_database.sqliteDb)
+    let result = sqlx::query!("DELETE FROM pages ",)
+        .execute(&server_database.sqliteDb)
         .await;
 
-        match result {
-            Ok(result_data) => {
-                   // Check the number of affected rows
-                if result_data.rows_affected() > 0 {
-                    tracing::error!("Successfully deleted all the row with name");
-                    log_data.push("Error : files data is deleted ".to_string());
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new()
-                    };
-                    return (StatusCode::OK, Json(res));
-                } else {
-                    tracing::error!("Error : No row deleted");
+    match result {
+        Ok(result_data) => {
+            // Check the number of affected rows
+            if result_data.rows_affected() > 0 {
+                tracing::error!("Successfully deleted all the row with name");
+                log_data.push("Error : files data is deleted ".to_string());
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::OK, Json(res));
+            } else {
+                tracing::error!("Error : No row deleted");
 
-                    log_data.push("Error : No data deleted".to_string());
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new()
-                    };
-                    return (StatusCode::OK, Json(res));
-                }
-            }
-            Err(e) => {
-                tracing::error!("Failed to delete page data: {:?}", e);
-                log_data.push(format!("Error occurred {}", e));
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new()
-                    };
-                (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+                log_data.push("Error : No data deleted".to_string());
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::OK, Json(res));
             }
         }
-
-
+        Err(e) => {
+            tracing::error!("Failed to delete page data: {:?}", e);
+            log_data.push(format!("Error occurred {}", e));
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+        }
+    }
 }
 
 pub async fn explorer_delete_file(
     State(server_database): State<Db>,
     Form(input): Form<DeleteInput>,
 ) -> (StatusCode, Json<ApiResponse>) {
-
     tracing::debug!("explorer_delete_file");
-    let mut log_data : Vec<String> = Vec::new();
+    let mut log_data: Vec<String> = Vec::new();
 
     // Get the name parameter from the input
     if input.filename.is_empty() {
-
         log_data.push("Error : file name is empty".to_string());
-        let res : ApiResponse = ApiResponse {
+        let res: ApiResponse = ApiResponse {
             logs: log_data,
             file: None,
-            files: Vec::new()
+            files: Vec::new(),
         };
         return (StatusCode::BAD_REQUEST, Json(res));
     };
 
-  
-        let result = sqlx::query!("DELETE FROM pages WHERE name = ?", input.filename)
-        .execute(& server_database.sqliteDb)
+    let result = sqlx::query!("DELETE FROM pages WHERE name = ?", input.filename)
+        .execute(&server_database.sqliteDb)
         .await;
 
-        match result {
-            Ok(result_data) => {
-                   // Check the number of affected rows
-                if result_data.rows_affected() > 0 {
-                    tracing::error!("Successfully deleted the row with name: {}", input.filename);
-                    log_data.push("Error : file data is deleted ".to_string());
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new()
-                    };
-                    return (StatusCode::OK, Json(res));
-                } else {
-                    tracing::error!("No row found with ID: {}", input.filename);
+    match result {
+        Ok(result_data) => {
+            // Check the number of affected rows
+            if result_data.rows_affected() > 0 {
+                tracing::error!("Successfully deleted the row with name: {}", input.filename);
+                log_data.push("Error : file data is deleted ".to_string());
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::OK, Json(res));
+            } else {
+                tracing::error!("No row found with ID: {}", input.filename);
 
-                    log_data.push(format!("Error : No row found with name {}", input.filename));
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new()
-                    };
-                    return (StatusCode::NOT_FOUND, Json(res));
-                }
-            }
-            Err(e) => {
-                tracing::error!("Failed to update page data: {:?}", e);
-                log_data.push(format!("Error occurred {}", e));
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new()
-                    };
-                (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+                log_data.push(format!("Error : No row found with name {}", input.filename));
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::NOT_FOUND, Json(res));
             }
         }
-
-
-
+        Err(e) => {
+            tracing::error!("Failed to update page data: {:?}", e);
+            log_data.push(format!("Error occurred {}", e));
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+        }
+    }
 }
-
 
 pub async fn explorer_witness_file(
     State(server_database): State<Db>,
     Form(input): Form<WitnessInput>,
 ) -> (StatusCode, Json<ApiResponse>) {
-
     tracing::debug!("explorer_witness_file");
-    let mut log_data : Vec<String> = Vec::new();
+    let mut log_data: Vec<String> = Vec::new();
 
     // Get the name parameter from the input
     if input.filename.is_empty() {
-
         log_data.push("Error : file name is empty".to_string());
-        let res : ApiResponse = ApiResponse {
+        let res: ApiResponse = ApiResponse {
             logs: log_data,
             file: None,
-            files: Vec::new()
+            files: Vec::new(),
         };
         return (StatusCode::BAD_REQUEST, Json(res));
     };
@@ -970,29 +1173,28 @@ pub async fn explorer_witness_file(
     // Handle database result errors
     match row {
         Ok(Some(row)) => {
-            log_data.push (format!("Success :  Page data for {} not found in database", input.filename));
+            log_data.push(format!(
+                "Success :  Page data for {} not found in database",
+                input.filename
+            ));
 
             // Deserialize page data
             let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
                 Ok(data) => {
-                    
                     log_data.push("Success :  Page Data Object parse".to_string());
-            
+
                     data
-                },
+                }
                 Err(e) => {
                     tracing::error!("Failed to parse page data record: {:?}", e);
 
-                    
-
                     log_data.push("Error : Failure to parse Page Data Object".to_string());
-            
-                  
-                   let res : ApiResponse = ApiResponse {
-                    logs: log_data,
-                    file: None,
-                    files: Vec::new()
-                };
+
+                    let res: ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                        files: Vec::new(),
+                    };
 
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -1010,37 +1212,39 @@ pub async fn explorer_witness_file(
                 Ok(s) => s,
                 Err(e) => {
                     tracing::error!("Failed to parse tx hash: {:?}", e);
-                    log_data.push (format!("Error :  Failed to to parse tx hash: {:?}", e));
+                    log_data.push(format!("Error :  Failed to to parse tx hash: {:?}", e));
 
-                    let res : ApiResponse = ApiResponse {
+                    let res: ApiResponse = ApiResponse {
                         logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
 
                     return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
 
-            log_data.push (format!("Success :  Parsed tx hash: {:?}", txHash));
+            log_data.push(format!("Success :  Parsed tx hash: {:?}", txHash));
             tracing::debug!("Tx hash: {}", txHash);
 
             let wallet_address = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
                 Ok(a) => a,
                 Err(e) => {
                     tracing::error!("Failed to parse wallet address: {:?}", e);
-                    log_data.push (format!("Error :  Failed to parse wallet address: {:?}", e));
+                    log_data.push(format!("Error :  Failed to parse wallet address: {:?}", e));
 
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data ,
+                    let res: ApiResponse = ApiResponse {
+                        logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
                     return (StatusCode::BAD_REQUEST, Json(res));
                 }
             };
-            log_data.push (format!("Success  :  parsed wallet address: {:?}", wallet_address));
-
+            log_data.push(format!(
+                "Success  :  parsed wallet address: {:?}",
+                wallet_address
+            ));
 
             let domain_snapshot_genesis_string = &deserialized.pages.get(0).unwrap().genesis_hash;
 
@@ -1134,12 +1338,15 @@ pub async fn explorer_witness_file(
                 Ok(data) => data,
                 Err(e) => {
                     tracing::error!("Failed to serialize updated page data: {:?}", e);
-                    log_data.push (format!("Error :  Failed to serialize updated page data {:?} ", e));
+                    log_data.push(format!(
+                        "Error :  Failed to serialize updated page data {:?} ",
+                        e
+                    ));
 
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data ,
+                    let res: ApiResponse = ApiResponse {
+                        logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -1162,58 +1369,61 @@ pub async fn explorer_witness_file(
                         name: row.name,
                         extension: row.extension,
                         page_data: page_data_new,
-                        owner : row.owner,
-                        mode : row.mode
+                        owner: row.owner,
+                        mode: row.mode,
                     };
 
-                   let res : ApiResponse =  ApiResponse{
-                    logs: log_data ,
-                    file: Some(file_info),
-                    files: Vec::new()
-                };
+                    let res: ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: Some(file_info),
+                        files: Vec::new(),
+                    };
                     (StatusCode::OK, Json(res))
                 }
                 Err(e) => {
                     tracing::error!("Failed to update page data: {:?}", e);
-                    log_data.push (format!("Error :  unable to update database with Page data for {} ", input.filename));
+                    log_data.push(format!(
+                        "Error :  unable to update database with Page data for {} ",
+                        input.filename
+                    ));
 
-                    let res : ApiResponse = ApiResponse {
-                        logs: log_data ,
+                    let res: ApiResponse = ApiResponse {
+                        logs: log_data,
                         file: None,
-                        files: Vec::new()
+                        files: Vec::new(),
                     };
                     (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
                 }
             }
         }
-        
+
         Ok(None) => {
+            log_data.push(format!(
+                "Error :  Page data for {} not found in database",
+                input.filename
+            ));
 
-            log_data.push (format!("Error :  Page data for {} not found in database", input.filename));
-
-            let res : ApiResponse = ApiResponse {
-                logs: log_data ,
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
                 file: None,
-                files: Vec::new()
+                files: Vec::new(),
             };
             (StatusCode::NOT_FOUND, Json(res))
-        },
+        }
         Err(e) => {
-            
             tracing::error!("Failed to fetch record: {:?}", e);
-            log_data.push (format!("Error :  Failed to fetch record {:?}", e));
+            log_data.push(format!("Error :  Failed to fetch record {:?}", e));
 
-            let res : ApiResponse = ApiResponse {
-                logs: log_data ,
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
                 file: None,
-                files: Vec::new()
+                files: Vec::new(),
             };
-            
+
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }
     }
 }
-
 
 pub async fn explorer_fetch_configuration(
     State(server_database): State<Db>,
@@ -1233,15 +1443,17 @@ pub async fn explorer_fetch_configuration(
     return (StatusCode::OK, Json(config_data));
 }
 
-
 pub async fn explorer_update_configuration(
     State(server_database): State<Db>,
     Form(input): Form<UpdateConfigurationInput>,
 ) -> (StatusCode, Json<ApiResponse>) {
-    let mut log_data : Vec<String> = Vec::new();
+    let mut log_data: Vec<String> = Vec::new();
 
     // Log the input
-    log_data.push(format!("Updating configuration with chain: {} and domain: {} mode : {}", input.chain, input.domain, input.mode));
+    log_data.push(format!(
+        "Updating configuration with chain: {} and domain: {} mode : {}",
+        input.chain, input.domain, input.mode
+    ));
 
     // Update the .env file with the new chain and domain
     if let Err(e) = update_env_file("CHAIN", &input.chain) {
@@ -1260,9 +1472,8 @@ pub async fn explorer_update_configuration(
     let res = ApiResponse {
         logs: log_data,
         file: None,
-        files: Vec::new()
+        files: Vec::new(),
     };
 
     (StatusCode::OK, Json(res))
-
 }

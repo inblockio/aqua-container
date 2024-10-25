@@ -4,7 +4,7 @@ import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } fro
 import { FileInfo } from "../models/FileInfo";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
-
+import {AquaVerifier } from "aqua-verifier-js";
 
 const DetailsPage: Component = () => {
 

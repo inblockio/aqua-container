@@ -39,3 +39,5 @@ ethers = "2.0.14"
 siwe = "0.6.1"
 hex = "0.4"
 ethers-core = "2.0.14"
+#infer file type from base 64 in aqua json file
+base64 = "0.22.1"
