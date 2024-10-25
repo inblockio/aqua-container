@@ -48,6 +48,7 @@ Multi-User File-Management
     `cd web && npm i  `
 2. `cargo run `
 3. `cd web && npm run dev`
+4. `http://localhost:3000/` use local host domain for oidc to work.
 
 ## How to clear db and set it up again 
 

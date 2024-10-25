@@ -2,7 +2,8 @@ use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput,
 use crate::models::page_data::{ApiResponse, PageDataContainer};
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
-    check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash, db_set_up, get_file_info,  make_empty_hash, update_env_file
+    check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
+    db_set_up, get_file_info, make_empty_hash, update_env_file, get_content_type
 };
 use crate::Db;
 use axum::response::{IntoResponse, Response};
@@ -416,7 +417,6 @@ pub async fn explorer_aqua_file_upload(
             return (StatusCode::BAD_REQUEST, Json(res));
         }
     };
-    //todo..
 
     tracing::debug!(
         "Processing aqua  upload Account {} - File data {:#?} ",
@@ -439,7 +439,6 @@ pub async fn explorer_aqua_file_upload(
     println!("Current Unix timestamp: {}", timestamp);
 
     let mut file_name = format!("{}", timestamp);
-    // if (aqua_json.pages.get(0).)
 
     let chain: Option<&HashChain> = aqua_json.pages.get(0);
 
@@ -469,28 +468,70 @@ pub async fn explorer_aqua_file_upload(
             .push("Aqua data data erorr genesis revision not found".to_string());
         return (StatusCode::BAD_REQUEST, Json(res));
     }
-    if ( genesis_revision.unwrap().content.file.is_none()){
+    if (genesis_revision.unwrap().content.file.is_none()) {
         tracing::error!("Aqua JSON data erorr genesis revision does not contain file info");
         res.logs
             .push("Aqua data data erorr genesis revision does not contain file info".to_string());
         return (StatusCode::BAD_REQUEST, Json(res));
     }
-    let file_name = genesis_revision.unwrap().content.file.clone().unwrap().filename;
+    let file_name = genesis_revision
+        .unwrap()
+        .content
+        .file
+        .clone()
+        .unwrap()
+        .filename;
 
-    let file_data_info = get_file_info(genesis_revision.unwrap().content.file.clone().unwrap().data.to_string());
+    let path = std::path::Path::new(&file_name);
+    let mut content_type: String = String::from("");
 
-    let content_type =  match file_data_info{
-        Ok(data)=>{
+    // Check if the file has an extension
+    if (path.extension().is_some()) {
+        tracing::error!("Aqua JSON generating file type from extension");
+        res.logs
+            .push("Aqua JSON generating file type from extension".to_string());
 
-            tracing::error!("file type found   {} the gerenal result is  {:#?}", data.file_type, data);
-            data.file_type
+        match get_content_type(&file_name) {
+            Some(data) => {
+                content_type = data;
+            }
+            None => {
+                content_type = "unknown".to_string();
+            }
         }
-        Err(err) =>{
-            tracing::error!("Failed infer file type  {}", err);
-            "unknown".to_string()
-        }
-    };
-       // Convert struct to JSON string
+    } else {
+        tracing::error!("Aqua JSON generating file type from content bytes");
+        res.logs
+            .push("Aqua data data erorr genesis type from content bytes".to_string());
+
+        let file_data_info = get_file_info(
+            genesis_revision
+                .unwrap()
+                .content
+                .file
+                .clone()
+                .unwrap()
+                .data
+                .to_string(),
+        );
+
+        content_type = match file_data_info {
+            Ok(data) => {
+                tracing::error!(
+                    "file type found   {} the gerenal result is  {:#?}",
+                    data.file_type,
+                    data
+                );
+                data.file_type
+            }
+            Err(err) => {
+                tracing::error!("Failed infer file type  {}", err);
+                "unknown".to_string()
+            }
+        };
+    }
+
+    // Convert struct to JSON string
     let json_string = match serde_json::to_string(&aqua_json) {
         Ok(json) => json,
         Err(e) => {
@@ -501,7 +542,6 @@ pub async fn explorer_aqua_file_upload(
         }
     };
 
-   
     // Insert into database
     match sqlx::query!(
         r#"

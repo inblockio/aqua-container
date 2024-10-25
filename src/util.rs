@@ -247,13 +247,29 @@ pub fn get_file_info(base64_string: String) -> Result<FileDataInformation, Strin
 
     // Define file signatures using a Vec instead of fixed-size arrays
     let file_signatures: HashMap<Vec<u8>, (String, String)> = [
-        (vec![0xFF, 0xD8, 0xFF], ("JPEG".to_string(), "image/jpeg".to_string())),
-        (vec![0x89, 0x50, 0x4E, 0x47], ("PNG".to_string(), "image/png".to_string())),
-        (vec![0x47, 0x49, 0x46], ("GIF".to_string(), "image/gif".to_string())),
-        (vec![0x25, 0x50, 0x44, 0x46], ("PDF".to_string(), "application/pdf".to_string())),
-        (vec![0x50, 0x4B, 0x03, 0x04], ("ZIP".to_string(), "application/zip".to_string())),
-        (vec![0x7B], ("JSON".to_string(), "application/json".to_string())),
-        (vec![0x3C, 0x3F, 0x78, 0x6D, 0x6C], ("XML".to_string(), "application/xml".to_string())),
+      // Image formats
+      (vec![0xFF, 0xD8, 0xFF], ("JPEG".to_string(), "image/jpeg".to_string())),
+      (vec![0x89, 0x50, 0x4E, 0x47], ("PNG".to_string(), "image/png".to_string())),
+      (vec![0x47, 0x49, 0x46], ("GIF".to_string(), "image/gif".to_string())),
+      (vec![0x3C, 0x73, 0x76, 0x67], ("SVG".to_string(), "image/svg+xml".to_string())),
+      
+      // Document formats
+      (vec![0x25, 0x50, 0x44, 0x46], ("PDF".to_string(), "application/pdf".to_string())),
+      (vec![0x50, 0x4B, 0x03, 0x04], ("ZIP".to_string(), "application/zip".to_string())),
+      (vec![0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1], ("DOC".to_string(), "application/msword".to_string())), // Older DOC files
+      (vec![0x50, 0x4B, 0x03, 0x04], ("DOCX".to_string(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document".to_string())), // DOCX files
+      
+      // Audio formats
+      (vec![0x49, 0x44, 0x33], ("MP3".to_string(), "audio/mpeg".to_string())), // MP3
+      (vec![0x52, 0x49, 0x46, 0x46], ("WAV".to_string(), "audio/wav".to_string())), // WAV files
+      
+      // Video formats
+      (vec![0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x6D, 0x70, 0x34, 0x32], ("MP4".to_string(), "video/mp4".to_string())), // MP4
+      (vec![0x1A, 0x45, 0xDF, 0xA3], ("MKV".to_string(), "video/x-matroska".to_string())), // MKV format
+      
+      // JSON and XML for other document-like formats
+      (vec![0x7B], ("JSON".to_string(), "application/json".to_string())),
+      (vec![0x3C, 0x3F, 0x78, 0x6D, 0x6C], ("XML".to_string(), "application/xml".to_string())),
     ].into_iter().collect();
 
     // Detect file type based on magic numbers
@@ -309,3 +325,38 @@ fn is_probably_text(bytes: &[u8]) -> bool {
 }
 
 
+
+pub fn get_content_type(file_name: &str) -> Option<String> {
+    // Define a mapping of file extensions to MIME types
+    let mut mime_types: HashMap<&str, &str> = HashMap::new();
+    
+    // Populate the HashMap with file extensions and their corresponding MIME types
+    mime_types.insert("jpg", "image/jpeg");
+    mime_types.insert("jpeg", "image/jpeg");
+    mime_types.insert("png", "image/png");
+    mime_types.insert("gif", "image/gif");
+    mime_types.insert("svg", "image/svg+xml");
+    mime_types.insert("pdf", "application/pdf");
+    mime_types.insert("zip", "application/zip");
+    mime_types.insert("mp3", "audio/mpeg");
+    mime_types.insert("wav", "audio/wav");
+    mime_types.insert("mp4", "video/mp4");
+    mime_types.insert("mkv", "video/x-matroska");
+    mime_types.insert("json", "application/json");
+    mime_types.insert("xml", "application/xml");
+    mime_types.insert("txt", "text/plain");
+    
+    // Use the Path to check for file extension
+    let path = Path::new(file_name);
+    
+    // Get the file extension if it exists
+    if let Some(extension) = path.extension() {
+        // Convert the extension to a string and check the mapping
+        if let Some(extension_str) = extension.to_str() {
+            return mime_types.get(extension_str).map(|&mime| mime.to_string());
+        }
+    }
+    
+    // Return None if the file has no extension or the extension is not recognized
+    None
+}

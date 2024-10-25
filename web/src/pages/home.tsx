@@ -61,7 +61,7 @@ const HomePage: Component = () => {
 
     createEffect(async () => {
 
-        
+
         let files = appState.filesFromApi;
         let size = 0;
         for (const element of files) {
@@ -147,7 +147,7 @@ const HomePage: Component = () => {
         fileInput.click();
     };
 
-    const handleFileSelect = (event: Event) => {
+    const handleFileSelect = async (event: Event) => {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
 
@@ -169,63 +169,68 @@ const HomePage: Component = () => {
         const fileName = file.name;
         console.log('Selected file:', fileName);
 
-        
-        if(fileTypeForUpload() == "upload_file"){
+
+        if (fileTypeForUpload() == "upload_file") {
             let exists = appState.filesFromApi.find((e) => e.name == fileName);
-        if (exists != undefined ) {
+            if (exists != undefined) {
 
-            setSelectedFileForUpload(null);
-            setError('Rename the file, a file with name ' + fileName + ' already exists');
-            // Reset the input
-            input.value = '';
-            return;
+                setSelectedFileForUpload(null);
+                setError('Rename the file, a file with name ' + fileName + ' already exists');
+                // Reset the input
+                input.value = '';
+                return;
 
-        } 
-    }
+            }
+        }
 
-    if(fileTypeForUpload() == "verify_aqua_json"){
+        if (fileTypeForUpload() == "verify_aqua_json") {
 
 
-       if (!fileName .endsWith('.json')){
-        setSelectedFileForUpload(null);
-        setError('Please select a json file , a file with name ' + fileName + ' is not json (file name)');
-        return;
-       }
-       isJsonFileContent(file)
-            .then((isJson) => {
-                console.log(isJson ? "This is a JSON file." : "This is not a JSON file.");
-                if (!isJson){
-                    setSelectedFileForUpload(null);
-                    setError('Please select a json file , a file with name ' + fileName + ' is not json (file contenets)');
-                 return;
+            if (!fileName.endsWith('.json')) {
+                setSelectedFileForUpload(null);
+                setError('Please select a json file , a file with name ' + fileName + ' is not json (file name)');
+                return;
+            }
+            try {
+                let res = await isJsonFileContent(file);
+                if (res) {
+                    console.log("file is a json");
+                } else {
+                    if (!res) {
+                        setSelectedFileForUpload(null);
+                        setError('Please select a json file , a file with name ' + fileName + ' is not json (file contenets)');
+                        return;
+                    }
                 }
-            })
-            .catch((error) => {
+            } catch (error) {
                 console.error("Error reading the file:", error);
                 setSelectedFileForUpload(null);
                 setError('Please select a json file , a file with name ' + fileName + ' cannot be read ' + JSON.stringify(error));
                 return;
-            });
-    }
-
-            setSelectedFileForUpload(file);
-            setError('');
-
-            console.log("Type: ", fileTypeForUpload())
-            if (fileTypeForUpload() === "verify_aqua_json") {
-                console.log("verify  json")
-                verifyAquaJsonFile()
-            }else  if (fileTypeForUpload() === "upload_aqua_json") {
-                console.log("Uploading json")
-                uploadAquaJsonFile()
-            } else if (fileTypeForUpload() == "upload_file") {
-                //upload the file
-                console.log("Uploading file")
-                uploadFile()
-            }else{
-                alert("Error failed .....");
             }
-        
+
+        }
+
+        setSelectedFileForUpload(file);
+        setError('');
+
+        console.log("Type: ", fileTypeForUpload())
+        if (fileTypeForUpload() === "verify_aqua_json") {
+            console.log("verify  json")
+            verifyAquaJsonFile()
+        } else if (fileTypeForUpload() === "upload_aqua_json") {
+
+
+            console.log("Uploading json")
+            uploadAquaJsonFile()
+        } else if (fileTypeForUpload() == "upload_file") {
+            //upload the file
+            console.log("Uploading file")
+            uploadFile()
+        } else {
+            alert("Error failed .....");
+        }
+
     };
 
     const uploadFile = async () => {
@@ -599,7 +604,7 @@ const HomePage: Component = () => {
                                     <div class="relative">
 
                                         <a href="javascript:void(0)" onClick={(e) => {
-                                            if(appState.metaMaskAddress == null){
+                                            if (appState.metaMaskAddress == null) {
                                                 setError("Please sign in with meta mask wallet address to upload a file");
                                                 return;
                                             }
@@ -629,6 +634,10 @@ const HomePage: Component = () => {
                                         />
 
                                         <a href="javascript:void(0)" onClick={(e) => {
+                                            if (appState.metaMaskAddress == null) {
+                                                setError("Please sign in with meta mask wallet address to upload a file");
+                                                return;
+                                            }
                                             setFileTypeForUpload("upload_aqua_json")
                                             handleSelectFileForUploadClick();
                                         }} data-fc-type="dropdown" data-fc-placement="bottom"
