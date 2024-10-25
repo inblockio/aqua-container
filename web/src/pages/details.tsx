@@ -1,16 +1,17 @@
 import { Component, createEffect, createSignal, For, JSX, onCleanup } from "solid-js";
 import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
-import { FileInfo } from "../models/FileInfo";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
-import {AquaVerifier } from "aqua-verifier-js";
+import {AquaVerifier } from "aqua-verifier";
 
 const DetailsPage: Component = () => {
 
     const navigate = useNavigate();
     const [filePageData, setFilePageData] = createSignal<PageData | undefined>();
     createEffect(() => {
+        let sample = new AquaVerifier();
+        
         if (appState.selectedFileFromApi != undefined) {
             const pageData: PageData = JSON.parse(appState.selectedFileFromApi.page_data);
             setFilePageData(pageData)
