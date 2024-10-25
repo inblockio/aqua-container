@@ -3,10 +3,36 @@ import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
+// import { AquaVerifier } from "aqua-verifier";
 
 const DetailsPage: Component = () => {
+    
     const navigate = useNavigate();
     const [filePageData, setFilePageData] = createSignal<PageData | undefined>();
+
+    // const verifyPage = async () => {
+    //     if (filePageData) {
+    //         let verifier = new AquaVerifier();
+
+    //         const pageData: PageData = filePageData()!!;
+
+    //         for (const page of pageData.pages) {
+    //             for (const revisionKey in page.revisions) {
+    //                 const revision = page.revisions[revisionKey];
+
+    //                 // Check if the revision has a witness and update witness_event_transaction_hash
+    //                 if (revision.witness && revision.witness.witness_event_transaction_hash) {
+    //                     revision.witness.witness_event_transaction_hash = `0x${revision.witness.witness_event_transaction_hash}`;
+    //                 }
+    //             }
+    //         }
+
+    //         let hashChain: any = filePageData()?.pages[0]
+    //         const result = await verifier.verifyAquaChain(hashChain)
+    //         console.log(result)
+    //     }
+    // }
+
     createEffect(() => {
 
         if (appState.selectedFileFromApi != undefined) {
@@ -35,6 +61,10 @@ const DetailsPage: Component = () => {
         }
 
     }, [appState.selectedFileFromApi]);
+
+    createEffect(() => {
+        verifyPage()
+    }, [filePageData()])
 
     const fileHashAndRevisionsDetails = () => {
         return <For each={filePageData()?.pages ?? []}>
