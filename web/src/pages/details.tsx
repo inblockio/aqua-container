@@ -3,15 +3,12 @@ import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
-import {AquaVerifier } from "aqua-verifier";
 
 const DetailsPage: Component = () => {
-
     const navigate = useNavigate();
     const [filePageData, setFilePageData] = createSignal<PageData | undefined>();
     createEffect(() => {
-        let sample = new AquaVerifier();
-        
+
         if (appState.selectedFileFromApi != undefined) {
             const pageData: PageData = JSON.parse(appState.selectedFileFromApi.page_data);
             setFilePageData(pageData)
@@ -129,13 +126,13 @@ const DetailsPage: Component = () => {
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(revision.metadata.time_stamp)}  </p>
 
                     <br />
-                    {revision.signature == null ? <h2 style={{"margin-bottom" : "18px"}}>No signature</h2> : <div style={{"margin-bottom" : "18px"}} >
-                        <h6 style={{"margin-block": "20px"}}>Signature details</h6>
+                    {revision.signature == null ? <h2 style={{ "margin-bottom": "18px" }}>No signature</h2> : <div style={{ "margin-bottom": "18px" }} >
+                        <h6 style={{ "margin-block": "20px" }}>Signature details</h6>
                         {revisionSignatureDisplay(revision.signature)}
                     </div>}
                     <br />
-                    {revision.witness == null ? <h2 style={{"margin-bottom" : "18px"}}>No witness</h2> : <div style={{"margin-bottom" : "18px"}} >
-                        <h6 style={{"margin-block": "20px"}}>Witness details</h6>
+                    {revision.witness == null ? <h2 style={{ "margin-bottom": "18px" }}>No witness</h2> : <div style={{ "margin-bottom": "18px" }} >
+                        <h6 style={{ "margin-block": "20px" }}>Witness details</h6>
                         {revisionWitnessDisplay(revision.witness)}
                     </div>}
 
@@ -162,15 +159,15 @@ const DetailsPage: Component = () => {
     }
     const revisionWitnessDisplay = (witnnes: RevisionWitness) => {
         return <div style={{ "margin-left": "30px" }}>
-        <div class="flex-grow truncate">
-            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witeness network : {witnnes.witness_network}  </p>
-            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness hash : {formatCryptoAddress(witnnes.witness_hash, 20, 5)}  </p>
-            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness domain snapshot genesis hash : {formatCryptoAddress(witnnes.domain_snapshot_genesis_hash, 20, 5)}  </p>
-            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  transaction hash : {formatCryptoAddress(witnnes.witness_event_transaction_hash ,20, 5)}  </p>
-            <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  verifiction hash : {formatCryptoAddress(witnnes.witness_event_verification_hash, 20, 5)}  </p>
-        </div>
+            <div class="flex-grow truncate">
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witeness network : {witnnes.witness_network}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness hash : {formatCryptoAddress(witnnes.witness_hash, 20, 5)}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness domain snapshot genesis hash : {formatCryptoAddress(witnnes.domain_snapshot_genesis_hash, 20, 5)}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  transaction hash : {formatCryptoAddress(witnnes.witness_event_transaction_hash, 20, 5)}  </p>
+                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  verifiction hash : {formatCryptoAddress(witnnes.witness_event_verification_hash, 20, 5)}  </p>
+            </div>
 
-    </div>
+        </div>
     }
     const filePreviewView = () => {
 
