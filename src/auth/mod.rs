@@ -75,7 +75,7 @@ pub async fn siwe_sign_in(
         Err(e) => {
             let error_message = format!("SIWE sign-in failed: {:?}", e);
             log_data.push(error_message.clone());
-            error!("{}", error_message);
+            error!("Error --> {}", error_message);
 
             let res = SiweResponse {
                 logs: log_data,

@@ -3,12 +3,17 @@ import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
-// import { AquaVerifier } from "aqua-verifier";
+import { AquaVerifier, RevisionAquaChainResult } from "aqua-verifier";
+import { DetailsPageWitness } from "./components/details_witness";
+import { DetailsPageSignature } from "./components/details_signature";
+import { DetailsPageRevision } from "./components/details_revision";
+
 
 const DetailsPage: Component = () => {
-    
+
     const navigate = useNavigate();
     const [filePageData, setFilePageData] = createSignal<PageData | undefined>();
+    const [copyMessage, setCopyMessage] = createSignal("");
 
     // const verifyPage = async () => {
     //     if (filePageData) {
@@ -28,10 +33,19 @@ const DetailsPage: Component = () => {
     //         }
 
     //         let hashChain: any = filePageData()?.pages[0]
-    //         const result = await verifier.verifyAquaChain(hashChain)
-    //         console.log(result)
+    //         const result: RevisionAquaChainResult | null = await verifier.verifyAquaChain(hashChain)
+    //         if (result == null) {
+    //             setError("Unable to verify aqua chain (hint : Did you set up aqua js lib properly  ) ")
+    //             return
+    //         }
+    //         console.log("file page verification rsult is  ", result);
+    //         setFilePageDataResult(result)
     //     }
     // }
+
+    // createEffect(() => {
+    //     verifyPage()
+    // }, [filePageData()])
 
     createEffect(() => {
 
@@ -62,9 +76,7 @@ const DetailsPage: Component = () => {
 
     }, [appState.selectedFileFromApi]);
 
-    createEffect(() => {
-        verifyPage()
-    }, [filePageData()])
+
 
     const fileHashAndRevisionsDetails = () => {
         return <For each={filePageData()?.pages ?? []}>
@@ -76,6 +88,21 @@ const DetailsPage: Component = () => {
 
         </For>
     }
+
+
+
+    const handleCopy = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopyMessage("Genesis hash copied to clipboard!");
+
+            // Remove message after a few seconds
+            setTimeout(() => setCopyMessage(""), 2000);
+        } catch (error) {
+            setCopyMessage("Failed to copy!");
+        }
+    };
+
     const fileChainsDisplay = (pages: HashChain, index: number) => {
         return <div class="p-3">
             <div class="flex items-center gap-3">
@@ -86,16 +113,18 @@ const DetailsPage: Component = () => {
                     <div class="font-medium text-gray-900 dark:text-gray-300 truncate mb-3"> Domain :  {pages.domain_id}                    </div>
                     <div class="font-medium text-gray-900 dark:text-gray-300 flex items-center">
                         Genesis Hash: {formatCryptoAddress(pages.genesis_hash)}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            fill="currentColor"
-                            class="bi bi-copy ml-2"  // added margin-left to space it
-                            viewBox="0 0 16 16"
-                        >
-                            <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
-                        </svg>
+                        <div class="m-5 p-3" >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                fill="currentColor"
+                                class="bi bi-copy ml-2"  // added margin-left to space it
+                                viewBox="0 0 16 16"
+                            >
+                                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
+                            </svg>
+                        </div>
                     </div>
                     {/* <p class="text-gray-600 dark:text-gray-400"> </p> */}
                 </div>
@@ -141,64 +170,14 @@ const DetailsPage: Component = () => {
             return <div>No revisions found</div>
         }
     }
-    const fileRevisionsDisplayItem = (revision: Revision, index: number, revisionHash: string) => {
-        return <div class="p-3 ms-5">
-            <div class="flex items-center gap-3">
-                <div class="h-10 w-10 flex-shrink-0">
-                    {index + 1}
-                </div>
-                <div class="flex-grow truncate">
-
-                    <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(revisionHash, 20, 5)}  </p>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Previous Verification Hash : {formatCryptoAddress(revision.metadata.previous_verification_hash ?? "", 20, 5)}  </p>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Content Hash : {formatCryptoAddress(revision.content.content_hash, 20, 5)}  </p>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Metadat Hash : {formatCryptoAddress(revision.metadata.metadata_hash, 20, 5)}  </p>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(revision.metadata.time_stamp)}  </p>
-
-                    <br />
-                    {revision.signature == null ? <h2 style={{ "margin-bottom": "18px" }}>No signature</h2> : <div style={{ "margin-bottom": "18px" }} >
-                        <h6 style={{ "margin-block": "20px" }}>Signature details</h6>
-                        {revisionSignatureDisplay(revision.signature)}
-                    </div>}
-                    <br />
-                    {revision.witness == null ? <h2 style={{ "margin-bottom": "18px" }}>No witness</h2> : <div style={{ "margin-bottom": "18px" }} >
-                        <h6 style={{ "margin-block": "20px" }}>Witness details</h6>
-                        {revisionWitnessDisplay(revision.witness)}
-                    </div>}
-
-                </div>
-
-            </div>
-            <hr />
-            <br></br>
-        </div>
+    const fileRevisionsDisplayItem = (revision: Revision,
+        index: number,
+        revisionHash: string) => {
+        return <DetailsPageRevision revision={revision} index={index} revisionHash={revisionHash} />
 
     }
 
-    const revisionSignatureDisplay = (signature: RevisionSignature) => {
-        return <div style={{ "margin-left": "30px" }}>
-            <div class="flex-grow truncate">
 
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Signature : {formatCryptoAddress(signature.signature, 20, 5)}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Signature Hash : {formatCryptoAddress(signature.signature_hash, 20, 5)}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' ">  wallet Address  : {formatCryptoAddress(signature.wallet_address, 20, 5)}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' ">  public key  : {formatCryptoAddress(signature.public_key, 20, 5)}  </p>
-            </div>
-
-        </div>
-    }
-    const revisionWitnessDisplay = (witnnes: RevisionWitness) => {
-        return <div style={{ "margin-left": "30px" }}>
-            <div class="flex-grow truncate">
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witeness network : {witnnes.witness_network}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness hash : {formatCryptoAddress(witnnes.witness_hash, 20, 5)}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness domain snapshot genesis hash : {formatCryptoAddress(witnnes.domain_snapshot_genesis_hash, 20, 5)}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  transaction hash : {formatCryptoAddress(witnnes.witness_event_transaction_hash, 20, 5)}  </p>
-                <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Witness  event  verifiction hash : {formatCryptoAddress(witnnes.witness_event_verification_hash, 20, 5)}  </p>
-            </div>
-
-        </div>
-    }
     const filePreviewView = () => {
 
         if (appState.selectedFileFromApi == undefined) {
@@ -208,7 +187,7 @@ const DetailsPage: Component = () => {
         }
         const fileTypeInfo = fileType(appState.selectedFileFromApi);
 
-        if (filePageData() && filePageData()?.pages != null && filePageData()?.pages.length > 0) {
+        if (filePageData() && filePageData()?.pages != null && filePageData()?.pages.length!! > 0) {
             const firstPage = filePageData()!.pages[0]; // Get the first page
             const firstRevisionKey = Object.keys(firstPage.revisions)[0]; // Get the first revision key
             const firstRevision = firstPage.revisions[firstRevisionKey]; // Get the first revision
@@ -291,6 +270,9 @@ const DetailsPage: Component = () => {
 
                     <main class="flex-grow p-6">
 
+
+
+
                         {/*   <!--Page Title Start--> */}
                         <div class="flex justify-between items-center mb-6">
                             <h4 class="text-slate-900 dark:text-slate-200 text-lg font-medium">File Detail</h4>
@@ -350,6 +332,10 @@ const DetailsPage: Component = () => {
                                 <div class="card">
                                     <div class="card-header">
                                         <h6 class="card-title">File Revisions</h6>
+
+                                        {copyMessage() && (
+                                            <p class="text-green-500 text-sm ml-3">{copyMessage()}</p>
+                                        )}
                                     </div>
 
                                     <div class="table overflow-hidden w-full">
