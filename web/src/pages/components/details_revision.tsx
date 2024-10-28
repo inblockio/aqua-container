@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal } from "solid-js";
+import { Component, JSX, createEffect, createSignal } from "solid-js";
 import { formatCryptoAddress, timeToHumanFriendly } from "../../util";
 import { AquaVerifier, ResultStatus, RevisionVerificationResult } from "aqua-verifier";
 import { Revision } from "../../models/PageData";
@@ -8,7 +8,8 @@ import { DetailsPageWitness } from "./details_witness";
 interface DetailsPageRevisionProps {
     revision: Revision;
     index: number,
-    revisionHash: string
+    revisionHash: string,
+    copyView: (arg1: string, arg2: string) => JSX.Element; 
 }
 
 export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) => {
@@ -92,15 +93,11 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
                     {isLoading() ? <div /> : <div class="mt-5 mb-5">{showRevisionContentVerificationResults()} </div>}
 
 
-                    <p class="text-gray-600 dark:text-gray-400 mb-5" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(props.revisionHash, 20, 5)}  </p>
+                    <div  class="text-gray-600 dark:text-gray-400 mb-5 flex items-center" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(props.revisionHash, 20, 5)}  <div>{props.copyView(props.revisionHash,"Verification hash copied to clipboard!")}</div> </div>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Previous Verification Hash : {formatCryptoAddress(props.revision.metadata.previous_verification_hash ?? "", 20, 5)}  </p>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Content Hash : {formatCryptoAddress(props.revision.content.content_hash, 20, 5)}  </p>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Metadat Hash : {formatCryptoAddress(props.revision.metadata.metadata_hash, 20, 5)}  </p>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(props.revision.metadata.time_stamp)}  </p>
-
-                    
-
-
 
                     <br />
                     {props.revision.signature == null ? <h2 style={{ "margin-bottom": "18px" }}>No signature</h2> : <div style={{ "margin-bottom": "18px" }} >
