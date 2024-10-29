@@ -16,10 +16,11 @@ export const DetailsPageWitness: Component<DetailsPageWitnessProps> = (props) =>
     createEffect(async () => {
         setIsLoading(true);
         let verifier = new AquaVerifier();
-        let item = props.witness;
-        item.witness_event_transaction_hash = `0x${props.witness.witness_event_transaction_hash}`
-        console.log("verify 0x in ", item);
-        let res = await verifier.verifyWitness(item, props.previous_verification_hash, false);
+        // let item = props.witness;
+        // item.witness_event_transaction_hash = `0x${props.witness.witness_event_transaction_hash}`
+        // console.log("verify 0x in ", item.witness_event_transaction_hash);
+        let res = await verifier.verifyWitness(props.witness, `0x${props.witness.witness_event_transaction_hash}`, false);
+        console.log(res)
         setResult(res);
         setIsLoading(false);
     });
