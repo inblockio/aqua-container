@@ -1,6 +1,6 @@
 import { Component, JSX, createEffect, createSignal } from "solid-js";
 import { formatCryptoAddress, timeToHumanFriendly } from "../../util";
-import { AquaVerifier, ResultStatus, RevisionVerificationResult } from "aqua-verifier";
+import  AquaVerifier, {  ResultStatus, RevisionVerificationResult } from "aqua-verifier";
 import { Revision } from "../../models/PageData";
 import { DetailsPageSignature } from "./details_signature";
 import { DetailsPageWitness } from "./details_witness";
@@ -28,8 +28,8 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
 
     let showRevisionSummary = () => {
         if (result()?.successful) {
-            return <div class="border bg-success/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
-                This revision is succesfull
+            return <div class="border bg-success/10 text-success border-success/20 rounded px-4 py-3 flex justify-between items-center">
+                This revision is valid
             </div>
         } else {
             return <div class="border bg-danger/10 text-danger border-danger/20 rounded px-4 py-3 flex justify-between items-center">
@@ -41,7 +41,7 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
 
     let showRevisionFileVerificationResults = () => {
         if (result()?.file_verification.successful) {
-            return <div class="border bg-success/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
+            return <div class="border bg-success/10 text-success border-success/20 rounded px-4 py-3 flex justify-between items-center">
                 File revision is valid
             </div>
         } else {
@@ -53,7 +53,7 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
 
     let showRevisionMetadataVerificationResults = () => {
         if (result()?.metadata_verification.successful) {
-            return <div class="border bg-success/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
+            return <div class="border bg-success/10 text-success border-success/20 rounded px-4 py-3 flex justify-between items-center">
                 revision metadata is valid
             </div>
         } else {
@@ -65,7 +65,7 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
 
     let showRevisionContentVerificationResults = () => {
         if (result()?.metadata_verification.successful) {
-            return <div class="border bg-success/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
+            return <div class="border bg-success/10 text-success border-success/20 rounded px-4 py-3 flex justify-between items-center">
                 revision conents is valid
             </div>
         } else {

@@ -3,7 +3,7 @@ import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
 import { useNavigate } from "@solidjs/router";
 import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
-import { AquaVerifier, RevisionAquaChainResult } from "aqua-verifier";
+import AquaVerifier , { RevisionAquaChainResult } from "aqua-verifier";
 import { DetailsPageWitness } from "./components/details_witness";
 import { DetailsPageSignature } from "./components/details_signature";
 import { DetailsPageRevision } from "./components/details_revision";

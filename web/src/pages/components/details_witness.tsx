@@ -2,7 +2,7 @@
 import { Component, createEffect, createSignal } from "solid-js";
 import { RevisionSignature, RevisionWitness } from "../../models/PageData";
 import { formatCryptoAddress } from "../../util";
-import { AquaVerifier, ResultStatus } from "aqua-verifier";
+import AquaVerifier, {  ResultStatus } from "aqua-verifier";
 
 interface DetailsPageWitnessProps {
     witness: RevisionWitness;
@@ -16,10 +16,11 @@ export const DetailsPageWitness: Component<DetailsPageWitnessProps> = (props) =>
     createEffect(async () => {
         setIsLoading(true);
         let verifier = new AquaVerifier();
-        let item = props.witness;
-        item.witness_event_transaction_hash = `0x${props.witness.witness_event_transaction_hash}`
-        console.log("verify 0x in ", item);
-        let res = await verifier.verifyWitness(item, props.previous_verification_hash, false);
+        // let item = props.witness;
+        // item.witness_event_transaction_hash = `0x${props.witness.witness_event_transaction_hash}`
+        // console.log("verify 0x in ", item.witness_event_transaction_hash);
+        let res = await verifier.verifyWitness(props.witness, `0x${props.witness.witness_event_transaction_hash}`, false);
+        console.log(res)
         setResult(res);
         setIsLoading(false);
     });
@@ -40,7 +41,7 @@ export const DetailsPageWitness: Component<DetailsPageWitnessProps> = (props) =>
     return (<div style={{ "margin-left": "30px" }}>
         <div class="flex-grow truncate">
             {
-                isLoading() ? <div class="border bg-info/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
+                isLoading() ? <div class="border bg-info/10 text-success border-info/20 rounded px-4 py-3 flex justify-between items-center">
                     Checking is witness is valid
                 </div> : <div> {isWitnessValid()}</div>
 

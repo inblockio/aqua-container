@@ -1,7 +1,7 @@
 import { Component, createEffect, createSignal } from "solid-js";
 import { RevisionSignature } from "../../models/PageData";
 import { formatCryptoAddress } from "../../util";
-import { AquaVerifier, ResultStatus } from "aqua-verifier";
+import AquaVerifier , {  ResultStatus } from "aqua-verifier";
 
 interface DetailsPageSignatureProps {
     signature: RevisionSignature;
