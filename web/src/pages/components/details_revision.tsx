@@ -4,12 +4,12 @@ import { AquaVerifier, ResultStatus, RevisionVerificationResult } from "aqua-ver
 import { Revision } from "../../models/PageData";
 import { DetailsPageSignature } from "./details_signature";
 import { DetailsPageWitness } from "./details_witness";
+import { CopyableText } from "../../components/CopyableText";
 
 interface DetailsPageRevisionProps {
     revision: Revision;
     index: number,
     revisionHash: string,
-    copyView: (arg1: string, arg2: string) => JSX.Element; 
 }
 
 export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) => {
@@ -24,6 +24,7 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
         setResult(res);
         setIsLoading(false);
     });
+
 
     let showRevisionSummary = () => {
         if (result()?.successful) {
@@ -53,11 +54,11 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
     let showRevisionMetadataVerificationResults = () => {
         if (result()?.metadata_verification.successful) {
             return <div class="border bg-success/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
-                 revision metadata is valid
+                revision metadata is valid
             </div>
         } else {
             return <div class="border bg-danger/10 text-danger border-danger/20 rounded px-4 py-3 flex justify-between items-center">
-                 revision metadata is not valid {result()?.file_verification.message}
+                revision metadata is not valid {result()?.file_verification.message}
             </div>
         }
     }
@@ -65,11 +66,11 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
     let showRevisionContentVerificationResults = () => {
         if (result()?.metadata_verification.successful) {
             return <div class="border bg-success/10 text-info border-info/20 rounded px-4 py-3 flex justify-between items-center">
-                 revision conents is valid
+                revision conents is valid
             </div>
         } else {
             return <div class="border bg-danger/10 text-danger border-danger/20 rounded px-4 py-3 flex justify-between items-center">
-                 revision metadata is not valid {result()?.file_verification.message}
+                revision metadata is not valid {result()?.file_verification.message}
             </div>
         }
     }
@@ -93,12 +94,39 @@ export const DetailsPageRevision: Component<DetailsPageRevisionProps> = (props) 
                     {isLoading() ? <div /> : <div class="mt-5 mb-5">{showRevisionContentVerificationResults()} </div>}
 
 
-                    <div  class="text-gray-600 dark:text-gray-400 mb-5 flex items-center" style="font-family : 'monospace' "> Verification Hash : {formatCryptoAddress(props.revisionHash, 20, 5)}  <div>{props.copyView(props.revisionHash,"Verification hash copied to clipboard!")}</div> </div>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Previous Verification Hash : {formatCryptoAddress(props.revision.metadata.previous_verification_hash ?? "", 20, 5)}  </p>
+                    {/* <div class="text-gray-600 dark:text-gray-400 mb-5 flex items-center" style="font-family : 'monospace' "> 
+                    Verification Hash : {formatCryptoAddress(props.revisionHash, 20, 5)} 
+                    </div> */}
+                    {/* <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Previous Verification Hash : {formatCryptoAddress(props.revision.metadata.previous_verification_hash ?? "", 20, 5)}  </p>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Content Hash : {formatCryptoAddress(props.revision.content.content_hash, 20, 5)}  </p>
                     <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Metadat Hash : {formatCryptoAddress(props.revision.metadata.metadata_hash, 20, 5)}  </p>
-                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(props.revision.metadata.time_stamp)}  </p>
+                    <p class="text-gray-600 dark:text-gray-400 mt-5" style="font-family : 'monospace' "> Time stamp : {timeToHumanFriendly(props.revision.metadata.time_stamp)}  </p> */}
 
+                    <CopyableText
+                        displayText={`Verification Hash: ${formatCryptoAddress(props.revisionHash, 20, 5)}`}
+                        copyText={props.revisionHash}
+                        onCopyMessage="Verification Hash Copied"
+                    />
+                    <CopyableText
+                        displayText={`Previous Verification Hash: ${formatCryptoAddress(props.revision.metadata.previous_verification_hash ?? "", 20, 5)}`}
+                        copyText={props.revision.metadata.previous_verification_hash ?? ""}
+                        onCopyMessage="Previous Verification Hash Copied"
+                    />
+                    <CopyableText
+                        displayText={`Content Hash: ${formatCryptoAddress(props.revision.content.content_hash, 20, 5)}`}
+                        copyText={props.revision.content.content_hash}
+                        onCopyMessage="Content Hash Copied"
+                    />
+                    <CopyableText
+                        displayText={`Metadata Hash: ${formatCryptoAddress(props.revision.metadata.metadata_hash, 20, 5)}`}
+                        copyText={props.revision.metadata.metadata_hash}
+                        onCopyMessage="Metadata Hash Copied"
+                    />
+                    <CopyableText
+                        displayText={`Timestamp: ${timeToHumanFriendly(props.revision.metadata.time_stamp)}`}
+                        copyText={props.revision.metadata.time_stamp}
+                        onCopyMessage="Timestamp Copied"
+                    />
                     <br />
                     {props.revision.signature == null ? <h2 style={{ "margin-bottom": "18px" }}>No signature</h2> : <div style={{ "margin-bottom": "18px" }} >
                         <h6 style={{ "margin-block": "20px" }}>Signature details</h6>

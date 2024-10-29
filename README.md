@@ -36,6 +36,9 @@ Multi-User File-Management
 2) [TODO] Integrate SIWE-OIDC login functionality
 3) [TODO] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
 
+## Known Limitation.
+1. The metamask siwe-oidc session is not persisted as such api  restart log you out
+2.  
 ## Requirements
 
 1. Rust and `sqlx` (` cargo install sqlx-cli`)

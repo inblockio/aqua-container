@@ -7,6 +7,7 @@ import { AquaVerifier, RevisionAquaChainResult } from "aqua-verifier";
 import { DetailsPageWitness } from "./components/details_witness";
 import { DetailsPageSignature } from "./components/details_signature";
 import { DetailsPageRevision } from "./components/details_revision";
+import { CopyableText } from "../components/CopyableText";
 
 
 const DetailsPage: Component = () => {
@@ -90,38 +91,7 @@ const DetailsPage: Component = () => {
     }
 
 
-    const copyView = (textCopy: string, textDisplay: string, uniqu) => {
-        return <span class="m-5 p-3 flex items-center cursor-pointer" onClick={(e) => {
-            handleCopyAction(textCopy, textDisplay)
-        }} >
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                fill="currentColor"
-                class="bi bi-copy ml-2"  // added margin-left to space it
-                viewBox="0 0 16 16"
-            >
-                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z" />
-            </svg>
-            &emsp;  &emsp;
-
-            {/* {copyMessage() && (
-                                           <span  class=" bg-success/5 text-xsm font-small text-success hover:text-white hover:bg-success">{copyMessage()}</span>
-                                        )} */}
-        </span>
-    }
-    const handleCopyAction = async (textCopy: string, textDisplay: string) => {
-        try {
-            await navigator.clipboard.writeText(textCopy);
-            setCopyMessage(textDisplay);
-
-            // Remove message after a few seconds
-            setTimeout(() => setCopyMessage(""), 2000);
-        } catch (error) {
-            setCopyMessage("Failed to copy!");
-        }
-    };
+ 
 
     const fileChainsDisplay = (pages: HashChain, index: number) => {
         return <div class="p-3">
@@ -132,8 +102,12 @@ const DetailsPage: Component = () => {
                 <div class="flex-grow truncate mb-5">
                     <div class="font-medium text-gray-900 dark:text-gray-300 truncate mb-3"> Domain :  {pages.domain_id}                    </div>
                     <div class="font-medium text-gray-900 dark:text-gray-300 flex items-center">
-                        Genesis Hash: {formatCryptoAddress(pages.genesis_hash)}
-                        <div>{copyView(pages.genesis_hash, "Genesis hash copied to clipboard!")}</div>
+                    <CopyableText
+                        displayText={`Content Hash: ${formatCryptoAddress(pages.genesis_hash, 20, 5)}`}
+                        copyText={pages.genesis_hash}
+                        onCopyMessage="Genesis Hash Copied"
+                    />
+                      
                     </div>
                     {/* <p class="text-gray-600 dark:text-gray-400"> </p> */}
                 </div>
@@ -182,9 +156,7 @@ const DetailsPage: Component = () => {
     const fileRevisionsDisplayItem = (revision: Revision,
         index: number,
         revisionHash: string) => {
-        return <DetailsPageRevision revision={revision} index={index} revisionHash={revisionHash} copyView={(item1, item2)=>{
-            return <div>{copyView(item1, item2)}</div>
-        }} />
+        return <DetailsPageRevision revision={revision} index={index} revisionHash={revisionHash}  />
 
     }
 
