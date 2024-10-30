@@ -1,3 +1,11 @@
+use aqua_verifier_rs_types::models::content::{FileContent, RevisionContent};
+use aqua_verifier_rs_types::models::hash::Hash;
+use aqua_verifier_rs_types::models::metadata::RevisionMetadata;
+use aqua_verifier_rs_types::models::page_data::HashChain;
+use aqua_verifier_rs_types::models::public_key::PublicKey;
+use aqua_verifier_rs_types::models::revision::Revision;
+use aqua_verifier_rs_types::models::signature::{RevisionSignature, Signature};
+use aqua_verifier_rs_types::models::{base64::Base64, timestamp::Timestamp};
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -16,17 +24,17 @@ use sha3::*;
 use std::collections::BTreeMap;
 use std::fs;
 
-use crate::models::file::FileInfo;
 use crate::models::input::RevisionInput;
 use crate::models::page_data::PageDataContainer;
 use crate::util::{check_or_generate_domain, db_set_up};
+use crate::verification::{metadata_hash, signature_hash, verification_hash};
 use crate::Db;
+use crate::{models::file::FileInfo, verification::content_hash};
 use axum::response::{IntoResponse, Response};
 use bonsaidb::core::keyvalue::{KeyStatus, KeyValue};
 use bonsaidb::core::schema::{Collection, SerializedCollection};
 use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
-use guardian_common::{crypt, custom_types::*};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
@@ -43,7 +51,6 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use verifier::v1_1::hashes::*;
 
 #[derive(Deserialize, Debug)]
 #[allow(dead_code)]
@@ -137,11 +144,11 @@ pub async fn save_request_body(
             .execute()
             .unwrap();
 
-        let document2: &Option<PageDataContainer> =
+        let document2: &Option<PageDataContainer<HashChain>> =
             &server_database.db.get_key(file_name).into().unwrap();
 
         if document2.is_some() {
-            let doc: PageDataContainer = document2.clone().unwrap();
+            let doc: PageDataContainer<HashChain> = document2.clone().unwrap();
             let (_, rev1) = &doc.pages[0].revisions[0];
 
             if rev1.content.file.is_some() {
@@ -165,11 +172,11 @@ pub async fn add_signature_hash_for_file(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
 ) -> (StatusCode, String) {
-    let mut document2: &Option<PageDataContainer> =
+    let mut document2: &Option<PageDataContainer<HashChain>> =
         &server_database.db.get_key(&input.filename).into().unwrap();
 
     if document2.is_some() {
-        let mut doc: PageDataContainer = document2.clone().unwrap();
+        let mut doc: PageDataContainer<HashChain> = document2.clone().unwrap();
         let len = &doc.pages[0].revisions.len();
 
         let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
@@ -238,11 +245,11 @@ pub async fn get_verification_hash_for_file(
     State(server_database): State<Db>,
     Form(input): Form<Input>,
 ) -> (StatusCode, String) {
-    let document2: &Option<PageDataContainer> =
+    let document2: &Option<PageDataContainer<HashChain>> =
         &server_database.db.get_key(&input.filename).into().unwrap();
 
     if document2.is_some() {
-        let doc: PageDataContainer = document2.clone().unwrap();
+        let doc: PageDataContainer<HashChain> = document2.clone().unwrap();
         let len = &doc.pages[0].revisions.len();
 
         let (ver1, _) = &doc.pages[0].revisions[len - 1];
@@ -258,11 +265,11 @@ pub async fn save_json_file(
     // println!("{:#?}", &input);
     tracing::debug!("{:#?}", &input);
 
-    let document2: &Option<PageDataContainer> =
+    let document2: &Option<PageDataContainer<HashChain>> =
         &server_database.db.get_key(&input.filename).into().unwrap();
 
     if document2.is_some() {
-        let doc: PageDataContainer = document2.clone().unwrap();
+        let doc: PageDataContainer<HashChain> = document2.clone().unwrap();
         let (_, rev1) = &doc.pages[0].revisions[0];
 
         if rev1.content.file.is_some() {

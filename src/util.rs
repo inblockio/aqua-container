@@ -1,7 +1,10 @@
+use aqua_verifier_rs_types::models::revision::Revision;
+use aqua_verifier_rs_types::models::hash::Hash;
+use aqua_verifier_rs_types::models::content::RevisionContent;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
-use guardian_common::custom_types::{Hash, Revision, RevisionContent};
-use guardian_common::prelude::Base64;
+// use guardian_common::custom_types::{Hash, Revision, RevisionContent};
+// use guardian_common::prelude::Base64;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde_json::Value;
@@ -16,6 +19,7 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use std::collections::HashMap;
 
 use crate::models::file::FileDataInformation;
+use crate::verification::content_hash;
 
 pub async fn db_set_up() -> Pool<Sqlite> {
     let db_file_path = "./pages.db";
@@ -221,7 +225,7 @@ pub fn compute_content_hash(contentPar: &RevisionContent) -> Result<Hash, String
     // println!("{:#?}", content_current);
     tracing::debug!("{:#?}", content_current);
 
-    let content_hash_current = verifier::v1_1::hashes::content_hash(&content_current.clone());
+    let content_hash_current = content_hash(&content_current.clone());
 
     tracing::debug!("{:#?}", content_hash_current);
 

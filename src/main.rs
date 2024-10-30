@@ -4,7 +4,10 @@ mod models;
 mod util;
 mod controllers;
 pub mod auth;
+pub mod verification;
+pub mod revision_integrity;
 
+use aqua_verifier_rs_types::models::page_data::HashChain;
 use auth::siwe_sign_in;
 use axum::{body::Bytes, extract::{DefaultBodyLimit, Multipart, Path, Request, State}, handler::HandlerWithoutStateExt, http::StatusCode, response::{Html, Redirect}, routing::{get, post}, BoxError, Form, Router, Json};
 use ethaddr::address;
@@ -36,9 +39,10 @@ use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
 use serde::{Deserialize, Serialize};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
-use guardian_common::{crypt, custom_types::*};
-use serde_json::json;
-use verifier::v1_1::hashes::*;
+// use guardian_common::{crypt, custom_types::*};
+// use serde_json::json;
+extern crate serde_json_path_to_error as serde_json;
+
 use crate::util::{check_or_generate_domain, db_set_up};
 use controllers::form_controller::{show_form, save_request_body, save_json_file, get_verification_hash_for_file, add_signature_hash_for_file };
 use  controllers::api_controller::{fetch_explorer_files, explorer_file_upload, explorer_aqua_file_upload, explorer_sign_revision, explorer_witness_file, explorer_delete_file,  explorer_delete_all_files, explorer_fetch_configuration, explorer_update_configuration};
@@ -80,7 +84,7 @@ async fn main() {
     check_or_generate_domain();
 
     let sqliteDb =  db_set_up().await;
-    let db = Database::open::<crate::models::page_data::PageDataContainer>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
+    let db = Database::open::<crate::models::page_data::PageDataContainer<HashChain>>(StorageConfiguration::new("b0nsa1.bonsaidb")).unwrap();
 
     // save files to a separate directory to not override files in the current directory
     tokio::fs::create_dir(UPLOADS_DIRECTORY).await;

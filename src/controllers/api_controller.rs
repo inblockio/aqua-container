@@ -3,9 +3,23 @@ use crate::models::page_data::{ApiResponse, PageDataContainer};
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
-    db_set_up, get_file_info, make_empty_hash, update_env_file, get_content_type
+    db_set_up, get_content_type, get_file_info, make_empty_hash, update_env_file,
+};
+use crate::verification::{
+    content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
 };
 use crate::Db;
+use aqua_verifier_rs_types::models::base64::Base64;
+use aqua_verifier_rs_types::models::content::{FileContent, RevisionContent};
+use aqua_verifier_rs_types::models::hash::Hash;
+use aqua_verifier_rs_types::models::metadata::RevisionMetadata;
+use aqua_verifier_rs_types::models::page_data::HashChain;
+use aqua_verifier_rs_types::models::public_key::PublicKey;
+use aqua_verifier_rs_types::models::revision::Revision;
+use aqua_verifier_rs_types::models::signature::{RevisionSignature, Signature};
+use aqua_verifier_rs_types::models::timestamp::Timestamp;
+use aqua_verifier_rs_types::models::tx_hash::TxHash;
+use aqua_verifier_rs_types::models::witness::{MerkleNode, RevisionWitness};
 use axum::response::{IntoResponse, Response};
 use axum::{
     body::Bytes,
@@ -24,14 +38,16 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use ethaddr::address;
 use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
-use guardian_common::{crypt, custom_types::*};
+// use guardian_common::{crypt, custom_types::*};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+// use serde_json::json;
+extern crate serde_json_path_to_error as serde_json;
 use sha3::{Digest, Sha3_512};
 use sqlx::Row;
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::collections::HashMap;
 use std::env;
+use std::error::Error;
 use std::fs;
 use std::io;
 use std::net::SocketAddr;
@@ -41,7 +57,7 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
-use verifier::v1_1::hashes::*;
+// use verifier::v1_1::hashes::*;
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -211,7 +227,7 @@ pub async fn explorer_file_verify_hash_upload(
                 };
 
                 // Try to parse the file content into your struct
-                match serde_json::from_slice::<PageDataContainer>(&data) {
+                match serde_json::from_slice::<PageDataContainer<HashChain>>(&data) {
                     Ok(parsed_data) => {
                         tracing::debug!("file is okay fn");
 
@@ -335,7 +351,7 @@ pub async fn explorer_aqua_file_upload(
     };
 
     let mut account: Option<String> = None;
-    let mut aqua_json: Option<PageDataContainer> = None;
+    let mut aqua_json: Option<PageDataContainer<HashChain>> = None;
 
     // Process only two fields: account and file
     for _ in 0..2 {
@@ -383,14 +399,15 @@ pub async fn explorer_aqua_file_upload(
                 };
 
                 // Parse JSON content into AquaData struct
-                aqua_json = match serde_json::from_slice::<PageDataContainer>(&file_content) {
-                    Ok(data) => Some(data),
-                    Err(e) => {
-                        tracing::error!("Failed to parse JSON: {}", e);
-                        res.logs.push(format!("Failed to parse JSON: {}", e));
-                        return (StatusCode::BAD_REQUEST, Json(res));
-                    }
-                };
+                aqua_json =
+                    match serde_json::from_slice::<PageDataContainer<HashChain>>(&file_content) {
+                        Ok(data) => Some(data),
+                        Err(e) => {
+                            tracing::error!("Failed to parse JSON: {}", e);
+                            res.logs.push(format!("Failed to parse JSON: {}", e));
+                            return (StatusCode::BAD_REQUEST, Json(res));
+                        }
+                    };
             }
             _ => {
                 tracing::warn!("Unexpected field: {}", name);
@@ -756,7 +773,7 @@ pub async fn explorer_file_upload(
     let verification_hash_current =
         verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
-    let pagedata_current = crate::models::page_data::PageDataContainer {
+    let pagedata_current = PageDataContainer {
         pages: vec![HashChain {
             genesis_hash: verification_hash_current.clone().to_string(),
             domain_id: domain_id_current,
@@ -843,6 +860,21 @@ pub async fn explorer_file_upload(
     }
 }
 
+// fn parse_json(data: &str) -> Result<PageDataContainer<HashChain>, Box<dyn Error>> {
+//     // let mut deserializer = serde_json::Deserializer::from_str(data);
+//     // let result = serde_json(&mut deserializer);
+//     // match result {
+//     //     Ok(parsed) => Ok(parsed),
+//     //     Err(PathError { path, error }) => {
+//     //         tracing::info!("Error at path {}: {}", path, error);
+//     //         Err(Box::new(error))
+//     //     }
+//     // }
+//     // result
+// }
+
+
+
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
     Form(input): Form<RevisionInput>,
@@ -874,22 +906,29 @@ pub async fn explorer_sign_revision(
     match row {
         Ok(Some(row)) => {
             // Deserialize page data
-            let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
-                Ok(data) => {
-                    log_data.push("Success  : parse page data".to_string());
-                    data
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse page data record: {:?}", e);
-                    log_data.push(format!("error : Failed to parse page data record: {:?}", e));
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-                }
-            };
+            // tracing::info!("{:#?}", row.page_data);
+            let deserialized: PageDataContainer<HashChain> =
+                match serde_json::from_str(&row.page_data) {
+                    Ok(data) => {
+                        log_data.push("Success  : parse page data".to_string());
+                        data
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to parse page data record: {:?}", e);
+                        log_data.push(format!("error : Failed to parse page data record: {:?}", e));
+                        if let Some(source) = e.source() {
+                            tracing::info!("Source: {}", source);
+                        } else {
+                            tracing::info!("Source NOT FOUND ");
+                        }
+                        let res: ApiResponse = ApiResponse {
+                            logs: log_data,
+                            file: None,
+                            files: Vec::new(),
+                        };
+                        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+                    }
+                };
 
             let mut doc = deserialized;
             let len = doc.pages[0].revisions.len();
@@ -1219,26 +1258,27 @@ pub async fn explorer_witness_file(
             ));
 
             // Deserialize page data
-            let deserialized: PageDataContainer = match serde_json::from_str(&row.page_data) {
-                Ok(data) => {
-                    log_data.push("Success :  Page Data Object parse".to_string());
+            let deserialized: PageDataContainer<HashChain> =
+                match serde_json::from_str(&row.page_data) {
+                    Ok(data) => {
+                        log_data.push("Success :  Page Data Object parse".to_string());
 
-                    data
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse page data record: {:?}", e);
+                        data
+                    }
+                    Err(e) => {
+                        tracing::error!("Failed to parse page data record: {:?}", e);
 
-                    log_data.push("Error : Failure to parse Page Data Object".to_string());
+                        log_data.push("Error : Failure to parse Page Data Object".to_string());
 
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
+                        let res: ApiResponse = ApiResponse {
+                            logs: log_data,
+                            file: None,
+                            files: Vec::new(),
+                        };
 
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-                }
-            };
+                        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+                    }
+                };
 
             let mut doc = deserialized.clone();
             let len = doc.pages[0].revisions.len();
