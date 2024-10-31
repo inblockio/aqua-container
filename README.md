@@ -9,7 +9,7 @@ Functionality milestones Fileupload & Hasher:
 2) [DONE] Turn file into Aqua-Chain
 3) [DONE] Export Aqua-Chain (no signature, no witness) as JSON
 4) [DONE] Sign Aqua-Chain with Metamask-Wallet
-5) [TODO] Import Aqua-Chain
+5) [DONE] Import Aqua-Chain
 6) [DONE] Extend existing Aqua-Chain with new Signature 
 7) [DONE] Witness Aqua-Chain on Chain
 8) [ONGOIN] Allow for choosing witness network from config.
@@ -22,7 +22,7 @@ Functionality milestones Verifier:
 1) [DONE] Upload Aqua-Chain for verification
 2) [DONE] Verification of Aqua-Chain (print to console)
 3) [DONE] Display verification results on the website
-4) [ONGOING] Independent upload for verification. Show verification with detailed verification details.
+4) [DONE] Independent upload for verification. Show verification with detailed verification details.
 
 Pages:
 1) [DONE][v1.2] Hasher 
@@ -33,8 +33,8 @@ Pages:
 
 Multi-User File-Management
 1) [DONE] Support multi-user access rights for DB
-2) [TODO] Integrate SIWE-OIDC login functionality
-3) [TODO] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
+2) [ONGOING] IntTODOegrate SIWE-OIDC login functionality
+3) [] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
 
 ## Known Limitation.
 1. The metamask siwe-oidc session is not persisted as such api  restart log you out
