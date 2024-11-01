@@ -13,19 +13,35 @@ license = "MIT OR Apache-2.0"
 axum = { git = "https://github.com/tokio-rs/axum", features = ["multipart"] }
 axum-extra = { git = "https://github.com/tokio-rs/axum" }
 bonsaidb = { git = "https://github.com/khonsulabs/bonsaidb", features = ["local"] }
-guardian-common = { git = "https://github.com/inblockio/aqua-guardian", rev = "2ae5c19" }
-verifier = { git = "https://github.com/inblockio/aqua-guardian", rev = "2ae5c19" }
+verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", branch = "main" }
+aqua-verifier-rs-types = { git = "https://github.com/dalmasonto/aqua-rs-types", branch = "master" }
 
 # fixed versions
 chrono = "0.4.38"
 sha3 = "0.10.8"
 futures = "0.3"
 serde = "1.0.210"
-serde_json = "1.0.128"
+
 tokio = { version = "1.0", features = ["full"] }
 tokio-util = { version = "0.7", features = ["io"] }
 tower = { version = "0.5.1", features = ["util"] }
 tower-http = { version = "0.6.1", features = ["fs", "limit",  "trace", "cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-ethaddr = "0.2.2"
+ethaddr = "0.2.2" # help use etherirum wallet addresses
+rusqlite = "0.32.1" # rust sqlite
+sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio-native-tls"] } # used to interacting with sqlite
+dotenv = "0.15"
+rand = "0.8.5"
+ethers = "2.0.14"
+
+# SIWE Sign in
+siwe = "0.6.1"
+hex = "0.4"
+ethers-core = "2.0.14"
+#infer file type from base 64 in aqua json file
+base64 = "0.22.1"
+
+flagset = { version = "0.4.5", features = ["serde"] }
+libsecp256k1 = "0.7.1"
+serde_json_path_to_error = "0.1.4"
