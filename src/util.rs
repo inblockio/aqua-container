@@ -3,8 +3,6 @@ use aqua_verifier_rs_types::models::hash::Hash;
 use aqua_verifier_rs_types::models::content::RevisionContent;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
-// use guardian_common::custom_types::{Hash, Revision, RevisionContent};
-// use guardian_common::prelude::Base64;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde_json::Value;
