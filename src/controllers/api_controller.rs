@@ -5,7 +5,10 @@ use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
     db_set_up, get_content_type, get_file_info, make_empty_hash, update_env_file,
 };
-use crate::verification::{
+// use crate::verification::{
+//     content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
+// };
+use verifier::verification::{
     content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
 };
 use crate::Db;

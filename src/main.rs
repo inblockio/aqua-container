@@ -4,8 +4,8 @@ mod models;
 mod util;
 mod controllers;
 pub mod auth;
-pub mod verification;
-pub mod revision_integrity;
+// pub mod verification;
+// pub mod revision_integrity;
 
 use aqua_verifier_rs_types::models::page_data::HashChain;
 use auth::siwe_sign_in;

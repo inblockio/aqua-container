@@ -19,7 +19,8 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use std::collections::HashMap;
 
 use crate::models::file::FileDataInformation;
-use crate::verification::content_hash;
+// use crate::verification::content_hash;
+use  verifier::verification::content_hash;
 
 pub async fn db_set_up() -> Pool<Sqlite> {
     let db_file_path = "./pages.db";
