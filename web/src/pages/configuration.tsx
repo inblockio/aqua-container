@@ -49,7 +49,7 @@ const ConfigsPage: Component = () => {
 
         const response = await axios.post(`${API_BASE_ENDPOINT}/explorer_update_configuration`, formData, {
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                // 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
 
@@ -57,8 +57,6 @@ const ConfigsPage: Component = () => {
             alert("Configuration update success")
         }
     }
-
-    console.log(fileMode())
 
     return (
         <>
