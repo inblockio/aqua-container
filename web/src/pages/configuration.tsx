@@ -9,6 +9,7 @@ const ConfigsPage: Component = () => {
     const [chainUsed, setChainUsed] = createSignal<string>("");
     const [fileMode, setFileMode] = createSignal<string>("");
     const [domain, setDomain] = createSignal<string>("");
+    const [contract, setContract] = createSignal<string>("0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611");
 
     createEffect(async () => {
         //fetch conf
@@ -22,6 +23,7 @@ const ConfigsPage: Component = () => {
             setChainUsed(response.data.chain)
             setDomain(response.data.domain)
             setFileMode(response.data.file_mode)
+            // setContract(response.data.contract)
         }
     })
 
@@ -41,7 +43,8 @@ const ConfigsPage: Component = () => {
         const formData = new URLSearchParams();
         formData.append('chain', chainUsed());
         formData.append('domain', domain());
-        formData.append('file_mode', fileMode());
+        formData.append('mode', fileMode());
+        formData.append('contract', contract());
 
 
         const response = await axios.post(`${API_BASE_ENDPOINT}/explorer_update_configuration`, formData, {
@@ -54,6 +57,8 @@ const ConfigsPage: Component = () => {
             alert("Configuration update success")
         }
     }
+
+    console.log(fileMode())
 
     return (
         <>
@@ -72,19 +77,28 @@ const ConfigsPage: Component = () => {
                             <div class="flex flex-col gap-3">
                                 <div class="">
                                     <label for="project-name" class="mb-2 block">Domain Name</label>
-                                    <input type="email" 
-                                    id="project-name" 
-                                    class="form-input" 
-                                    placeholder="Enter Title"
-                                     value={domain()} onChange={(e)=>{setDomain(e.target.value)}} aria-describedby="input-helper-text" />
+                                    <input type="email"
+                                        id="project-name"
+                                        class="form-input"
+                                        placeholder="Enter Title"
+                                        value={domain()} onChange={(e) => { setDomain(e.target.value) }} aria-describedby="input-helper-text" />
+                                </div>
+
+                                <div class="">
+                                    <label for="project-name" class="mb-2 block">Contract Address</label>
+                                    <input type="email"
+                                        id="project-name"
+                                        class="form-input"
+                                        placeholder="Enter Title"
+                                        value={contract()} onChange={(e) => { setContract(e.target.value) }} aria-describedby="input-helper-text" />
                                 </div>
 
 
                                 <div>
                                     <label for="select-label" class="mb-2 block">Selet chain</label>
-                                    <select id="select-label" class="form-select" 
-                                     value={chainUsed()}
-                                    onChange={(e) => setChainUsed(e.target.value)}>
+                                    <select id="select-label" class="form-select"
+                                        value={chainUsed()}
+                                        onChange={(e) => setChainUsed(e.target.value)}>
                                         <option selected>Open this select menu</option>
                                         <option value="sepolia">Sepolia</option>
                                         <option value="mainnet">Mainnet</option>
@@ -94,12 +108,12 @@ const ConfigsPage: Component = () => {
 
                                 <div>
                                     <label for="select-label" class="mb-2 block">Default File mode (is a file public or private by default)</label>
-                                    <select id="select-label" class="form-select" 
-                                     value={fileMode()}
-                                    onChange={(e) => setFileMode(e.target.value)}>
-                                        <option selected>Open this select menu</option>
-                                        <option value="public">Public</option>
-                                        <option value="private">private</option>
+                                    <select id="select-label" class="form-select"
+                                        value={fileMode()}
+                                        onChange={(e) => setFileMode(e.target.value)}>
+                                        <option>Open this select menu</option>
+                                        <option selected={fileMode() === 'public'} value="public">Public</option>
+                                        <option selected={fileMode() === 'private'} value="private">private</option>
                                     </select>
                                 </div>
                             </div>

@@ -1548,6 +1548,11 @@ pub async fn explorer_update_configuration(
         log_data.push(format!("Failed to update FILE_MODE in .env file: {}", e));
     }
 
+
+    if let Err(e) = update_env_file("CONTRACT_ADDRESS", &input.mode) {
+        log_data.push(format!("Failed to update CONTRACT_ADDRESS in .env file: {}", e));
+    }
+
     // Prepare the response
     let res = ApiResponse {
         logs: log_data,

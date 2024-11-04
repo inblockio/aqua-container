@@ -6,10 +6,10 @@ export const documentTypes = ["application/pdf", "application/msword", "applicat
 export const musicTypes = ["audio/mpeg", "audio/wav"];
 export const videoTypes = ["video/mp4", "video/mpeg", "video/webm"];
 
-export function isJsonFileContent(file: File) : Promise<boolean>{
+export function isJsonFileContent(file: File): Promise<boolean> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        
+
         reader.onload = () => {
             try {
                 JSON.parse(reader.result);
@@ -18,8 +18,33 @@ export function isJsonFileContent(file: File) : Promise<boolean>{
                 resolve(false); // Not JSON
             }
         };
-        
+
         reader.onerror = () => reject(reader.error);
+        reader.readAsText(file);
+    });
+}
+
+export function readJsonFile(file: File): Promise<any> {
+    return new Promise((resolve, reject) => {
+        if (file.type !== "application/json") {
+            reject(new Error("The file is not a JSON file."));
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const json = JSON.parse(reader.result as string);
+                resolve(json);
+            } catch (error) {
+                reject(new Error("Error parsing JSON content."));
+            }
+        };
+
+        reader.onerror = () => {
+            reject(new Error("Error reading the file."));
+        };
+
         reader.readAsText(file);
     });
 }

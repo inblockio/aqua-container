@@ -1,8 +1,6 @@
 import type { Component } from 'solid-js';
 import { createEffect, createSignal, For } from "solid-js";
 import axios from "axios";
-import { ethers } from "ethers";
-import { FileInfo } from "../models/FileInfo";
 import { getTimestampSafe, PageData, Revision } from "../models/PageData";
 import {
     capitalizeFirstLetter,
@@ -21,6 +19,8 @@ import WitnessFile from '../components/WitnessFile';
 import MainLayout from '../layout/MainLayout';
 import { API_BASE_ENDPOINT } from '../config/constants';
 import { fetchFiles } from '../network/api';
+import FileUpload from '../components/FileUpload';
+import { ApiFileInfo } from '../models/FileInfo';
 
 const HomePage: Component = () => {
 
@@ -265,11 +265,13 @@ const HomePage: Component = () => {
 
 
             // Assuming the API returns an array of FileInfo objects
-            const file: FileInfo = {
+            const file: ApiFileInfo = {
                 id: res.file.id,
                 name: res.file.name,
                 extension: res.file.extension,
-                page_data: res.file.page_data
+                page_data: res.file.page_data,
+                mode: res.file.mode,
+                owner: res.file.owner
             };
 
             setAppState("filesFromApi", [...appState.filesFromApi, file])
@@ -683,6 +685,9 @@ const HomePage: Component = () => {
                             <div class="w-full">
                                 <div class="grid 2xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-6">
                                     <div class="2xl:col-span-4 sm:col-span-2">
+
+                                        <FileUpload />
+
                                         {
                                             error().length == 0 ? <div></div> :
                                                 <>

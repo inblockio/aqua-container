@@ -50,8 +50,6 @@ const SignInButton = () => {
                 formData.append('message', message);
                 formData.append('signature', remove0xPrefix(signature));
 
-                console.log("Message for backend: ", message)
-
                 const response = await axios.post(`${API_BASE_ENDPOINT}/siwe`, formData, {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'

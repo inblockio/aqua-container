@@ -32,4 +32,5 @@ pub struct UpdateConfigurationInput {
     pub chain: String,
     pub domain: String,
     pub mode: String,   
+    pub contract: String,   
 }

@@ -2,7 +2,7 @@ import { Component, createEffect, createSignal, For, JSX, onCleanup } from "soli
 import { appState, setAppState } from "../store/store";
 import { HashChain, PageData, Revision, RevisionSignature, RevisionWitness } from "../models/PageData";
 import { useNavigate } from "@solidjs/router";
-import { fileType, formatCryptoAddress, timeToHumanFriendly } from "../util";
+import { fileType, formatCryptoAddress, isJsonFileContent, timeToHumanFriendly } from "../util";
 import AquaVerifier , { RevisionAquaChainResult } from "aqua-verifier";
 import { DetailsPageWitness } from "./components/details_witness";
 import { DetailsPageSignature } from "./components/details_signature";
@@ -52,6 +52,7 @@ const DetailsPage: Component = () => {
 
         if (appState.selectedFileFromApi != undefined) {
             const pageData: PageData = JSON.parse(appState.selectedFileFromApi.page_data);
+            // const pageData: PageData = appState.selectedFileFromApi.page_data;
             setFilePageData(pageData)
         } else {
             navigate("/details");
