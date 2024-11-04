@@ -5,7 +5,7 @@ use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
     db_set_up, get_content_type, get_file_info, make_empty_hash, update_env_file,
 };
-use crate::verification::{
+use verifier::verification::{
     content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
 };
 use crate::Db;
@@ -38,9 +38,7 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use ethaddr::address;
 use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
-// use guardian_common::{crypt, custom_types::*};
 use serde::{Deserialize, Serialize};
-// use serde_json::json;
 extern crate serde_json_path_to_error as serde_json;
 use sha3::{Digest, Sha3_512};
 use sqlx::Row;
@@ -57,7 +55,6 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
-// use verifier::v1_1::hashes::*;
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 

@@ -4,8 +4,8 @@ mod models;
 mod util;
 mod controllers;
 pub mod auth;
-pub mod verification;
-pub mod revision_integrity;
+// pub mod verification;
+// pub mod revision_integrity;
 
 use aqua_verifier_rs_types::models::page_data::HashChain;
 use auth::siwe_sign_in;
@@ -39,8 +39,6 @@ use bonsaidb::local::config::{Builder, StorageConfiguration};
 use bonsaidb::local::Database;
 use serde::{Deserialize, Serialize};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
-// use guardian_common::{crypt, custom_types::*};
-// use serde_json::json;
 extern crate serde_json_path_to_error as serde_json;
 
 use crate::util::{check_or_generate_domain, db_set_up};
