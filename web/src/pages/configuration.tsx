@@ -2,6 +2,7 @@ import { useNavigate } from '@solidjs/router';
 import { Component, createEffect, createSignal, For } from "solid-js";
 import axios from "axios";
 import { API_BASE_ENDPOINT } from '../config/constants';
+import { setAppState } from '../store/store';
 
 const ConfigsPage: Component = () => {
 
@@ -24,6 +25,13 @@ const ConfigsPage: Component = () => {
             setDomain(response.data.domain)
             setFileMode(response.data.mode)
             setContract(response.data.contract)
+
+            setAppState("config", {
+                chain: response.data.chain,
+                domain: response.data.domain,
+                fileMode: response.data.mode,
+                contractAddress: response.data.contract,
+            })
         }
     })
 

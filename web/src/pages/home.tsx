@@ -1,7 +1,7 @@
 import type { Component } from 'solid-js';
 import { createEffect, createSignal, For } from "solid-js";
 import axios from "axios";
-import { getTimestampSafe, PageData, Revision } from "../models/PageData";
+import { getTimestampSafe, PageData } from "../models/PageData";
 import {
     capitalizeFirstLetter,
     debugPageDataStructure, fileType,
@@ -12,13 +12,10 @@ import {
 } from "../util";
 import { UiFileTypes } from "../models/UiFileTypes";
 import { appState, setAppState } from "../store/store";
-import app from "../App";
 import { useNavigate } from "@solidjs/router";
 import SignFile from '../components/SignFile';
 import WitnessFile from '../components/WitnessFile';
-import MainLayout from '../layout/MainLayout';
 import { API_BASE_ENDPOINT } from '../config/constants';
-import { fetchFiles } from '../network/api';
 import FileUpload from '../components/FileUpload';
 import { ApiFileInfo } from '../models/FileInfo';
 
@@ -27,7 +24,7 @@ const HomePage: Component = () => {
 
     const navigate = useNavigate();
     const [selectedFileForUpload, setSelectedFileForUpload] = createSignal<File | null>(null);
-    // const [fileFromApi, setFilesFromApi] = createSignal<Array<FileInfo>>([]);
+    // const [fileFromApi, setFilesFromApi] = createSignal<Array<ApiFileInfo>>([]);
     const [allFilesSize, setAllFileSize] = createSignal<number>(0);
     const [pageDataInfo, setPageDataInfo] = createSignal("");
     const [fileTypeForUpload, setFileTypeForUpload] = createSignal("");
@@ -264,8 +261,8 @@ const HomePage: Component = () => {
             })
 
 
-            // Assuming the API returns an array of FileInfo objects
-            const file: ApiFileInfo = {
+            // Assuming the API returns an array of ApiFileInfo objects
+            const file: ApiApiFileInfo = {
                 id: res.file.id,
                 name: res.file.name,
                 extension: res.file.extension,
@@ -316,12 +313,14 @@ const HomePage: Component = () => {
             })
 
 
-            // Assuming the API returns an array of FileInfo objects
-            const file: FileInfo = {
+            // Assuming the API returns an array of ApiFileInfo objects
+            const file: ApiFileInfo = {
                 id: res.file.id,
                 name: res.file.name,
                 extension: res.file.extension,
-                page_data: res.file.page_data
+                page_data: res.file.page_data,
+                mode: res.file.mode,
+                owner: res.file.owner
             };
 
             setAppState("filesFromApi", [...appState.filesFromApi, file])
@@ -336,10 +335,10 @@ const HomePage: Component = () => {
 
 
 
-    const downloadAquaJson = (fileInfo: FileInfo) => {
+    const downloadAquaJson = (ApiFileInfo: ApiFileInfo) => {
         try {
             // Parse the page_data string to a PageData object
-            const pageData: PageData = JSON.parse(fileInfo.page_data);
+            const pageData: PageData = JSON.parse(ApiFileInfo.page_data);
 
             for (const page of pageData.pages) {
                 for (const revisionKey in page.revisions) {
@@ -364,7 +363,7 @@ const HomePage: Component = () => {
             // Create a temporary anchor element and trigger the download
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${fileInfo.name}-page-data.json`;
+            a.download = `${ApiFileInfo.name}-page-data.json`;
             document.body.appendChild(a);
             a.click();
 
@@ -479,7 +478,7 @@ const HomePage: Component = () => {
         </div>
     }
 
-    const fileListDisplay = (file: FileInfo) => {
+    const fileListDisplay = (file: ApiFileInfo) => {
 
         const pageData: PageData = JSON.parse(file.page_data);
         // Debug the structure
@@ -569,7 +568,7 @@ const HomePage: Component = () => {
 
                         if (response.status === 200) {
                             let files = appState.filesFromApi
-                            let filesNew: Array<FileInfo> = [];
+                            let filesNew: Array<ApiFileInfo> = [];
                             for (let index = 0; index < files.length; index++) {
                                 const element = files[index];
                                 if (element.name != file.name) {

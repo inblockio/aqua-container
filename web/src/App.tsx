@@ -6,6 +6,7 @@ import { Route, Router } from "@solidjs/router";
 import ConfigsPage from './pages/configuration';
 import MainLayout from './layout/MainLayout';
 import { ethers } from 'ethers';
+import LoadConfiguration from './pages/LoadConfiguration';
 
 
 declare global {
@@ -18,6 +19,7 @@ const App: Component = () => {
 
   return (
     <MainLayout>
+      <LoadConfiguration />
       <Router>
         <Route path="/configuration" component={ConfigsPage} />
         <Route path="/details" component={DetailsPage} />

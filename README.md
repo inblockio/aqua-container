@@ -13,6 +13,7 @@ Functionality milestones Fileupload & Hasher:
 6) [DONE] Extend existing Aqua-Chain with new Signature 
 7) [DONE] Witness Aqua-Chain on Chain
 8) [ONGOIN] Allow for choosing witness network from config.
+9) [TODO] Make user profile to handle some information ie config, email, payments
 
 UI-Interface:
 1) [DONE] Beautify website with CSS
