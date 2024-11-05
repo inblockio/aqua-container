@@ -14,7 +14,7 @@ axum = { git = "https://github.com/tokio-rs/axum", features = ["multipart"] }
 axum-extra = { git = "https://github.com/tokio-rs/axum" }
 bonsaidb = { git = "https://github.com/khonsulabs/bonsaidb", features = ["local"] }
 verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", branch = "main" }
-aqua-verifier-rs-types = { git = "https://github.com/dalmasonto/aqua-rs-types", branch = "master" }
+aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", branch = "main" }
 
 # fixed versions
 chrono = "0.4.38"

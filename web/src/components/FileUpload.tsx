@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Component, createSignal } from 'solid-js';
+import { Component, createEffect, createSignal } from 'solid-js';
 import { appState, setAppState } from '../store/store';
 import { ApiFileInfo } from '../models/FileInfo';
 import { useNavigate } from '@solidjs/router';
@@ -13,6 +13,8 @@ const FileUpload: Component<FileUploadProps> = (props: FileUploadProps) => {
 
   const [isDragging, setIsDragging] = createSignal(false);
   const [files, setFiles] = createSignal<File[]>([]);
+
+  const [uploadedFilesIndexes, setUploadedFilesIndexes] = createSignal<number[]>([])
 
   const navigate = useNavigate();
 
@@ -85,6 +87,7 @@ const FileUpload: Component<FileUploadProps> = (props: FileUploadProps) => {
       };
 
       setAppState("filesFromApi", [...appState.filesFromApi, file])
+      setUploadedFilesIndexes(value => [...value, fileIndex])
       return;
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -130,6 +133,7 @@ const FileUpload: Component<FileUploadProps> = (props: FileUploadProps) => {
       };
 
       setAppState("filesFromApi", [...appState.filesFromApi, file])
+      setUploadedFilesIndexes(value => [...value, fileIndex])
       return;
     } catch (error) {
       console.error('Error uploading file:', error);
@@ -161,6 +165,24 @@ const FileUpload: Component<FileUploadProps> = (props: FileUploadProps) => {
         // Handle the error here
       });
   };
+
+  const displayUploadButtons = (fileIndex: number) => {
+    let file = files()[fileIndex]
+    if (!file) {
+      return 'none'
+    }
+    let isJsonFile = isJSONFile(file.name)
+    let isInUploaded = uploadedFilesIndexes().includes(fileIndex)
+    if (isJsonFile && !isInUploaded) {
+      return 'block'
+    } else {
+      return 'none'
+    }
+  }
+
+  // createEffect(() => {
+  //   console.log(uploadedFilesIndexes())
+  // }, [uploadedFilesIndexes()])
 
   return (
     <>
@@ -236,9 +258,12 @@ const FileUpload: Component<FileUploadProps> = (props: FileUploadProps) => {
                             "column-gap": '10px',
                             "justify-content": 'flex-end'
                           }}>
-                            <button type="button" class="btn btn-sm border border-primary text-primary hover:bg-primary hover:text-white" onclick={() => uploadFile(i)}>Upload</button>
+                            <button type="button" class="btn btn-sm border border-primary text-primary hover:bg-primary hover:text-white" style={{
+                              display: uploadedFilesIndexes().includes(i) ? 'none' : 'block'
+                            }} onclick={() => uploadFile(i)}>Upload</button>
                             <button type="button" style={{ display: isJSONFile(file.name) ? 'block' : 'none' }} class="btn btn-sm border border-primary text-primary hover:bg-primary hover:text-white" onclick={() => handleVerifyAquaJsonFile(i)}>Verify Aqua File</button>
-                            <button type="button" style={{ display: isJSONFile(file.name) ? 'block' : 'none' }} class="btn btn-sm border border-primary text-primary hover:bg-primary hover:text-white" onclick={() => uploadFile(i)}>Import Aqua File</button>
+                            <button type="button" style={{ display: displayUploadButtons(i) }} class="btn btn-sm border border-primary text-primary hover:bg-primary hover:text-white" onclick={() => uploadAquaJsonFile(i)}
+                            >Import Aqua File</button>
                           </div>
                         </td>
                       </tr>

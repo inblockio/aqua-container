@@ -22,8 +22,8 @@ const ConfigsPage: Component = () => {
         if (response.status === 200) {
             setChainUsed(response.data.chain)
             setDomain(response.data.domain)
-            setFileMode(response.data.file_mode)
-            // setContract(response.data.contract)
+            setFileMode(response.data.mode)
+            setContract(response.data.contract)
         }
     })
 
