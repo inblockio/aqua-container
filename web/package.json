@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@solidjs/router": "^0.10.9",
+    "aqua-verifier": "^1.2.0",
     "axios": "^1.7.7",
     "ethereum-cryptography": "^3.0.0",
     "ethers": "^6.13.3",
