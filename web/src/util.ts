@@ -240,3 +240,50 @@ export function remove0xPrefix(input: string): string {
     // Return the original string if it doesn't start with '0x'
     return input;
 }
+
+export function getCookie(name: string) {
+    const value = `; ${document.cookie}`;
+    const parts: any = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return null;
+}
+
+export function setCookie(name: string, value: string, expirationTime: Date) {
+    const expirationDate = new Date(expirationTime);
+    // For UTC cookie settings
+    // document.cookie = `${name}=${value}; expires=${expirationDate.toUTCString()}; path=/; Secure; SameSite=Strict`;
+    document.cookie = `${name}=${value}; expires=${expirationDate}; path=/; Secure; SameSite=Strict`;
+}
+
+export async function getCurrentNetwork() {
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            console.log("Current chain ID:", chainId);
+            return chainId;
+        } catch (error) {
+            console.error("Error fetching chain ID:", error);
+        }
+    } else {
+        console.error("MetaMask is not installed.");
+    }
+}
+
+export async function switchNetwork(chainId: string) {
+    // const chainId = '0x89'; // Example: Polygon Mainnet chain ID
+    if (typeof window.ethereum !== 'undefined') {
+        try {
+            // Check if the network is already set
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId }],
+            });
+            console.log("Network switched successfully");
+        } catch (error) {
+            // If the network is not added, request MetaMask to add it
+
+        }
+    } else {
+        console.error("MetaMask is not installed.");
+    }
+}

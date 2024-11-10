@@ -2,7 +2,8 @@ import axios from "axios";
 import { ethers } from "ethers";
 import { FileInfo } from "../models/PageData";
 import { appState, setAppState } from "../store/store";
-import { API_BASE_ENDPOINT } from "../config/constants";
+import { API_BASE_ENDPOINT, ETH_CHAINID_MAP } from "../config/constants";
+import { getCurrentNetwork, switchNetwork } from "../util";
 
 interface ISignRevision {
     pageVerificationHash: String
@@ -28,6 +29,13 @@ const SignFile = ({ pageVerificationHash, filename }: ISignRevision) => {
 
                 // Create an ethers provider
                 const provider = new ethers.BrowserProvider(window.ethereum);
+
+                const networkId = await getCurrentNetwork()
+                const currentChainId = ETH_CHAINID_MAP[appState.config.chain]
+                if(networkId !== currentChainId){
+                    await switchNetwork(currentChainId)
+                }
+
                 const signer = await provider.getSigner();
 
                 // Hash the message (optional but recommended)

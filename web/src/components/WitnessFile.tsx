@@ -1,9 +1,10 @@
 import axios from "axios";
 import { ethers } from "ethers";
-import { API_BASE_ENDPOINT, ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
+import { API_BASE_ENDPOINT, ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
 import sha3 from 'js-sha3'
 import { FileInfo } from "../models/FileInfo";
 import { appState, setAppState } from "../store/store";
+import { getCurrentNetwork, switchNetwork } from "../util";
 
 async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) {
 
@@ -21,14 +22,14 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
         }
     })
 
-    let res = await response.data ;
-    let logs : Array<string> = res.logs
-    logs.forEach((item)=>{
-        console.log("**>" + item + "\n." )
+    let res = await response.data;
+    let logs: Array<string> = res.logs
+    logs.forEach((item) => {
+        console.log("**>" + item + "\n.")
     })
-   
+
     if (response.status === 200) {
-        let resp: FileInfo = res.file as FileInfo 
+        let resp: FileInfo = res.file as FileInfo
         let array: FileInfo[] = [];
         for (let index = 0; index < appState.filesFromApi.length; index++) {
             const element = appState.filesFromApi[index];
@@ -66,24 +67,33 @@ const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
                     return;
                 }
 
-                const chainId = await window.ethereum.request({ method: 'eth_chainId' })
-                // const serverChainId = ethChainIdMap[parsed.witness_network]
-                // if (serverChainId !== chainId) {
-                if (ETH_CHAINID_MAP.sepolia !== chainId) {
-                    console.log(ETH_CHAINID_MAP.sepolia, chainId)
-                    // Switch network if the Wallet network does not match DA
-                    // server network.
-                    await window.ethereum.request({
-                        method: 'wallet_switchEthereumChain',
-                        params: [{
-                            chainId: ETH_CHAINID_MAP.sepolia,
-                        }],
-                    })
+                // const chainId = await window.ethereum.request({ method: 'eth_chainId' })
+                // // const serverChainId = ethChainIdMap[parsed.witness_network]
+                // // if (serverChainId !== chainId) {
+                // if (ETH_CHAINID_MAP.sepolia !== chainId) {
+                //     console.log(ETH_CHAINID_MAP.sepolia, chainId)
+                //     // Switch network if the Wallet network does not match DA
+                //     // server network.
+                //     await window.ethereum.request({
+                //         method: 'wallet_switchEthereumChain',
+                //         params: [{
+                //             chainId: ETH_CHAINID_MAP.sepolia,
+                //         }],
+                //     })
+                // }
+
+                const networkId = await getCurrentNetwork()
+                const currentChainId = ETH_CHAINID_MAP[appState.config.chain]
+                if (networkId !== currentChainId) {
+                    await switchNetwork(currentChainId)
                 }
+                const contract_address = ETH_CHAIN_ADDRESSES_MAP[appState.config.chain]
+
                 const params = [
                     {
                         from: walletAddress,
-                        to: SEPOLIA_SMART_CONTRACT_ADDRESS,
+                        // to: SEPOLIA_SMART_CONTRACT_ADDRESS,
+                        to: contract_address,
                         // gas and gasPrice are optional values which are
                         // automatically set by MetaMask.
                         // gas: '0x7cc0', // 30400

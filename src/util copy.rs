@@ -11,7 +11,6 @@ use serde_json::Value;
 use sha3::{Digest, Sha3_512};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Pool, Sqlite};
-use verifier::verification::content_hash;
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
@@ -225,7 +224,7 @@ pub fn compute_content_hash(contentPar: &RevisionContent) -> Result<Hash, String
     // println!("{:#?}", content_current);
     tracing::debug!("{:#?}", content_current);
 
-    let content_hash_current = content_hash(&content_current.clone());
+    let content_hash_current = verifier::v1_1::hashes::content_hash(&content_current.clone());
 
     tracing::debug!("{:#?}", content_hash_current);
 

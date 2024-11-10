@@ -1,4 +1,4 @@
-import { formatCryptoAddress, remove0xPrefix } from "../util";
+import { formatCryptoAddress, remove0xPrefix, setCookie } from "../util";
 import { fetchFiles } from "../network/api";
 import { appState, setAppState } from "../store/store";
 import { ApiFileInfo } from "../models/FileInfo";
@@ -14,7 +14,8 @@ const SignInButton = () => {
         const scheme = window.location.protocol.slice(0, -1);
         const domain = window.location.host;
         const origin = window.location.origin;
-        console.log("Scheme: ", scheme,)
+        const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        console.log("expiry: ", expiry,)
         const message = new SiweMessage({
             // Setting scheme is giving out lots of headaches
             // scheme: scheme,
@@ -23,8 +24,10 @@ const SignInButton = () => {
             statement,
             uri: origin,
             version: '1',
-            chainId: 1,
-            nonce: generateNonce()
+            chainId: 2,
+            nonce: generateNonce(),
+            expirationTime: expiry,
+            issuedAt: new Date(Date.now()).toISOString()
         });
         return message.prepareMessage();
     }
@@ -59,8 +62,13 @@ const SignInButton = () => {
                 if (response.status === 200) {
                     if (signature) {
                         const responseData = response.data
-                        const walletAddress = responseData?.address
+                        console.log("Response data: ", responseData)
+                        const walletAddress = responseData?.session?.address
                         setAppState("metaMaskAddress", walletAddress);
+
+                        const expirationDate = new Date(responseData?.session?.expiration_time);
+                        const expirationTimeUTC = expirationDate.toUTCString()
+                        setCookie('pkc_nonce', `${responseData.session.nonce}`, expirationDate)
 
                         let files = await fetchFiles(walletAddress);
                         setAppState('filesFromApi', files);
