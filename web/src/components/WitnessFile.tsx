@@ -2,17 +2,18 @@ import axios from "axios";
 import { ethers } from "ethers";
 import { API_BASE_ENDPOINT, ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP, SEPOLIA_SMART_CONTRACT_ADDRESS } from "../config/constants";
 import sha3 from 'js-sha3'
-import { FileInfo } from "../models/FileInfo";
+import { ApiFileInfo } from "../models/FileInfo";
 import { appState, setAppState } from "../store/store";
 import { getCurrentNetwork, switchNetwork } from "../util";
 
-async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string) {
+async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string, network: string) {
 
     const formData = new URLSearchParams();
 
     formData.append('filename', filename);
     formData.append('tx_hash', txhash);
     formData.append('wallet_address', ownerAddress);
+    formData.append('network', network);
 
 
 
@@ -29,8 +30,8 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
     })
 
     if (response.status === 200) {
-        let resp: FileInfo = res.file as FileInfo
-        let array: FileInfo[] = [];
+        let resp: ApiFileInfo = res.file as ApiFileInfo
+        let array: ApiFileInfo[] = [];
         for (let index = 0; index < appState.filesFromApi.length; index++) {
             const element = appState.filesFromApi[index];
             if (element.name === resp.name) {
@@ -88,6 +89,7 @@ const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
                     await switchNetwork(currentChainId)
                 }
                 const contract_address = ETH_CHAIN_ADDRESSES_MAP[appState.config.chain]
+                const network = appState.config.chain
 
                 const params = [
                     {
@@ -108,7 +110,7 @@ const WitnessFile = ({ previousVerificationHash, filename }: IWitnessFile) => {
                     })
                     .then(txhash => {
                         console.log("Transaction hash is: ", txhash)
-                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress)).then(() => {
+                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress), network).then(() => {
                             console.log("State updated successfully")
                         }).catch(() => { alert("Something went wrong") })
                     })

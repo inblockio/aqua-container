@@ -65,7 +65,3 @@ rm pages.db  && export DATABASE_URL="sqlite:pages.db" && sqlx database create &&
 ```bash
 sqlx migrate add table_name
 ```
-
-
-
-

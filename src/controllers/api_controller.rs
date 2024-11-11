@@ -1236,6 +1236,16 @@ pub async fn explorer_witness_file(
         return (StatusCode::BAD_REQUEST, Json(res));
     };
 
+    if input.network.is_empty() {
+        log_data.push("Error : Network is empty".to_string());
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::BAD_REQUEST, Json(res));
+    };
+
     log_data.push("Success : file name is not  empty".to_string());
 
     // Fetch a single row from the 'pages' table where name matches
@@ -1374,7 +1384,7 @@ pub async fn explorer_witness_file(
             rev2.witness = Some(RevisionWitness {
                 domain_snapshot_genesis_hash: domain_snapshot_genesis_hash,
                 merkle_root: rev1.metadata.verification_hash,
-                witness_network: "sepolia".to_string(),
+                witness_network: input.network,
                 witness_event_transaction_hash: txHash,
                 witness_event_verification_hash: witness_event_verification_hash,
                 witness_hash: witness_hash,
