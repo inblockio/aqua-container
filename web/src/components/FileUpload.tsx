@@ -215,7 +215,7 @@ const FileUpload: Component<FileUploadProps> = (props: FileUploadProps) => {
         <label
           for="file-upload-input"
           style={{ cursor: 'pointer' }}
-          onClick={() => document.getElementById("file-upload-input")?.click()}
+          // onClick={() => document.getElementById("file-upload-input")?.click()}
           class='text-2xl'
         >
           {isDragging() ? (
