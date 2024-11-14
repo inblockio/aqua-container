@@ -319,7 +319,6 @@ pub async fn explorer_aqua_file_upload(
     mut multipart: Multipart,
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_aqua_file_upload fn");
-
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
         logs: log_data,
@@ -684,6 +683,7 @@ pub async fn explorer_file_upload(
                         return (StatusCode::BAD_REQUEST, Json(res));
                     }
                 };
+
                 let body_bytes = match field.bytes().await {
                     Ok(bytes) => bytes.to_vec(),
                     Err(e) => {

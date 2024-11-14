@@ -110,7 +110,8 @@ async fn main() {
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .layer(DefaultBodyLimit::max(20 * 1024 * 1024));;
 
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")
