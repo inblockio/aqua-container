@@ -165,7 +165,7 @@ pub async fn verify_siwe_message(
     let sig = <[u8; 65]>::from_hex(format!(r#"{}"#, signature)).unwrap();
 
     let verification_opts = VerificationOpts {
-        domain: Some("localhost:3000".parse().unwrap()),
+        domain: Some("localhost:5173".parse().unwrap()),
         // We can adjust the fields once we create database sessions. There is a table already
         // nonce: Some("kEWepMt9knR6lWJ6A".into()),
         // timestamp: Some(OffsetDateTime::parse("2021-12-08T00:00:00Z", &Rfc3339).unwrap()),

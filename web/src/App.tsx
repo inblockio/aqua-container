@@ -1,13 +1,7 @@
-import type { Component } from 'solid-js';
-
-import HomePage from "./pages/home";
-import DetailsPage from "./pages/details"
-import { Route, Router } from "@solidjs/router";
-import ConfigsPage from './pages/configuration';
-import MainLayout from './layout/MainLayout';
 import { ethers } from 'ethers';
-import LoadConfiguration from './pages/LoadConfiguration';
-
+import MainLayout from './layouts/MainLayout'
+import Home from './pages/Home'
+import LoadConfiguration from './components/config';
 
 declare global {
   interface Window {
@@ -15,19 +9,17 @@ declare global {
   }
 }
 
-const App: Component = () => {
+
+function App() {
 
   return (
-    <MainLayout>
+    <>
       <LoadConfiguration />
-      <Router>
-        <Route path="/configuration" component={ConfigsPage} />
-        <Route path="/details" component={DetailsPage} />
-        <Route path="/" component={HomePage} />
-        <Route path="*" component={HomePage} />
-      </Router>
-    </MainLayout>
-  );
-};
+      <MainLayout>
+        <Home />
+      </MainLayout>
+    </>
+  )
+}
 
-export default App;
+export default App
