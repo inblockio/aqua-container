@@ -28,6 +28,7 @@ export const ENDPOINTS = {
   DELETE_FILE: `${API_BASE_ENDPOINT}/explorer_delete_file`,
   UPLOAD_FILE: `${API_BASE_ENDPOINT}/explorer_file_upload`,
   IMPORT_AQUA_CHAIN: `${API_BASE_ENDPOINT}/explorer_aqua_file_upload`,
+  DELETE_ALL_FILES: `${API_BASE_ENDPOINT}/explorer_delete_all_files`,
 }
 
 export const imageTypes = ["image/png", "image/jpeg", "image/gif", "image/svg+xml"];

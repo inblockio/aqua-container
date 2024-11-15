@@ -10,12 +10,12 @@ import {
 import { Button } from "./button"
 import { Checkbox } from "./checkbox"
 import { useState } from "react"
-import CustomDrawer from "./navigation/CustomDrawer"
 import { useStore } from "zustand"
 import appStore from "../../store"
 import { getFileCategory, getLastRevisionVerificationHash, sumFileContentSize, timeToHumanFriendly } from "../../utils/functions"
 import { getTimestampSafe } from "../../models/PageData"
 import { DeleteAquaChain, DownloadAquaChain, SignAquaChain, WitnessAquaChain } from "../aqua_chain_actions"
+import ChainDetails from "./navigation/CustomDrawer"
 
 
 const FilesTable = () => {
@@ -55,7 +55,7 @@ const FilesTable = () => {
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <DownloadAquaChain file={item} />
-                    <CustomDrawer />
+                    <ChainDetails pageData={JSON.parse(item.page_data)} />
                     <WitnessAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <DeleteAquaChain filename={item.name} />

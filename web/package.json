@@ -12,6 +12,7 @@
   "dependencies": {
     "@chakra-ui/react": "^3.0.0",
     "@emotion/react": "^11.13.3",
+    "aqua-verifier": "^1.2.0",
     "axios": "^1.7.7",
     "ethers": "^6.13.4",
     "idb": "^8.0.0",

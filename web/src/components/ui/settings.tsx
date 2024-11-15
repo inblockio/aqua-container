@@ -1,4 +1,4 @@
-import { Button, Card, createListCollection, Group, HStack, IconButton, Input, Text, VStack } from "@chakra-ui/react"
+import { Card, createListCollection, Group, HStack, IconButton, Input, Text, VStack } from "@chakra-ui/react"
 import { LuSettings } from "react-icons/lu"
 import { DialogActionTrigger, DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot, DialogTitle, DialogTrigger } from "./dialog"
 import { Field } from "./field"
@@ -10,6 +10,7 @@ import axios from "axios"
 import { useStore } from "zustand"
 import appStore from "../../store"
 import { toaster } from "./toaster"
+import { Button } from "./button"
 
 const networks = createListCollection({
     items: [
@@ -114,6 +115,43 @@ const SettingsForm = () => {
     )
 }
 
+const DeleteFiles = () => {
+    const [deleting, setDeleting] = useState(false)
+    const { setFiles } = useStore(appStore)
+
+    const deleteFile = async () => {
+        try {
+
+            setDeleting(true)
+            const response = await axios.get(ENDPOINTS.DELETE_ALL_FILES, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            if (response.status === 200) {
+                setFiles([])
+                toaster.create({
+                    description: "Files cleared successfully",
+                    type: "success"
+                })
+            }
+            setDeleting(false)
+        }
+        catch (e: any) {
+            toaster.create({
+                description: `Failed to clear files ${e}`,
+                type: "error"
+            })
+            setDeleting(false)
+        }
+    }
+
+    return (
+        <Button loading={deleting} colorPalette={'red'} borderRadius={'md'} variant={'subtle'} onClick={deleteFile}>Delete all Data</Button>
+    )
+}
+
 const Settings = () => {
 
     return (
@@ -144,7 +182,7 @@ const Settings = () => {
                     </DialogBody>
                     <DialogFooter>
                         <HStack w={'100%'} justifyContent={'space-between'}>
-                            <Button colorPalette={'red'} borderRadius={'md'} variant={'subtle'}>Delete all Data</Button>
+                            <DeleteFiles />
                             <HStack>
                                 <DialogActionTrigger asChild>
                                     <Button variant="outline">Cancel</Button>
