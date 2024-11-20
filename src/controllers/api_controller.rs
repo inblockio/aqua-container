@@ -18,6 +18,7 @@ use aqua_verifier_rs_types::models::timestamp::Timestamp;
 use aqua_verifier_rs_types::models::tx_hash::TxHash;
 use aqua_verifier_rs_types::models::witness::{MerkleNode, RevisionWitness};
 use axum::response::{IntoResponse, Response};
+use aqua_verifier_rs_types::models::content::RevisionContentContent;
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -37,7 +38,7 @@ use ethaddr::address;
 use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
-use verifier::verification::{
+use verifier::util::{
     content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
 };
 extern crate serde_json_path_to_error as serde_json;
@@ -772,6 +773,10 @@ pub async fn explorer_file_upload(
     let verification_hash_current =
         verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
+        let revision_content_content = RevisionContentContent{
+            file_hash : file_hash_current
+        };
+
     let pagedata_current = PageDataContainer {
         pages: vec![HashChain {
             genesis_hash: verification_hash_current.clone().to_string(),
@@ -789,7 +794,7 @@ pub async fn explorer_file_upload(
                             size: file_size,
                             comment: String::new(),
                         }),
-                        content: content_current,
+                        content: revision_content_content, //content_current,
                         content_hash: content_hash_current,
                     },
                     metadata: RevisionMetadata {

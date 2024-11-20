@@ -11,7 +11,7 @@ use serde_json::Value;
 use sha3::{Digest, Sha3_512};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Pool, Sqlite};
-use verifier::verification::content_hash;
+use verifier::util::content_hash;
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
