@@ -65,3 +65,8 @@ rm pages.db  && export DATABASE_URL="sqlite:pages.db" && sqlx database create &&
 ```bash
 sqlx migrate add table_name
 ```
+
+
+## Good to know.
+1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching  the channel.
+2.   
