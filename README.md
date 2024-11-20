@@ -69,4 +69,4 @@ sqlx migrate add table_name
 
 ## Good to know.
 1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching  the channel.
-2.   
+2.   Use the latest verion of node and npm.
