@@ -324,10 +324,20 @@ export const DownloadAquaChain = ({ file }: { file: ApiFileInfo }) => {
                 for (const revisionKey in page.revisions) {
                     const revision = page.revisions[revisionKey];
 
-                    // Check if the revision has a witness and update witness_event_transaction_hash
                     if (revision.witness && revision.witness.witness_event_transaction_hash) {
-                        revision.witness.witness_event_transaction_hash = `0x${revision.witness.witness_event_transaction_hash}`;
+                        const hash = revision.witness.witness_event_transaction_hash;
+
+                        // Prepend '0x' only if it doesn't already start with it
+                        if (!hash.startsWith('0x')) {
+                            revision.witness.witness_event_transaction_hash = `0x${hash}`;
+                        }
                     }
+
+                    // // Check if the revision has a witness and update witness_event_transaction_hash
+                    // if (revision.witness && revision.witness.witness_event_transaction_hash) {
+
+                    //     revision.witness.witness_event_transaction_hash = `0x${revision.witness.witness_event_transaction_hash}`;
+                    // }
                 }
             }
 
