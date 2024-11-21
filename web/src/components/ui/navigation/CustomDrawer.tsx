@@ -12,15 +12,18 @@ import {
     DrawerTrigger,
 } from "../drawer"
 import { Button } from "../button"
-import { LuCheck, LuEye, LuFileSignature, LuGlasses, LuShare2, LuX } from "react-icons/lu"
-import { Card, For, Group, Icon, Span, Text } from "@chakra-ui/react"
+import { LuCheck, LuExternalLink, LuEye, LuX } from "react-icons/lu"
+import { Card, For, Group, Icon, Link, Span, Text } from "@chakra-ui/react"
 import { TimelineConnector, TimelineContent, TimelineDescription, TimelineItem, TimelineRoot, TimelineTitle } from "../timeline"
 import { PageData, Revision } from "../../../models/PageData"
-import { formatCryptoAddress, timeToHumanFriendly } from "../../../utils/functions"
+import { formatCryptoAddress, getLastRevisionVerificationHash, timeToHumanFriendly } from "../../../utils/functions"
 import { Alert } from "../alert"
 import { ClipboardIconButton, ClipboardRoot } from "../clipboard"
 import AquaVerifier, { RevisionAquaChainResult, RevisionVerificationResult } from "aqua-verifier";
 import ReactLoading from "react-loading"
+import { WITNESS_NETWORK_MAP } from "../../../utils/constants"
+import { DownloadAquaChain, WitnessAquaChain, SignAquaChain, DeleteAquaChain } from "../../aqua_chain_actions"
+import { ApiFileInfo } from "../../../models/FileInfo"
 
 
 interface IItemDetail {
@@ -61,7 +64,7 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                     bg={verificationResult?.successful ? "green" : "red"}
                     color={"white"}
                 >
-                    <Icon fontSize="xs" color={'white'}>
+                    <Icon fontSize="xs" color={'white'} border={'none'}>
                         {
                             !verificationResult ? (
                                 <ReactLoading type={'spin'} color={'blue'} height={loaderSize} width={loaderSize} />
@@ -223,10 +226,17 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                                                     displayValue={formatCryptoAddress(revision.witness.witness_hash, 4, 6)}
                                                     value={revision.witness.witness_hash} showCopyIcon={true}
                                                 />
-                                                <ItemDetail label="Transaction Hash:"
-                                                    displayValue={formatCryptoAddress(revision.witness.witness_event_transaction_hash.startsWith('0x') ? revision.witness.witness_event_transaction_hash : `0x${revision.witness.witness_event_transaction_hash}`, 4, 6)}
-                                                    value={`0x${revision.witness.witness_event_transaction_hash}`} showCopyIcon={true}
-                                                />
+                                                <Group>
+                                                    <ItemDetail label="Transaction Hash:"
+                                                        displayValue={formatCryptoAddress(revision.witness.witness_event_transaction_hash.startsWith('0x') ? revision.witness.witness_event_transaction_hash : `0x${revision.witness.witness_event_transaction_hash}`, 4, 6)}
+                                                        value={`0x${revision.witness.witness_event_transaction_hash}`} showCopyIcon={true}
+                                                    />
+                                                    <Link outline={'none'} href={`${WITNESS_NETWORK_MAP[revision.witness.witness_network]}/${revision.witness.witness_event_transaction_hash}`} target="_blank">
+                                                        <Icon size={'lg'} color={'blue.500'}>
+                                                            <LuExternalLink />
+                                                        </Icon>
+                                                    </Link>
+                                                </Group>
                                                 <ItemDetail label="Verification Hash:"
                                                     displayValue={formatCryptoAddress(revision.witness.witness_event_verification_hash, 4, 6)}
                                                     value={revision.witness.witness_event_verification_hash} showCopyIcon={true}
@@ -253,8 +263,6 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                                     )
                                 }
 
-
-
                             </TimelineRoot>
 
                         </Card.Body>
@@ -277,6 +285,15 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
     const [open, setOpen] = useState(false)
     const [verificationResult, setVerificationResult] = useState<RevisionAquaChainResult | null>(null)
 
+    const file: ApiFileInfo = {
+        id: 0,
+        name: pageData.pages[0].title,
+        extension: "",
+        page_data: JSON.stringify(pageData),
+        mode: "",
+        owner: ""
+    }
+
     const verifyAquaChain = () => {
 
         let verifier = new AquaVerifier({
@@ -295,11 +312,17 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
     }
 
     useEffect(() => {
-        if (open) {
+        if (open && pageData) {
             console.info("Verification Trigger pulled")
             verifyAquaChain()
         }
-    }, [open])
+    }, [open, pageData])
+
+    useEffect(() => {
+        if (!pageData) {
+            setOpen(false)
+        }
+    }, [pageData])
 
     return (
         <DrawerRoot open={open} size={{ base: 'full', md: 'xl' }} onOpenChange={(e) => setOpen(e.open)}>
@@ -310,9 +333,9 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
                     Details
                 </Button>
             </DrawerTrigger>
-            <DrawerContent>
-                <DrawerHeader bg={'red.100'}>
-                    <DrawerTitle>FileName.json</DrawerTitle>
+            <DrawerContent borderLeftRadius={'xl'} overflow={'hidden'}>
+                <DrawerHeader bg={{ base: verificationResult ? verificationResult?.successful ? 'green.100' : 'red.100' : 'rgb(188 220 255 / 22%)', _dark: verificationResult ? verificationResult?.successful ? 'green.900' : 'red.900' : 'rgba(0, 0, 0, 0.3)' }}>
+                    <DrawerTitle>{pageData?.pages[0]?.title}</DrawerTitle>
                 </DrawerHeader>
                 <DrawerBody py={'lg'}>
                     {/* <Text color={'gray.800'} _dark={{ color: 'white' }}>
@@ -338,18 +361,10 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
                     <DrawerActionTrigger asChild>
                         <Button variant="outline" size={'sm'}>Close</Button>
                     </DrawerActionTrigger>
-                    <Button size={'sm'}>
-                        <LuShare2 />
-                        Share
-                    </Button>
-                    <Button size={'sm'}>
-                        <LuGlasses />
-                        Witness
-                    </Button>
-                    <Button size={'sm'}>
-                        <LuFileSignature />
-                        Sign
-                    </Button>
+                    <DownloadAquaChain file={file} />
+                    <WitnessAquaChain filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
+                    <SignAquaChain filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
+                    <DeleteAquaChain filename={file.name} />
                 </DrawerFooter>
                 <DrawerCloseTrigger />
             </DrawerContent>

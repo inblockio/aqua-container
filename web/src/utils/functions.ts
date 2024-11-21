@@ -1,6 +1,8 @@
+import { ethers } from "ethers";
 import { ApiFileInfo } from "../models/FileInfo";
 import { PageData } from "../models/PageData";
 import { documentTypes, ENDPOINTS, imageTypes, musicTypes, videoTypes } from "./constants";
+import { AvatarGenerator } from 'random-avatar-generator';
 
 export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
     if (!address) return "NO ADDRESS"
@@ -291,3 +293,29 @@ export function readJsonFile(file: File): Promise<any> {
 export const isJSONFile = (fileName: string) => {
     return fileName.trim().toLowerCase().endsWith('.json');
 }
+
+export function generateAvatar(_address: string) {
+    let address = ethers.getAddress(_address)
+    let generator = new AvatarGenerator()
+    return generator.generateRandomAvatar(address)
+}
+
+// const b64toBlob = (b64Data: string, contentType = "", sliceSize = 512) => {
+//     const byteCharacters = atob(b64Data);
+//     const byteArrays = [];
+
+//     for (let offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+//         const slice = byteCharacters.slice(offset, offset + sliceSize);
+
+//         const byteNumbers = new Array(slice.length);
+//         for (let i = 0; i < slice.length; i++) {
+//             byteNumbers[i] = slice.charCodeAt(i);
+//         }
+
+//         const byteArray = new Uint8Array(byteNumbers);
+//         byteArrays.push(byteArray);
+//     }
+
+//     const blob = new Blob(byteArrays, { type: contentType });
+//     return blob;
+// };

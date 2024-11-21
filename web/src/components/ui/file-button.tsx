@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react"
 import { forwardRef, useState } from "react"
 import { LuFile, LuUpload, LuX } from "react-icons/lu"
-import { ImportAquaChain, UploadFile, VerifyFile } from "../dropzone_file_actions"
+import { ImportAquaChain, UploadFile } from "../dropzone_file_actions"
 import { isJSONFile } from "../../utils/functions"
 
 export interface FileUploadRootProps extends ChakraFileUpload.RootProps {
@@ -91,7 +91,8 @@ const FileUploadItem = (props: FileUploadItemProps) => {
         isJSONFile(file.name) ? (
           <>
           <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
-          <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+          {/* <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} /> */}
+          {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
           </>
         ): null
       }

@@ -16,6 +16,7 @@ import { getFileCategory, getLastRevisionVerificationHash, sumFileContentSize, t
 import { getTimestampSafe } from "../../models/PageData"
 import { DeleteAquaChain, DownloadAquaChain, SignAquaChain, WitnessAquaChain } from "../aqua_chain_actions"
 import ChainDetails from "./navigation/CustomDrawer"
+import { Alert } from "./alert"
 
 
 const FilesTable = () => {
@@ -93,7 +94,16 @@ const FilesTable = () => {
                                 <Table.ColumnHeader fontWeight={600} fontSize={{ base: 'sm', md: 'md' }}>Action</Table.ColumnHeader>
                             </Table.Row>
                         </Table.Header>
-                        <Table.Body>{rows}</Table.Body>
+                        <Table.Body>
+                            {rows}
+                            {rows.length === 0 ?
+                                <Alert title="No Data">
+                                    <Table.Cell colSpan={6}>
+                                        Please upload some files or import an Aqua Chain
+                                    </Table.Cell>
+                                </Alert>
+                                : null}
+                        </Table.Body>
                     </Table.Root>
                 </Table.ScrollArea>
 

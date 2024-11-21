@@ -8,23 +8,27 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "../dialog"
-import { Dialog, Text, VStack } from '@chakra-ui/react'
-import { LuCheckCircle2, LuWallet2, LuXCircle } from 'react-icons/lu'
+import { Center, Dialog, Text, VStack } from '@chakra-ui/react'
+import { LuCheckCircle2, LuLogOut, LuWallet2, LuXCircle } from 'react-icons/lu'
 import ReactLoading from 'react-loading'
-import { fetchFiles, formatCryptoAddress, remove0xPrefix, setCookie } from '../../../utils/functions'
+import { fetchFiles, formatCryptoAddress, generateAvatar, remove0xPrefix, setCookie } from '../../../utils/functions'
 import { SiweMessage, generateNonce } from 'siwe'
-import { ENDPOINTS } from '../../../utils/constants'
+import { ENDPOINTS, SESSION_COOKIE_NAME } from '../../../utils/constants'
 import axios from 'axios'
 import { useStore } from 'zustand'
 import appStore from '../../../store'
-import { BrowserProvider } from 'ethers'
+import { BrowserProvider, ethers } from 'ethers'
+import { Avatar } from '../avatar'
+import { toaster } from '../toaster'
 
 export default function ConnectWallet() {
 
-    const { metamaskAddress, setMetamaskAddress, setFiles } = useStore(appStore);
+    const { metamaskAddress, setMetamaskAddress, setFiles, avatar, setAvatar } = useStore(appStore);
 
     const [isOpen, setIsOpen] = useState(false)
+    const [loading, setLoading] = useState(false)
     const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'success' | 'error'>('idle')
+    // const [avatar, setAvatar] = useState("")
     const [_progress, setProgress] = useState(0)
 
     const iconSize = "120px"
@@ -59,6 +63,7 @@ export default function ConnectWallet() {
 
     const signAndConnect = async () => {
         if (window.ethereum) {
+            setLoading(true)
             setConnectionState('connecting')
             const provider = new BrowserProvider(window.ethereum);
             try {
@@ -88,24 +93,32 @@ export default function ConnectWallet() {
                 if (response.status === 200) {
                     if (signature) {
                         const responseData = response.data
-                        const walletAddress = responseData?.session?.address
+                        const walletAddress = ethers.getAddress(responseData?.session?.address)
                         setMetamaskAddress(walletAddress)
-
+                        let avatar = generateAvatar(walletAddress)
+                        setAvatar(avatar)
                         const expirationDate = new Date(responseData?.session?.expiration_time);
-                        setCookie('pkc_nonce', `${responseData.session.nonce}`, expirationDate)
+                        setCookie(SESSION_COOKIE_NAME, `${responseData.session.nonce}`, expirationDate)
                         setConnectionState('success')
 
                         let files = await fetchFiles(walletAddress);
                         setFiles(files)
                     }
                 }
+                setLoading(false)
+                toaster.create({
+                    description: "Sign In successful",
+                    type: "success"
+                })
                 setTimeout(() => {
                     setIsOpen(false)
                     resetState()
+                    setLoading(false)
                 }, 2000)
 
             } catch (error: any) {
                 setConnectionState("error")
+                setLoading(false)
                 console.error('Error during wallet connection or signing:', error);
             }
         } else {
@@ -113,45 +126,79 @@ export default function ConnectWallet() {
         }
     };
 
+    const signOut = () => {
+        setLoading(true)
+        setCookie(SESSION_COOKIE_NAME, '', new Date('1970-01-01T00:00:00Z'));
+        setMetamaskAddress(null)
+        setAvatar(undefined)
+        setLoading(false)
+        setIsOpen(false)
+        toaster.create({
+            description: "Signed out successfully",
+            type: "success"
+        })
+    }
+
     return (
         <Dialog.Root placement={'center'} size={'sm'} open={isOpen} onOpenChange={(details) => setIsOpen(details.open)}>
             <DialogTrigger asChild>
                 <Button size={'sm'} borderRadius={'md'} onClick={() => {
                     setIsOpen(true)
-                    signAndConnect()
+                    !metamaskAddress && signAndConnect()
                 }}>
                     <LuWallet2 />
                     {metamaskAddress ? formatCryptoAddress(metamaskAddress, 3, 3) : 'Sign In'}
                 </Button>
             </DialogTrigger>
-            <DialogContent borderRadius={'2xl'}>
-                <DialogHeader>
-                    <DialogTitle fontWeight={500} color={'gray.800'} _dark={{ color: 'white' }}>Wallet Connection</DialogTitle>
+            <DialogContent borderRadius={'2xl'} overflow={"hidden"}>
+                <DialogHeader py={'3'} px={"5"} bg={{base: 'rgb(188 220 255 / 22%)', _dark: 'rgba(0, 0, 0, 0.3)'}}>
+                    <DialogTitle fontWeight={500} color={'gray.800'} _dark={{ color: 'white' }}>
+                        {
+                            metamaskAddress ? "Account" : "Sign In"
+                        }
+                    </DialogTitle>
                 </DialogHeader>
-                <DialogBody >
-                    <VStack gap={'10'}>
-                        {connectionState === 'connecting' && (
-                            <>
-                                <ReactLoading type={'spin'} color={'blue'} height={iconSize} width={iconSize} />
-                                <Text fontSize={'md'}>Connecting to wallet...</Text>
-                            </>
-                        )}
-                        {connectionState === 'success' && (
-                            <>
-                                <LuCheckCircle2 strokeWidth='1px' color='green' size={iconSize} />
-                                <Text fontSize={'md'} color={'green.700'}>Successfully connected!</Text>
-                            </>
-                        )}
-                        {connectionState === 'error' && (
-                            <>
-                                <LuXCircle color='red' strokeWidth='1px' size={iconSize} />
-                                <Text fontSize={'md'} color={'red.700'}>Error connecting to wallet</Text>
-                            </>
-                        )}
-                    </VStack>
+                <DialogBody py={'8'} px={"5"}>
+                    {
+                        metamaskAddress ? (
+                            <VStack gap={5}>
+                                <Center>
+                                    <Avatar src={avatar} size={'2xl'} loading='eager' />
+                                </Center>
+                                <Text fontFamily={'monospace'}>
+                                    {formatCryptoAddress(metamaskAddress, 10, 10)}
+                                </Text>
+                                <Button borderRadius={'md'} loading={loading} onClick={signOut}>
+                                    Sign Out
+                                    <LuLogOut />
+                                </Button>
+                            </VStack>
+                        ) : (
+                            <VStack gap={'10'}>
+                                {connectionState === 'connecting' && (
+                                    <>
+                                        <ReactLoading type={'spin'} color={'blue'} height={iconSize} width={iconSize} />
+                                        <Text fontSize={'md'}>Connecting to wallet...</Text>
+                                    </>
+                                )}
+                                {connectionState === 'success' && (
+                                    <>
+                                        <LuCheckCircle2 strokeWidth='1px' color='green' size={iconSize} />
+                                        <Text fontSize={'md'} color={'green.700'}>Successfully connected!</Text>
+                                    </>
+                                )}
+                                {connectionState === 'error' && (
+                                    <>
+                                        <LuXCircle color='red' strokeWidth='1px' size={iconSize} />
+                                        <Text fontSize={'md'} color={'red.700'}>Error connecting to wallet</Text>
+                                    </>
+                                )}
+                            </VStack>
+                        )
+                    }
                 </DialogBody>
                 <DialogCloseTrigger />
             </DialogContent>
-        </Dialog.Root>
+        </Dialog.Root >
     )
 }

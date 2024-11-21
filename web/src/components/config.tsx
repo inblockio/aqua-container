@@ -1,13 +1,15 @@
 import axios from "axios";
 import { useEffect } from "react";
-import { fetchFiles, getCookie } from "../utils/functions";
+import { fetchFiles, generateAvatar, getCookie } from "../utils/functions";
 import { ENDPOINTS } from "../utils/constants";
 import { useStore } from "zustand";
 import appStore from "../store";
+import { toaster } from "./ui/toaster";
+import { ethers } from "ethers";
 
 
 const LoadConfiguration = () => {
-    const { setMetamaskAddress, setConfiguration, setFiles } = useStore(appStore)
+    const { setMetamaskAddress, setConfiguration, setFiles, setAvatar } = useStore(appStore)
     const fetchAddressGivenANonce = async (nonce: string) => {
         const formData = new URLSearchParams();
         formData.append('nonce', nonce);
@@ -18,9 +20,12 @@ const LoadConfiguration = () => {
             }
         });
         if (response.status === 200) {
-            const address = response.data?.address
-            if (address) {
+            const _address = response.data?.address
+            if (_address) {
+                let address = ethers.getAddress(_address)
                 setMetamaskAddress(address)
+                let avatar = generateAvatar(address)
+                setAvatar(avatar)
                 let files = await fetchFiles(address);
                 setFiles(files)
             }
@@ -45,14 +50,17 @@ const LoadConfiguration = () => {
         }
     }
 
-
-
     useEffect(() => {
         const nonce = getCookie("pkc_nonce");
         if (nonce) {
             fetchAddressGivenANonce(nonce)
         } else {
-            alert("Your session has expired. Sign in again!")
+            setMetamaskAddress(null)
+            setAvatar(undefined)
+            toaster.create({
+                description: "You are not logged in! Please login",
+                type: "info",
+            })
         }
     }, []);
 

@@ -111,7 +111,17 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
                     .then(txhash => {
                         storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles).then(() => {
 
-                        }).catch(() => { alert("Something went wrong") })
+                        }).catch(() => {
+
+                        })
+                    })
+                    .catch((error: any) => {
+                        if (error?.message) {
+                            toaster.create({
+                                description: error.message,
+                                type: "error"
+                            })
+                        }
                     }).finally(() => {
                         setWitnessing(false)
                     })
@@ -123,7 +133,6 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
                     type: "error"
                 })
             }
-            setWitnessing(false)
         } else {
             setWitnessing(false)
             toaster.create({
