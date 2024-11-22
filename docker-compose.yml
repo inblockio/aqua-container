@@ -1,0 +1,15 @@
+services:
+  aqua-container:
+    pull_policy: always
+    image: ghcr.io/inblockio/aqua-container:github-action
+    ports:
+      - 3000:3000
+      - 3600:3600
+    volumes:
+      - app_data:/app/data
+    env_file:
+      - .env
+
+
+volumes:
+  app_data:
