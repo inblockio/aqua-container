@@ -13,6 +13,7 @@ Functionality milestones Fileupload & Hasher:
 6) [DONE] Extend existing Aqua-Chain with new Signature 
 7) [DONE] Witness Aqua-Chain on Chain
 8) [ONGOIN] Allow for choosing witness network from config.
+9) [TODO] Make user profile to handle some information ie config, email, payments
 
 UI-Interface:
 1) [DONE] Beautify website with CSS
@@ -66,5 +67,6 @@ sqlx migrate add table_name
 ```
 
 
-
-
+## Good to know.
+1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching  the channel.
+2.   Use the latest verion of node and npm.

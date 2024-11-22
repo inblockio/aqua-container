@@ -3,12 +3,15 @@ use aqua_verifier_rs_types::models::hash::Hash;
 use aqua_verifier_rs_types::models::content::RevisionContent;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
+// use guardian_common::custom_types::{Hash, Revision, RevisionContent};
+// use guardian_common::prelude::Base64;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde_json::Value;
 use sha3::{Digest, Sha3_512};
 use sqlx::sqlite::SqlitePoolOptions;
 use sqlx::{Pool, Sqlite};
+use verifier::util::content_hash;
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
@@ -17,8 +20,6 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use std::collections::HashMap;
 
 use crate::models::file::FileDataInformation;
-// use crate::verification::content_hash;
-use  verifier::verification::content_hash;
 
 pub async fn db_set_up() -> Pool<Sqlite> {
     let db_file_path = "./pages.db";
@@ -230,6 +231,8 @@ pub fn compute_content_hash(contentPar: &RevisionContent) -> Result<Hash, String
 
     Ok(content_hash_current)
 }
+
+// pub fn content_hash()
 
 
 pub fn make_empty_hash() -> Hash {

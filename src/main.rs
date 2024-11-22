@@ -8,7 +8,7 @@ pub mod auth;
 // pub mod revision_integrity;
 
 use aqua_verifier_rs_types::models::page_data::HashChain;
-use auth::siwe_sign_in;
+use auth::{fetch_nonce_session, siwe_sign_in};
 use axum::{body::Bytes, extract::{DefaultBodyLimit, Multipart, Path, Request, State}, handler::HandlerWithoutStateExt, http::StatusCode, response::{Html, Redirect}, routing::{get, post}, BoxError, Form, Router, Json};
 use ethaddr::address;
 
@@ -105,11 +105,13 @@ async fn main() {
         .route("/explorer_fetch_configuration", get(explorer_fetch_configuration))
         .route("/explorer_update_configuration", post(explorer_update_configuration))
         .route("/siwe", post(siwe_sign_in))
+        .route("/fetch_nonce_session", post(fetch_nonce_session))
         
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .layer(DefaultBodyLimit::max(20 * 1024 * 1024));;
 
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")

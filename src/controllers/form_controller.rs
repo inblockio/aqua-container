@@ -4,6 +4,7 @@ use aqua_verifier_rs_types::models::metadata::RevisionMetadata;
 use aqua_verifier_rs_types::models::page_data::HashChain;
 use aqua_verifier_rs_types::models::public_key::PublicKey;
 use aqua_verifier_rs_types::models::revision::Revision;
+use aqua_verifier_rs_types::models::content::RevisionContentContent;
 use aqua_verifier_rs_types::models::signature::{RevisionSignature, Signature};
 use aqua_verifier_rs_types::models::{base64::Base64, timestamp::Timestamp};
 use axum::{
@@ -27,7 +28,7 @@ use std::fs;
 use crate::models::input::RevisionInput;
 use crate::models::page_data::PageDataContainer;
 use crate::util::{check_or_generate_domain, db_set_up};
-use verifier::verification::{metadata_hash, signature_hash, verification_hash, content_hash};
+use verifier::util::{metadata_hash, signature_hash, verification_hash, content_hash};
 use crate::Db;
 use crate::models::file::FileInfo;
 use axum::response::{IntoResponse, Response};
@@ -103,6 +104,10 @@ pub async fn save_request_body(
         let verification_hash_current =
             verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
+            let revision_content_content = RevisionContentContent{
+                file_hash : file_hash_current
+            };
+
         let pagedata_current = &PageDataContainer {
             pages: vec![HashChain {
                 genesis_hash: verification_hash_current.clone().to_string(),
@@ -120,7 +125,7 @@ pub async fn save_request_body(
                                 size: 0,
                                 comment: "".to_string(),
                             }),
-                            content: content_current,
+                            content: revision_content_content,//content_current,
                             content_hash: content_hash_current,
                         },
                         metadata: RevisionMetadata {

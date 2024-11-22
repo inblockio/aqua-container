@@ -15,6 +15,7 @@ pub struct WitnessInput {
     pub filename: String,
     pub tx_hash: String,
     pub wallet_address: String,
+    pub network: String,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -32,4 +33,5 @@ pub struct UpdateConfigurationInput {
     pub chain: String,
     pub domain: String,
     pub mode: String,   
+    pub contract: String,   
 }
