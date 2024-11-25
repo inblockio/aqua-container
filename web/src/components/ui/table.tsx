@@ -56,7 +56,7 @@ const FilesTable = () => {
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <DownloadAquaChain file={item} />
-                    <ChainDetails pageData={JSON.parse(item.page_data)} />
+                    <ChainDetails fileInfo={item} />
                     <WitnessAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <DeleteAquaChain filename={item.name} />

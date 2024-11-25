@@ -319,3 +319,17 @@ export function generateAvatar(_address: string) {
 //     const blob = new Blob(byteArrays, { type: contentType });
 //     return blob;
 // };
+
+export function fileType(file: ApiFileInfo): string {
+    if (imageTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Image";
+    } else if (documentTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Document";
+    } else if (musicTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Music";
+    } else if (videoTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Video";
+    } else {
+        return "unknown";
+    }
+}
