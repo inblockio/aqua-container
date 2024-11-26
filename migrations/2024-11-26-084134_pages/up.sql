@@ -1,3 +1,4 @@
+-- Your SQL goes here
 -- Add migration script here
 CREATE TABLE IF NOT EXISTS pages (
                                      id INTEGER PRIMARY KEY AUTOINCREMENT,

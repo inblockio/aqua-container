@@ -1,3 +1,4 @@
+use crate::db::siwe::fetch_siwe_data;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use ethers::types::Signature;
@@ -9,11 +10,10 @@ use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
 use siwe::{Message, VerificationOpts};
-use sqlx::query_as;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
-
+use crate::db::siwe::{insert_siwe_data };
 #[derive(Deserialize)]
 pub struct SiweRequest {
     pub message: String,   // The SIWE message
@@ -76,45 +76,56 @@ pub async fn siwe_sign_in(
     // Verify the SIWE message
     match verify_siwe_message(payload.message, payload.signature).await {
         Ok(siwe_session) => {
-            // Insert the session into db
-            match sqlx::query!(
-                r#"
-                INSERT INTO siwe_sessions (address, nonce, issued_at, expiration_time)
-                VALUES (?, ?, ?, ?)
-                RETURNING id
-                "#,
-                siwe_session.address,
-                siwe_session.nonce,
-                siwe_session.issued_at,
-                siwe_session.expiration_time
-            )
-            .fetch_one(&server_database.sqliteDb)
-            .await
-            {
-                Ok(_) => {
-                    log_data.push(format!(
-                        "SIWE sign-in successful for address: {}",
-                        siwe_session.address
-                    ));
-                    let res: SiweResponse = SiweResponse {
-                        logs: log_data.clone(),
-                        success: true,
-                        session: Some(siwe_session.clone()),
-                    };
-                    (StatusCode::OK, Json(res))
-                }
-                Err(e) => {
-                    error!("Error occured inserting session into db: {:#?}", e);
-                    log_data.push("Failed to create sign in session".to_string());
-                    let res = SiweResponse {
-                        logs: log_data,
-                        success: false,
-                        session: None,
-                    };
 
-                    (StatusCode::BAD_REQUEST, Json(res))
-                }
+           
+            let res = insert_siwe_data(siwe_session.clone());
+            if res.is_err(){
+                let e = res.err().unwrap();
+
+                error!("Error occured inserting session into db: {:#?}", e);
+                log_data.push("Failed to create sign in session".to_string());
+                let res = SiweResponse {
+                    logs: log_data,
+                    success: false,
+                    session: None,
+                };
+
+              return   (StatusCode::BAD_REQUEST, Json(res));
+
             }
+
+            log_data.push(format!(
+                "SIWE sign-in successful for address: {}",
+                siwe_session.address.clone()
+            ));
+            let res: SiweResponse = SiweResponse {
+                logs: log_data.clone(),
+                success: true,
+                session: Some(siwe_session.clone()),
+            };
+         return   (StatusCode::OK, Json(res));
+            // Insert the session into db
+            // match sqlx::query!(
+            //     r#"
+            //     INSERT INTO siwe_sessions (address, nonce, issued_at, expiration_time)
+            //     VALUES (?, ?, ?, ?)
+            //     RETURNING id
+            //     "#,
+            //     siwe_session.address,
+            //     siwe_session.nonce,
+            //     siwe_session.issued_at,
+            //     siwe_session.expiration_time
+            // )
+            // .fetch_one(&server_database.sqliteDb)
+            // .await
+            // {
+            //     Ok(_) => {
+                    
+            //     }
+            //     Err(e) => {
+                    
+            //     }
+            // }
         }
         Err(e) => {
             let error_message = format!("SIWE sign-in failed: {:?}", e);
@@ -199,13 +210,14 @@ pub async fn fetch_nonce_session(
 ) -> (StatusCode, Json<Option<SiweSession>>) {
     // Query the database for a session with the given nonce
     tracing::info!("Nonce to fetch for: {}", payload.nonce);
-    let session = query_as!(
-        SiweSession,
-        "SELECT address, nonce, issued_at, expiration_time FROM siwe_sessions WHERE nonce = ?",
-        payload.nonce
-    )
-    .fetch_one(&server_database.sqliteDb)
-    .await;
+    // let session = query_as!(
+    //     SiweSession,
+    //     "SELECT address, nonce, issued_at, expiration_time FROM siwe_sessions WHERE nonce = ?",
+    //     payload.nonce
+    // )
+    // .fetch_one(&server_database.sqliteDb)
+    // .await;
+    let session = fetch_siwe_data();
 
     match session {
         Ok(s) => (StatusCode::OK, Json(Some(s))),
