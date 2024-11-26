@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
 use siwe::{Message, VerificationOpts};
+use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
@@ -33,7 +34,7 @@ pub async fn siwe_sign_in(
         Ok(siwe_session) => {
 
            
-            let res = insert_siwe_data(siwe_session.clone(),server_database.pool);
+            let res = insert_siwe_data(siwe_session.clone(), server_database.pool);
             if res.is_err(){
                 let e = res.err().unwrap();
 
@@ -176,8 +177,23 @@ pub async fn fetch_nonce_session(
     // .await;
     let session = fetch_siwe_data(server_database.pool);
 
+    //todo 
     match session {
-        Ok(s) => (StatusCode::OK, Json(Some(s))),
+        Ok(s) => {
+            let first = s.first();
+
+            if first.is_none(){
+              return  (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+            }
+            let first_result =  first.unwrap();
+            let siwe = SiweSession{
+                address : first_result.address.clone(),
+                nonce : first_result.address.clone(),
+                issued_at : first_result.issued_at.clone(),
+                expiration_time : first_result.expiration_time.clone()
+            }
+           return (StatusCode::OK, Json(Some(siwe)));
+        },
         Err(_) => (
             StatusCode::NOT_FOUND,
             Json(None), // No session found
