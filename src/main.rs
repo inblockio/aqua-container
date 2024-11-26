@@ -9,7 +9,7 @@ mod util;
 // pub mod revision_integrity;
 
 use aqua_verifier_rs_types::models::page_data::HashChain;
-use auth::{fetch_nonce_session, siwe_sign_in};
+
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -54,9 +54,14 @@ use crate::controllers::api_controller::explorer_file_verify_hash_upload;
 use crate::util::{check_or_generate_domain, establish_connection};
 use controllers::api_controller::{
     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file,
-    explorer_fetch_configuration, explorer_file_upload, explorer_sign_revision,
-    explorer_update_configuration, explorer_witness_file, fetch_explorer_files,
+     explorer_file_upload, explorer_sign_revision,
+     explorer_witness_file, fetch_explorer_files,
 };
+use controllers::auth_controller::{
+    siwe_sign_in, verify_siwe_message, fetch_nonce_session
+
+};
+use controllers::configuration_controller::{explorer_fetch_configuration, explorer_update_configuration};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
