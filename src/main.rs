@@ -5,6 +5,8 @@ mod controllers;
 mod db;
 mod models;
 mod util;
+mod schema;
+
 // pub mod verification;
 // pub mod revision_integrity;
 
