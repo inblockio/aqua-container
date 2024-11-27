@@ -8,7 +8,7 @@ diesel::table! {
         page_data -> Text,
         owner -> Text,
         mode -> Text,
-        created_at -> Nullable<Timestamp>,
+        created_at -> Text,
     }
 }
 

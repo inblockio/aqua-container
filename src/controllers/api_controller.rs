@@ -563,7 +563,21 @@ pub async fn explorer_aqua_file_upload(
         owner: metamask_address.to_string(),
     } ;
 
-    let insert_result = insert_page_data(db_data_model.clone());
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            
+            res.logs.push("Failed to get database connection".to_string());
+            
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+
+
+
+    let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
     if insert_result.is_err(){
         let err = insert_result.err().unwrap();
         tracing::error!("Failed to insert page: {}", err );
@@ -853,7 +867,19 @@ pub async fn explorer_file_upload(
         owner: metamask_address.to_string(),
     } ;
 
-    let insert_result = insert_page_data(db_data_model.clone());
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            
+            res.logs.push("Failed to get database connection".to_string());
+            
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+
     if insert_result.is_err(){
         let er = insert_result.err().unwrap();
         tracing::error!("Failed to insert page: {}", er.clone() );
@@ -949,7 +975,26 @@ pub async fn explorer_sign_revision(
     // .fetch_optional(&server_database.sqliteDb)
     // .await;
 
-    let page_data_result = fetch_page_data(input.filename);
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+           
+            
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+    let page_data_result = fetch_page_data(input.filename, & mut conn);
 
     if page_data_result.is_err(){
 
@@ -1111,7 +1156,30 @@ pub async fn explorer_sign_revision(
             let mut new_data = page_data.clone();
             new_data.page_data =page_data_new.clone();
 
-            let update_result = update_page_data(new_data.clone());
+
+            let mut conn = match server_database.pool.get() {
+                Ok(connection) => connection,
+                Err(e) => {
+                    log_data.push("Failed data not found in database".to_string());
+        
+                    log_data.push("Failed to get database connection".to_string());
+                    let res: ApiResponse = ApiResponse {
+                        logs: log_data,
+                        file: None,
+                        files: Vec::new(),
+                    };
+                    
+                                
+                    println!("Error Fetching connection {:#?}", res);
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+                }
+            };
+        
+            // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+            // let page_data_result = fetch_page_data(input.filename, & mut conn);
+
+            
+            let update_result = update_page_data(new_data.clone(), & mut conn);
             if update_result.is_err(){
                 let e = update_result.err().unwrap();
                 tracing::error!("Failed to update page data: {:?}", e);
@@ -1171,7 +1239,26 @@ pub async fn explorer_delete_all_files(
     // let result = sqlx::query!("DELETE FROM pages ",)
     //     .execute(&server_database.sqliteDb)
     //     .await;
-    let result = delete_all_data();
+
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            
+                        
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let result = delete_all_data(&mut  conn);
 
     match result {
         Ok(result_data) => {
@@ -1232,7 +1319,26 @@ pub async fn explorer_delete_file(
     //     .execute(&server_database.sqliteDb)
     //     .await;
 
-    let result = delete_page_data(input.filename.clone());
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            
+                        
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+
+    let result = delete_page_data(input.filename.clone(),&mut  conn);
 
     match result {
         Ok(result_data) => {
@@ -1309,7 +1415,26 @@ pub async fn explorer_witness_file(
     // .fetch_optional(&server_database.sqliteDb)
     // .await;
 
-    let page_data_result = fetch_page_data(input.filename.clone());
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            
+                        
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+
+    let page_data_result = fetch_page_data(input.filename.clone(),&mut  conn);
 
     if page_data_result.is_err(){
 
@@ -1510,7 +1635,25 @@ pub async fn explorer_witness_file(
     let mut new_data = page_data.clone();
     new_data.page_data =page_data_new.clone();
 
-    let update_result = update_page_data(new_data.clone());
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            
+                        
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let update_result = update_page_data(new_data.clone(), &mut  conn);
     if update_result.is_err(){
         let e = update_result.err().unwrap();
         tracing::error!("Failed to update page data: {:?}", e);

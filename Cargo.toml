@@ -16,7 +16,6 @@ verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", branch = "ma
 # aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", branch = "main" }
 aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", rev = "495735706073f86864ef9a461a80bddc30866f08" }
 
-chrono = {version ="0.4.38", features = ["serde"]}
 sha3 = "0.10.8"
 futures = "0.3"
 serde = "1.0.210"
@@ -32,6 +31,8 @@ ethaddr = "0.2.2" # help use etherirum wallet addresses
 # rusqlite = "0.32.1" # rust sqlite
 # sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio-native-tls"] } # used to interacting with sqlite
 diesel = { version = "2.2.0", features = ["sqlite", "r2d2", "returning_clauses_for_sqlite_3_35"]}
+
+chrono = {version ="0.4.38", features = ["serde"]}
 
 dotenv = "0.15"
 rand = "0.8.5"

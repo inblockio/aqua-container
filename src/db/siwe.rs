@@ -15,7 +15,7 @@ pub fn insert_siwe_data(
         issued_at: data.issued_at,
         expiration_time: data.expiration_time,
     };
-    let inserted_id = diesel::insert_into(crate::schema::siwe_sessions::table)
+    let inserted_id: i32 = diesel::insert_into(crate::schema::siwe_sessions::table)
         .values(record)
         .returning(crate::schema::siwe_sessions::dsl::id)
         .get_result::<Option<i32>>(db_connection)

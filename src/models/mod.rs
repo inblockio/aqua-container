@@ -6,15 +6,18 @@ use diesel::prelude::*;
 pub mod file;
 pub mod page_data;
 pub mod input;
-
+use chrono::{DateTime, Utc};
 
 pub type DB_POOL = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
 use diesel::prelude::*;
 use chrono::NaiveDateTime;
 use siwe::TimeStamp;
+use diesel::prelude::*;
+use diesel::expression::AsExpression;
+use diesel::sql_types::Nullable;
 
-#[derive(Queryable, Selectable, Serialize, Deserialize, Debug, Clone)]
+#[derive(Queryable, Selectable, Serialize, Deserialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::pages)]
 pub struct PagesTable {
     pub id: Option<i32>,
@@ -23,7 +26,7 @@ pub struct PagesTable {
     pub page_data: String,
     pub owner: String,
     pub mode: String,
-    pub created_at: Option<chrono::NaiveDateTime>,
+    pub created_at: String,
 }
 
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
