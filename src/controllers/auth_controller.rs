@@ -33,8 +33,22 @@ pub async fn siwe_sign_in(
     match verify_siwe_message(payload.message, payload.signature).await {
         Ok(siwe_session) => {
 
+            let mut conn = match server_database.pool.get() {
+                Ok(connection) => connection,
+                Err(e) => {
+                    error!("Failed to get database connection: {}", e);
+                    log_data.push("Failed to get database connection".to_string());
+                    let res = SiweResponse {
+                        logs: log_data,
+                        success: false,
+                        session: None,
+                    };
+                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+                }
+            };
+
            
-            let res = insert_siwe_data(siwe_session.clone(), server_database.pool);
+            let res = insert_siwe_data(siwe_session.clone(), & mut conn );
             if res.is_err(){
                 let e = res.err().unwrap();
 
@@ -165,6 +179,7 @@ pub async fn fetch_nonce_session(
     Form(payload): Form<SiweNonceRequest>,
 ) -> (StatusCode, Json<Option<SiweSession>>) {
 
+    let mut log_data: Vec<String> = Vec::new();
 
     // Query the database for a session with the given nonce
     tracing::info!("Nonce to fetch for: {}", payload.nonce);
@@ -175,7 +190,23 @@ pub async fn fetch_nonce_session(
     // )
     // .fetch_one(&server_database.sqliteDb)
     // .await;
-    let session = fetch_siwe_data(server_database.pool);
+
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            error!("Failed to get database connection: {}", e);
+            log_data.push("Failed to get database connection".to_string());
+            let res = SiweResponse {
+                logs: log_data,
+                success: false,
+                session: None,
+            };
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
+        }
+    };
+
+    let session = fetch_siwe_data(& mut conn);
 
     //todo 
     match session {
@@ -191,7 +222,7 @@ pub async fn fetch_nonce_session(
                 nonce : first_result.address.clone(),
                 issued_at : first_result.issued_at.clone(),
                 expiration_time : first_result.expiration_time.clone()
-            }
+            };
            return (StatusCode::OK, Json(Some(siwe)));
         },
         Err(_) => (

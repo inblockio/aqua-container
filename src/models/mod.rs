@@ -2,7 +2,7 @@
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::SqliteConnection;
 use serde::{Deserialize, Serialize};
-
+use diesel::prelude::*;
 pub mod file;
 pub mod page_data;
 pub mod input;
@@ -26,8 +26,9 @@ pub struct PagesTable {
     pub created_at: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(Insertable, Deserialize)]
+#[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::siwe_sessions)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct SiweSessionsTable {
     pub id: Option<i32>,
     pub address: String,

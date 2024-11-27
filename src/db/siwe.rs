@@ -1,41 +1,49 @@
-use diesel::prelude::*; // This will import RunQueryDsl
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, PooledConnection}; // This will import RunQueryDsl
 use crate::auth::SiweSession;
 use crate::models::{SiweSessionsTable, DB_POOL};
 use serde::{Deserialize, Serialize};
 
-pub fn insert_siwe_data(data: SiweSession,mut db_connection: DB_POOL) -> Result<(i64), String> {
-    
-    // Use returning instead of get_result
-    let inserted_id = diesel::insert_into(crate::schema::siwe_sessions::dsl::siwe_sessions)
-        .values(&SiweSessionsTable {
-            id: None,
-            address: data.address,
-            nonce: data.nonce,
-            issued_at: data.issued_at,
-            expiration_time: data.expiration_time,
-        })
+pub fn insert_siwe_data(
+    data: SiweSession, 
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
+) -> Result<i64, String> {
+    let record =  &SiweSessionsTable {
+        id: None,
+        address: data.address,
+        nonce: data.nonce,
+        issued_at: data.issued_at,
+        expiration_time: data.expiration_time,
+    };
+    let inserted_id = diesel::insert_into(crate::schema::siwe_sessions::table)
+        .values(record)
         .returning(crate::schema::siwe_sessions::dsl::id)
-        .first::<i32>(&mut db_connection)
-        .map_err(|e| format!("Error saving new siwe data: {}", e))?;
+        .get_result::<Option<i32>>(db_connection)
+        .map_err(|e| format!("Error saving new siwe data: {}", e))?
+        .unwrap_or(-1);  // Provide a default value if None
 
     Ok(inserted_id as i64)
-
 }
-
-pub fn fetch_siwe_data(mut db_connection: DB_POOL) -> Result<Vec<SiweSessionsTable>, String> {
+pub fn fetch_siwe_data(
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
+) -> Result<Vec<SiweSessionsTable>, String> {
     use crate::schema::siwe_sessions::dsl::*;
 
     siwe_sessions
-        .load::<SiweSessionsTable>(&mut db_connection)
+        .select(SiweSessionsTable::as_select())
+        .load::<SiweSessionsTable>(db_connection)
         .map_err(|e| format!("Error fetching SIWE sessions: {}", e))
 }
 
-// Or to fetch a single record
-pub fn fetch_siwe_data_by_address(address: String, mut db_connection: DB_POOL) -> Result<SiweSessionsTable, String> {
+pub fn fetch_siwe_data_by_address(
+    address_param: &str,
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
+) -> Result<Vec<SiweSessionsTable>, String> {
     use crate::schema::siwe_sessions::dsl::*;
 
     siwe_sessions
-        .filter(siwe_sessions::address.eq(address))
-        .first::<SiweSessionsTable>(&mut db_connection)
-        .map_err(|e| format!("Error fetching SIWE session: {}", e))
+        .filter(address.eq(address_param))
+        .select(SiweSessionsTable::as_select())
+        .load::<SiweSessionsTable>(db_connection)
+        .map_err(|e| format!("Error fetching SIWE sessions for address: {}", e))
 }

@@ -33,7 +33,7 @@ pub struct SiweNonceRequest {
     pub nonce: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct SiweResponse {
     pub logs: Vec<String>,
     pub success: bool,
