@@ -143,7 +143,7 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .layer(DefaultBodyLimit::max(20 * 1024 * 1024));
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3600")
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3600")
         .await
         .unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());

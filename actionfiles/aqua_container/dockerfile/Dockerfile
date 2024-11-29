@@ -7,11 +7,6 @@ COPY . .
 
 RUN rustup default nightly
 
-#Remove this! Handle migrations etc in code
-RUN cargo install sqlx-cli
-RUN sqlx database create
-RUN sqlx migrate run
-
 RUN cargo build --package aqua-container --bin aqua-container --release
 
 FROM node:latest as builder_npm
@@ -42,8 +37,5 @@ RUN mkdir /app/data
 
 COPY ./actionfiles/aqua_container/script/start_aqua.sh .
 RUN chmod +x ./start_aqua.sh
-
-#Remove this! Handle migrations etc in code
-RUN curl --proto '=https' -o install_rust.sh --tlsv1.2 -sSf https://sh.rustup.rs && chmod +x install_rust.sh && ./install_rust.sh -y && rm ./install_rust.sh &&  /root/.cargo/bin/cargo install sqlx-cli
 
 CMD "./start_aqua.sh"
