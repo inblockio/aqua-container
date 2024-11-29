@@ -54,11 +54,11 @@ extern crate serde_json_path_to_error as serde_json;
 use std::sync::{mpsc, Mutex, MutexGuard};
 use crate::controllers::api_controller::explorer_file_verify_hash_upload;
 use crate::util::{check_or_generate_domain, establish_connection};
-use controllers::api_controller::{
+use controllers::{api_controller::{
     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file,
      explorer_file_upload, explorer_sign_revision,
      explorer_witness_file, fetch_explorer_files,
-};
+}, auth_controller::session_logou_by_nonce};
 use controllers::auth_controller::{
     siwe_sign_in, verify_siwe_message, fetch_nonce_session
 
@@ -136,6 +136,7 @@ async fn main() {
         )
         .route("/siwe", post(siwe_sign_in))
         .route("/fetch_nonce_session", post(fetch_nonce_session))
+        .route("/siwe_logout", post(session_logou_by_nonce))
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())

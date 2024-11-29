@@ -3,11 +3,12 @@ import { Button } from "./ui/button";
 import axios from "axios";
 import { useStore } from "zustand";
 import appStore from "../store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiFileInfo } from "../models/FileInfo";
 import { toaster } from "./ui/toaster";
 import { ENDPOINTS } from "../utils/constants";
 import { readJsonFile } from "../utils/functions";
+import ChainDetails from "./ui/navigation/CustomDrawer";
 
 
 interface IDropzoneAction {
@@ -94,7 +95,7 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
 export const VerifyFile = ({ file }: IDropzoneAction) => {
 
     const [verifying, setVerifying] = useState(false)
-    const [_hashChainForVerification, setHashChain] = useState<ApiFileInfo>()
+    const [hashChainForVerification, setHashChain] = useState<ApiFileInfo>()
     // const [uploaded, setUploaded] = useState(false)
 
     // const { metamaskAddress, setFiles, files } = useStore(appStore)
@@ -125,11 +126,23 @@ export const VerifyFile = ({ file }: IDropzoneAction) => {
         setVerifying(false)
     };
 
+    useEffect(() => {
+        handleVerifyAquaJsonFile()
+    }, [])
+
     return (
-        <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'80px'} onClick={handleVerifyAquaJsonFile} loading={verifying}>
-            <LuScan />
-            Verify
-        </Button>
+        <>
+            {
+                hashChainForVerification ? (
+                    <ChainDetails fileInfo={hashChainForVerification} />
+                ) : (
+                    <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'80px'} loading={verifying} disabled>
+                        <LuScan />
+                        LOading Chain
+                    </Button>
+                )
+            }
+        </>
     )
 }
 
@@ -139,7 +152,7 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files } = useStore(appStore)
+    const { metamaskAddress, setFiles, files, configuration } = useStore(appStore)
 
     const importAquaChain = async () => {
 
@@ -178,8 +191,8 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
                 name: res.file.name,
                 extension: res.file.extension,
                 page_data: res.file.page_data,
-                mode: '',
-                owner: ''
+                mode: configuration.fileMode ?? "",
+                owner: metamaskAddress ?? "",
             };
             setFiles([...files, file])
             // setUploadedFilesIndexes(value => [...value, fileIndex])

@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useEffect } from "react";
 import { fetchFiles, generateAvatar, getCookie } from "../utils/functions";
 import { ENDPOINTS } from "../utils/constants";
@@ -10,24 +10,37 @@ import { ethers } from "ethers";
 
 const LoadConfiguration = () => {
     const { setMetamaskAddress, setConfiguration, setFiles, setAvatar } = useStore(appStore)
-    const fetchAddressGivenANonce = async (nonce: string) => {
-        const formData = new URLSearchParams();
-        formData.append('nonce', nonce);
 
-        const response = await axios.post(ENDPOINTS.FETCH_ADDRESS_BY_NONCE, formData, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+    const fetchAddressGivenANonce = async (nonce: string) => {
+        try {
+            const formData = new URLSearchParams();
+            formData.append('nonce', nonce);
+
+            const response = await axios.post(ENDPOINTS.FETCH_ADDRESS_BY_NONCE, formData, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            if (response.status === 200) {
+                const _address = response.data?.address
+                if (_address) {
+                    let address = ethers.getAddress(_address)
+                    setMetamaskAddress(address)
+                    let avatar = generateAvatar(address)
+                    setAvatar(avatar)
+                    let files = await fetchFiles(address);
+                    setFiles(files)
+                }
             }
-        });
-        if (response.status === 200) {
-            const _address = response.data?.address
-            if (_address) {
-                let address = ethers.getAddress(_address)
-                setMetamaskAddress(address)
-                let avatar = generateAvatar(address)
-                setAvatar(avatar)
-                let files = await fetchFiles(address);
-                setFiles(files)
+        }
+        catch (error: any) {
+            if (error?.response?.status === 404) {
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                setFiles([])
+            }else{
+
             }
         }
     }

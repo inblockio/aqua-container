@@ -47,3 +47,26 @@ pub fn fetch_siwe_data_by_address(
         .load::<SiweSessionsTable>(db_connection)
         .map_err(|e| format!("Error fetching SIWE sessions for address: {}", e))
 }
+
+pub fn fetch_siwe_session_by_nonce(
+    nonce_value: &str,
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+) -> Result<SiweSessionsTable, String> {
+    use crate::schema::siwe_sessions::dsl::*;
+
+    siwe_sessions
+        .filter(nonce.eq(nonce_value)) // Use the passed `nonce_value`
+        .first::<SiweSessionsTable>(db_connection) // Fetch the first matching result
+        .map_err(|e| format!("Error fetching SIWE session for nonce: {}", e)) // Map any errors
+}
+
+pub fn delete_siwe_session_by_nonce(
+    nonce_value: &str,
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+) -> Result<usize, String> {
+    use crate::schema::siwe_sessions::dsl::*;
+
+    diesel::delete(siwe_sessions.filter(nonce.eq(nonce_value)))
+        .execute(db_connection)
+        .map_err(|e| format!("Error deleting SIWE session for nonce: {}", e))
+}

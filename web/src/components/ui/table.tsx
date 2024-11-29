@@ -56,7 +56,7 @@ const FilesTable = () => {
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <DownloadAquaChain file={item} />
-                    <ChainDetails pageData={JSON.parse(item.page_data)} />
+                    <ChainDetails fileInfo={item} />
                     <WitnessAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <DeleteAquaChain filename={item.name} />
@@ -97,11 +97,13 @@ const FilesTable = () => {
                         <Table.Body>
                             {rows}
                             {rows.length === 0 ?
-                                <Alert title="No Data">
+                                <Table.Row>
                                     <Table.Cell colSpan={6}>
-                                        Please upload some files or import an Aqua Chain
+                                        <Alert title="No Data">
+                                            Please upload some files or import an Aqua Chain
+                                        </Alert>
                                     </Table.Cell>
-                                </Alert>
+                                </Table.Row>
                                 : null}
                         </Table.Body>
                     </Table.Root>

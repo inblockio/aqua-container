@@ -11,7 +11,7 @@ import {
 import { Center, Dialog, Text, VStack } from '@chakra-ui/react'
 import { LuCheckCircle2, LuLogOut, LuWallet2, LuXCircle } from 'react-icons/lu'
 import ReactLoading from 'react-loading'
-import { fetchFiles, formatCryptoAddress, generateAvatar, remove0xPrefix, setCookie } from '../../../utils/functions'
+import { fetchFiles, formatCryptoAddress, generateAvatar, getCookie, remove0xPrefix, setCookie } from '../../../utils/functions'
 import { SiweMessage, generateNonce } from 'siwe'
 import { ENDPOINTS, SESSION_COOKIE_NAME } from '../../../utils/constants'
 import axios from 'axios'
@@ -139,6 +139,37 @@ export default function ConnectWallet() {
         })
     }
 
+    const signOutFromSiweSession = async () => {
+        setLoading(true)
+        try {
+            const formData = new URLSearchParams();
+            const nonce = getCookie("pkc_nonce");
+            formData.append('nonce', nonce);
+
+            const response = await axios.post(ENDPOINTS.SIWE_SIGN_OUT, formData, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            if (response.status === 200) {
+                signOut()
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                setFiles([])
+            }
+        }
+        catch (error: any) {
+            if (error?.response?.status === 404) {
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                setFiles([])
+            }
+        }
+        setLoading(false)
+    }
+
+
     return (
         <Dialog.Root placement={'center'} size={'sm'} open={isOpen} onOpenChange={(details) => setIsOpen(details.open)}>
             <DialogTrigger asChild>
@@ -151,7 +182,7 @@ export default function ConnectWallet() {
                 </Button>
             </DialogTrigger>
             <DialogContent borderRadius={'2xl'} overflow={"hidden"}>
-                <DialogHeader py={'3'} px={"5"} bg={{base: 'rgb(188 220 255 / 22%)', _dark: 'rgba(0, 0, 0, 0.3)'}}>
+                <DialogHeader py={'3'} px={"5"} bg={{ base: 'rgb(188 220 255 / 22%)', _dark: 'rgba(0, 0, 0, 0.3)' }}>
                     <DialogTitle fontWeight={500} color={'gray.800'} _dark={{ color: 'white' }}>
                         {
                             metamaskAddress ? "Account" : "Sign In"
@@ -168,7 +199,7 @@ export default function ConnectWallet() {
                                 <Text fontFamily={'monospace'}>
                                     {formatCryptoAddress(metamaskAddress, 10, 10)}
                                 </Text>
-                                <Button borderRadius={'md'} loading={loading} onClick={signOut}>
+                                <Button borderRadius={'md'} loading={loading} onClick={signOutFromSiweSession}>
                                     Sign Out
                                     <LuLogOut />
                                 </Button>

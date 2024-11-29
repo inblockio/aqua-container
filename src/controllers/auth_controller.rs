@@ -1,5 +1,8 @@
 use crate::auth::SiweRequest;
+use crate::db::siwe::delete_siwe_session_by_nonce;
 use crate::db::siwe::fetch_siwe_data;
+use crate::db::siwe::fetch_siwe_session_by_nonce;
+use crate::db::siwe::insert_siwe_data;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use ethers::types::Signature;
@@ -15,9 +18,8 @@ use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
-use crate::db::siwe::{insert_siwe_data };
 
-use crate::auth::{SiweError,SiweSession , SiweNonceRequest , SiweResponse };
+use crate::auth::{SiweError, SiweNonceRequest, SiweResponse, SiweSession};
 
 pub async fn siwe_sign_in(
     State(server_database): State<Db>,
@@ -32,7 +34,6 @@ pub async fn siwe_sign_in(
     // Verify the SIWE message
     match verify_siwe_message(payload.message, payload.signature).await {
         Ok(siwe_session) => {
-
             let mut conn = match server_database.pool.get() {
                 Ok(connection) => connection,
                 Err(e) => {
@@ -47,9 +48,8 @@ pub async fn siwe_sign_in(
                 }
             };
 
-           
-            let res = insert_siwe_data(siwe_session.clone(), & mut conn );
-            if res.is_err(){
+            let res = insert_siwe_data(siwe_session.clone(), &mut conn);
+            if res.is_err() {
                 let e = res.err().unwrap();
 
                 error!("Error occured inserting session into db: {:#?}", e);
@@ -60,8 +60,7 @@ pub async fn siwe_sign_in(
                     session: None,
                 };
 
-              return   (StatusCode::BAD_REQUEST, Json(res));
-
+                return (StatusCode::BAD_REQUEST, Json(res));
             }
 
             log_data.push(format!(
@@ -73,29 +72,7 @@ pub async fn siwe_sign_in(
                 success: true,
                 session: Some(siwe_session.clone()),
             };
-         return   (StatusCode::OK, Json(res));
-            // Insert the session into db
-            // match sqlx::query!(
-            //     r#"
-            //     INSERT INTO siwe_sessions (address, nonce, issued_at, expiration_time)
-            //     VALUES (?, ?, ?, ?)
-            //     RETURNING id
-            //     "#,
-            //     siwe_session.address,
-            //     siwe_session.nonce,
-            //     siwe_session.issued_at,
-            //     siwe_session.expiration_time
-            // )
-            // .fetch_one(&server_database.sqliteDb)
-            // .await
-            // {
-            //     Ok(_) => {
-                    
-            //     }
-            //     Err(e) => {
-                    
-            //     }
-            // }
+            return (StatusCode::OK, Json(res));
         }
         Err(e) => {
             let error_message = format!("SIWE sign-in failed: {:?}", e);
@@ -173,23 +150,11 @@ pub async fn verify_siwe_message(
     }
 }
 
-
 pub async fn fetch_nonce_session(
     State(server_database): State<Db>,
     Form(payload): Form<SiweNonceRequest>,
 ) -> (StatusCode, Json<Option<SiweSession>>) {
-
     let mut log_data: Vec<String> = Vec::new();
-
-    // Query the database for a session with the given nonce
-    tracing::info!("Nonce to fetch for: {}", payload.nonce);
-    // let session = query_as!(
-    //     SiweSession,
-    //     "SELECT address, nonce, issued_at, expiration_time FROM siwe_sessions WHERE nonce = ?",
-    //     payload.nonce
-    // )
-    // .fetch_one(&server_database.sqliteDb)
-    // .await;
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
@@ -206,28 +171,75 @@ pub async fn fetch_nonce_session(
         }
     };
 
-    let session = fetch_siwe_data(& mut conn);
+    let session = fetch_siwe_session_by_nonce(&payload.nonce, &mut conn);
 
-    //todo 
-    match session {
-        Ok(s) => {
-            let first = s.first();
+    if session.is_err() {
+        return (StatusCode::NOT_FOUND, Json(None));
+    }
 
-            if first.is_none(){
-              return  (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
-            }
-            let first_result =  first.unwrap();
-            let siwe = SiweSession{
-                address : first_result.address.clone(),
-                nonce : first_result.address.clone(),
-                issued_at : first_result.issued_at.clone(),
-                expiration_time : first_result.expiration_time.clone()
+    let _session = session.unwrap();
+
+    let siwe = SiweSession {
+        address: _session.address.clone(),
+        nonce: _session.address.clone(),
+        issued_at: _session.issued_at.clone(),
+        expiration_time: _session.expiration_time.clone(),
+    };
+    return (StatusCode::OK, Json(Some(siwe)));
+}
+
+
+pub async fn session_logou_by_nonce(
+    State(server_database): State<Db>,
+    Form(payload): Form<SiweNonceRequest>,
+) -> (StatusCode, Json<SiweResponse>) {
+    let mut log_data: Vec<String> = Vec::new();
+
+    // Get database connection
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            error!("Failed to get database connection: {}", e);
+            log_data.push("Failed to get database connection".to_string());
+            let res = SiweResponse {
+                logs: log_data,
+                success: false,
+                session: None,
             };
-           return (StatusCode::OK, Json(Some(siwe)));
-        },
-        Err(_) => (
-            StatusCode::NOT_FOUND,
-            Json(None), // No session found
-        ),
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    // Call helper function to delete session
+    match delete_siwe_session_by_nonce(&payload.nonce, &mut conn) {
+        Ok(affected_rows) => {
+            if affected_rows == 0 {
+                log_data.push("No session found to delete".to_string());
+                let res = SiweResponse {
+                    logs: log_data,
+                    success: false,
+                    session: None,
+                };
+                return (StatusCode::NOT_FOUND, Json(res));
+            }
+
+            log_data.push(format!("Successfully deleted {} session(s)", affected_rows));
+            let res = SiweResponse {
+                logs: log_data,
+                success: true,
+                session: None,
+            };
+            (StatusCode::OK, Json(res))
+        }
+        Err(e) => {
+            error!("Failed to delete session: {}", e);
+            log_data.push(format!("Failed to delete session: {}", e));
+            let res = SiweResponse {
+                logs: log_data,
+                success: false,
+                session: None,
+            };
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 import type { ButtonProps, RecipeProps } from "@chakra-ui/react"
 import {
+  Box,
   Button,
   FileUpload as ChakraFileUpload,
   Icon,
@@ -13,7 +14,7 @@ import {
 } from "@chakra-ui/react"
 import { forwardRef, useState } from "react"
 import { LuFile, LuUpload, LuX } from "react-icons/lu"
-import { ImportAquaChain, UploadFile } from "../dropzone_file_actions"
+import { ImportAquaChain, UploadFile, VerifyFile } from "../dropzone_file_actions"
 import { isJSONFile } from "../../utils/functions"
 
 export interface FileUploadRootProps extends ChakraFileUpload.RootProps {
@@ -46,7 +47,9 @@ export const FileUploadDropzone = forwardRef<
   return (
     <ChakraFileUpload.Dropzone ref={ref} {...rest}>
       <Icon fontSize="xl" color="fg.muted">
-        <LuUpload />
+        <Box>
+          <LuUpload />
+        </Box>
       </Icon>
       <ChakraFileUpload.DropzoneContent>
         <div>{label}</div>
@@ -90,11 +93,11 @@ const FileUploadItem = (props: FileUploadItemProps) => {
       {
         isJSONFile(file.name) ? (
           <>
-          <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
-          {/* <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} /> */}
-          {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
+            <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
           </>
-        ): null
+        ) : null
       }
       <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
 

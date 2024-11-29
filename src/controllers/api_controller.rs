@@ -3,10 +3,11 @@ use crate::models::page_data::{ApiResponse, PageDataContainer};
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
-     get_content_type, get_file_info, make_empty_hash, update_env_file,
+    get_content_type, get_file_info, make_empty_hash, update_env_file,
 };
 use crate::Db;
 use aqua_verifier_rs_types::models::base64::Base64;
+use aqua_verifier_rs_types::models::content::RevisionContentContent;
 use aqua_verifier_rs_types::models::content::{FileContent, RevisionContent};
 use aqua_verifier_rs_types::models::hash::Hash;
 use aqua_verifier_rs_types::models::metadata::RevisionMetadata;
@@ -18,7 +19,6 @@ use aqua_verifier_rs_types::models::timestamp::Timestamp;
 use aqua_verifier_rs_types::models::tx_hash::TxHash;
 use aqua_verifier_rs_types::models::witness::{MerkleNode, RevisionWitness};
 use axum::response::{IntoResponse, Response};
-use aqua_verifier_rs_types::models::content::RevisionContentContent;
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -38,6 +38,10 @@ use verifier::util::{
     content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
 };
 extern crate serde_json_path_to_error as serde_json;
+use crate::db::pages_db::{
+    db_data, delete_all_data, delete_page_data, fetch_all_pages_data_per_user, fetch_page_data,
+    insert_page_data, update_page_data,
+};
 use dotenv::{dotenv, vars};
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
@@ -52,7 +56,6 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
-use crate::db::pages_db::{db_data, insert_page_data, fetch_page_data, update_page_data, delete_page_data, delete_all_data};
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -97,79 +100,82 @@ pub async fn fetch_explorer_files(
     tracing::debug!("fetch_explorer_files");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-        logs: log_data,
+        logs: log_data.clone(),
         file: None,
         files: Vec::new(),
     };
 
     // Initialize an empty Vec to hold the result
-    // let mut pages: Vec<FileInfo> = Vec::new();
+    let mut pages: Vec<FileInfo> = Vec::new();
 
-    // // Extract the 'metamask_address' header
-    // let query_string: String = match headers.get("metamask_address") {
-    //     Some(value) => match value.to_str() {
-    //         Ok(key) => {
-    //             format!("SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='pulic' or  owner = '{}'",key)
-    //         }
-    //         Err(err) => {
-    //             // return (StatusCode::BAD_REQUEST, Json(json!({"error": "Invalid metamask_address header"})))
+    let user_address: Result<String, String> = match headers.get("metamask_address") {
+        Some(value) => match value.to_str() {
+            Ok(address) => Ok(address.to_string()), // Successfully extracted address
+            Err(_) => Err("Failed to parse the metamask_address header.".to_string()),
+        },
+        None => Err("metamask_address header not found.".to_string()), // Header not found
+    };
 
-    //             tracing::debug!("error {} ", err);
-    //             "SELECT id, name, extension, page_data , owner , mode FROM pages where mode ='public'".to_string()
-    //         }
-    //     },
-    //     None => {
-    //         // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
 
-    //         tracing::debug!("metamask_address header missing ");
-    //         "SELECT id, name, extension, page_data , owner , mode  FROM pages where mode ='public'"
-    //             .to_string()
-    //     }
-    // };
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data.clone(),
+                file: None,
+                files: Vec::new(),
+            };
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
 
-    // tracing::debug!("Sql query ==>  {}", query_string);
+    if user_address.is_ok() {
+        let page_data_result = fetch_all_pages_data_per_user(user_address.unwrap(), &mut conn);
+        if page_data_result.is_err() {
+            log_data.push("Failed data not found in database".to_string());
 
-    // // Fetch all rows from the 'pages' table
-    // let rows = sqlx::query(&query_string)
-    //     .fetch_all(&server_database.sqliteDb)
-    //     .await;
+            let res: ApiResponse = ApiResponse {
+                logs: log_data.clone(),
+                file: None,
+                files: Vec::new(),
+            };
+            return (StatusCode::NOT_FOUND, Json(res));
+        }
 
-    // // Handle database result errors
-    // match rows {
-    //     Ok(records) => {
-    //         // Loop through the records and populate the pages vector
-    //         // id: row.id,
-    //         // name: row.name,
-    //         // extension: row.extension,
-    //         // page_data: row.page_data,
-    //         for row in records {
-    //             pages.push(FileInfo {
-    //                 id: row.get("id"),               // Get id from the row
-    //                 name: row.get("name"),           // Get name from the row
-    //                 extension: row.get("extension"), // Get extension from the row
-    //                 page_data: row.get("page_data"), // Get page_data from the row
-    //                 mode: row.get("mode"),           // Get owner from the row
-    //                 owner: row.get("owner"),         // Get owner from the row
-    //             });
-    //         }
+        let page_data = page_data_result.unwrap();
 
-    //         if pages.is_empty() {
-    //             res.logs.push("No pages found".to_string());
-    //             return (StatusCode::OK, Json::from(res));
-    //         }
+        for row in page_data {
+            pages.push(FileInfo {
+                id: row.id.unwrap().try_into().unwrap(),
+                name: row.name,
+                extension: row.extension,
+                page_data: row.page_data,
+                mode: row.mode,
+                owner: row.owner,
+            });
+        }
 
-    //         res.files = pages;
-    //         // Return the populated list of pages
-    //         (StatusCode::OK, Json::from(res))
-    //     }
-    //     Err(e) => {
-    //         tracing::error!("Failed to fetch records: {:?}", e);
-    //         res.logs
-    //             .push(format!("Error: Failed to fetch records: {:?}", e));
-    //         res.files = pages;
-    //         (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
-    //     }
-    // }
+        if pages.is_empty() {
+            res.logs.push("No pages found".to_string());
+            return (StatusCode::OK, Json::from(res));
+        }
+
+        res.files = pages;
+        // Return the populated list of pages
+        return (StatusCode::OK, Json::from(res));
+    } else {
+        log_data
+            .push("Unable to parse metamask address/ Metamask address not provided".to_string());
+        let res: ApiResponse = ApiResponse {
+            logs: log_data.clone(),
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
 
@@ -554,35 +560,32 @@ pub async fn explorer_aqua_file_upload(
         }
     };
 
-    let db_data_model = db_data{
-        id:0,
+    let db_data_model = db_data {
+        id: 0,
         name: file_name,
         extension: content_type,
         page_data: json_string,
         mode: mode,
         owner: metamask_address.to_string(),
-    } ;
+    };
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            
-            res.logs.push("Failed to get database connection".to_string());
-            
+            res.logs
+                .push("Failed to get database connection".to_string());
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
-
-
-
-    let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
-    if insert_result.is_err(){
+    let insert_result = insert_page_data(db_data_model.clone(), &mut conn);
+    if insert_result.is_err() {
         let err = insert_result.err().unwrap();
-        tracing::error!("Failed to insert page: {}", err );
+        tracing::error!("Failed to insert page: {}", err);
         res.logs.push(format!("Failed to insert page: {}", err));
-       return (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
 
     let file_info = FileInfo {
@@ -594,31 +597,7 @@ pub async fn explorer_aqua_file_upload(
         owner: db_data_model.owner.to_string(),
     };
     res.file = Some(file_info);
-   return (StatusCode::CREATED, Json(res));
-
-    // Insert into database
-    // match sqlx::query!(
-    //     r#"
-    //     INSERT INTO pages (name, extension, page_data, mode, owner)
-    //     VALUES (?, ?, ?, ? , ?)
-    //     RETURNING id
-    //     "#,
-    //     file_name,
-    //     content_type,
-    //     json_string,
-    //     mode,
-    //     metamask_address
-    // )
-    // .fetch_one(&server_database.sqliteDb)
-    // .await
-    // {
-        // Ok(record) => {
-           
-    //     }
-    //     Err(e) => {
-            
-    //     }
-    // }
+    return (StatusCode::CREATED, Json(res));
 }
 
 pub async fn explorer_file_upload(
@@ -800,9 +779,9 @@ pub async fn explorer_file_upload(
     let verification_hash_current =
         verification_hash(&content_hash_current, &metadata_hash_current, None, None);
 
-        let revision_content_content = RevisionContentContent{
-            file_hash : file_hash_current
-        };
+    let revision_content_content = RevisionContentContent {
+        file_hash: file_hash_current,
+    };
 
     let pagedata_current = PageDataContainer {
         pages: vec![HashChain {
@@ -856,35 +835,33 @@ pub async fn explorer_file_upload(
         mode = file_mode;
     }
 
-
-
-    let db_data_model = db_data{
-        id:0,
+    let db_data_model = db_data {
+        id: 0,
         name: file_name,
         extension: content_type,
         page_data: json_string,
         mode: mode,
         owner: metamask_address.to_string(),
-    } ;
+    };
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
         Err(e) => {
-            
-            res.logs.push("Failed to get database connection".to_string());
-            
+            res.logs
+                .push("Failed to get database connection".to_string());
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
-    let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+    let insert_result = insert_page_data(db_data_model.clone(), &mut conn);
 
-    if insert_result.is_err(){
+    if insert_result.is_err() {
         let er = insert_result.err().unwrap();
-        tracing::error!("Failed to insert page: {}", er.clone() );
+        tracing::error!("Failed to insert page: {}", er.clone());
         res.logs.push(format!("Failed to insert page: {}", er));
-       return (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
 
     let file_info = FileInfo {
@@ -897,56 +874,8 @@ pub async fn explorer_file_upload(
     };
 
     res.file = Some(file_info);
-   return (StatusCode::CREATED, Json(res));
-
-    // Insert into database
-    // match sqlx::query!(
-    //     r#"
-    //     INSERT INTO pages (name, extension, page_data, mode, owner)
-    //     VALUES (?, ?, ?, ? , ?)
-    //     RETURNING id
-    //     "#,
-    //     file_name,
-    //     content_type,
-    //     json_string,
-    //     mode,
-    //     metamask_address
-    // )
-    // .fetch_one(&server_database.sqliteDb)
-    // .await
-    // {
-    //     Ok(record) => {
-    //         let file_info = FileInfo {
-    //             id: record.id,
-    //             name: file_name,
-    //             extension: content_type,
-    //             page_data: json_string,
-    //             mode: mode,
-    //             owner: metamask_address.to_string(),
-    //         };
-    //         res.file = Some(file_info);
-    //         (StatusCode::CREATED, Json(res))
-    //     }
-    //     Err(e) => {
-    //         tracing::error!("Failed to insert page: {}", e);
-    //         res.logs.push(format!("Failed to insert page: {}", e));
-    //         (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
-    //     }
-    // }
+    return (StatusCode::CREATED, Json(res));
 }
-
-// fn parse_json(data: &str) -> Result<PageDataContainer<HashChain>, Box<dyn Error>> {
-//     // let mut deserializer = serde_json::Deserializer::from_str(data);
-//     // let result = serde_json(&mut deserializer);
-//     // match result {
-//     //     Ok(parsed) => Ok(parsed),
-//     //     Err(PathError { path, error }) => {
-//     //         tracing::info!("Error at path {}: {}", path, error);
-//     //         Err(Box::new(error))
-//     //     }
-//     // }
-//     // result
-// }
 
 pub async fn explorer_sign_revision(
     State(server_database): State<Db>,
@@ -967,13 +896,185 @@ pub async fn explorer_sign_revision(
         return (StatusCode::BAD_REQUEST, Json(res));
     };
 
-    // Fetch a single row from the 'pages' table where name matches
-    // let row = sqlx::query!(
-    //     "SELECT id, name, extension, page_data, owner, mode FROM pages WHERE name = ? LIMIT 1",
-    //     input.filename
-    // )
-    // .fetch_optional(&server_database.sqliteDb)
-    // .await;
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+    let page_data_result = fetch_page_data(input.filename, &mut conn);
+
+    if page_data_result.is_err() {
+        tracing::error!("Failed not found ",);
+
+        log_data.push("Failed data not found in database".to_string());
+
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::NOT_FOUND, Json(res));
+    }
+    let page_data = page_data_result.unwrap();
+
+    let deserialized: PageDataContainer<HashChain> =
+        match serde_json::from_str(&page_data.page_data) {
+            Ok(data) => {
+                log_data.push("Success  : parse page data".to_string());
+                data
+            }
+            Err(e) => {
+                tracing::error!("Failed to parse page data record: {:?}", e);
+                log_data.push(format!("error : Failed to parse page data record: {:?}", e));
+                if let Some(source) = e.source() {
+                    tracing::info!("Source: {}", source);
+                } else {
+                    tracing::info!("Source NOT FOUND ");
+                }
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+            }
+        };  
+
+    let mut doc = deserialized;
+    let len = doc.pages[0].revisions.len();
+
+    let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
+
+    let mut rev2 = rev1.clone();
+    rev2.witness = None;
+    rev2.metadata.previous_verification_hash = Some(*ver1);
+
+    // Parse input data with proper error handling
+    let sig = match input.signature.parse::<Signature>() {
+        Ok(s) => {
+            log_data.push("Success :  signature  parse successfully".to_string());
+            s
+        }
+        Err(e) => {
+            tracing::error!("Failed to parse signature: {:?}", e);
+
+            log_data.push(format!("error : Failed to parse  signature: {:?}", e));
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+    let pubk = match input.publickey.parse::<PublicKey>() {
+        Ok(p) => {
+            log_data.push("Success : public  key  parsed successfully".to_string());
+
+            p
+        }
+        Err(e) => {
+            tracing::error!("Failed to parse public key: {:?}", e);
+
+            log_data.push(format!("error : Failed to parse  public key: {:?}", e));
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+    let addr = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
+        Ok(a) => {
+            log_data.push("wallet address parsed successfully".to_string());
+
+            a
+        }
+        Err(e) => {
+            tracing::error!("Failed to parse wallet address: {:?}", e);
+            log_data.push(format!("Failed to parse wallet address: {:?}", e));
+
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    let sig_hash = signature_hash(&sig, &pubk);
+
+    rev2.signature = Some(RevisionSignature {
+        signature: sig,
+        public_key: pubk,
+        signature_hash: sig_hash.clone(),
+        wallet_address: addr,
+    });
+
+    let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
+    rev2.metadata.time_stamp = timestamp_current.clone();
+
+    let metadata_hash_current =
+        metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
+
+    let verification_hash_current = verification_hash(
+        &rev2.content.content_hash,
+        &metadata_hash_current,
+        Some(&sig_hash),
+        None,
+    );
+
+    rev2.metadata.metadata_hash = metadata_hash_current;
+    rev2.metadata.verification_hash = verification_hash_current;
+
+    doc.pages[0]
+        .revisions
+        .push((verification_hash_current, rev2));
+
+    println!("Revisisons len is: {}", doc.pages[0].revisions.len());
+
+    // Serialize the updated document
+    let page_data_new = match serde_json::to_string(&doc) {
+        Ok(data) => {
+            log_data.push("revision  serialized  successfully".to_string());
+
+            data
+        }
+        Err(e) => {
+            tracing::error!("Failed to serialize updated page data: {:?}", e);
+
+            log_data.push(format!("Failed to serialize updated page data : {:?}", e));
+
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let mut new_data = page_data.clone();
+    new_data.page_data = page_data_new.clone();
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
@@ -986,249 +1087,62 @@ pub async fn explorer_sign_revision(
                 file: None,
                 files: Vec::new(),
             };
-           
-            
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
-    let page_data_result = fetch_page_data(input.filename, & mut conn);
+    // let page_data_result = fetch_page_data(input.filename, & mut conn);
 
-    if page_data_result.is_err(){
+    let update_result = update_page_data(new_data.clone(), &mut conn);
+    if update_result.is_err() {
+        let e = update_result.err().unwrap();
+        tracing::error!("Failed to update page data: {:?}", e);
+        log_data.push(format!("Failed to update page data : {:?}", e));
 
-        tracing::error!("Failed not found ",);
-
-            log_data.push("Failed data not found in database".to_string());
-
-            let res: ApiResponse = ApiResponse {
-                logs: log_data,
-                file: None,
-                files: Vec::new(),
-            };
-         return   (StatusCode::NOT_FOUND, Json(res))
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
-    let page_data =  page_data_result.unwrap();
 
-    let deserialized: PageDataContainer<HashChain> =
-                match serde_json::from_str(&page_data.page_data) {
-                    Ok(data) => {
-                        log_data.push("Success  : parse page data".to_string());
-                        data
-                    }
-                    Err(e) => {
-                        tracing::error!("Failed to parse page data record: {:?}", e);
-                        log_data.push(format!("error : Failed to parse page data record: {:?}", e));
-                        if let Some(source) = e.source() {
-                            tracing::info!("Source: {}", source);
-                        } else {
-                            tracing::info!("Source NOT FOUND ");
-                        }
-                        let res: ApiResponse = ApiResponse {
-                            logs: log_data,
-                            file: None,
-                            files: Vec::new(),
-                        };
-                        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-                    }
-                };
+    let file_info = FileInfo {
+        id: new_data.id,
+        name: new_data.name,
+        extension: new_data.extension,
+        page_data: page_data_new.clone(),
+        owner: new_data.owner,
+        mode: new_data.mode,
+    };
+    let res: ApiResponse = ApiResponse {
+        logs: log_data,
+        file: Some(file_info),
+        files: Vec::new(),
+    };
+    return (StatusCode::OK, Json(res));
 
-            let mut doc = deserialized;
-            let len = doc.pages[0].revisions.len();
+    // Update the database with the new document
+    // let result = sqlx::query!(
+    //     "UPDATE pages SET page_data = ? WHERE id = ?",
+    //     page_data_new,
+    //     row.id
+    // )
+    // .execute(&server_database.sqliteDb)
+    // .await;
 
-            let (ver1, rev1) = &doc.pages[0].revisions[len - 1].clone();
+    // // Handle the result of the update
+    // match result {
+    //     Ok(_) => {
 
-            let mut rev2 = rev1.clone();
-            rev2.witness = None;
-            rev2.metadata.previous_verification_hash = Some(*ver1);
+    //     }
+    //     Err(e) => {
 
-            // Parse input data with proper error handling
-            let sig = match input.signature.parse::<Signature>() {
-                Ok(s) => {
-                    log_data.push("Success :  signature  parse successfully".to_string());
-                    s
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse signature: {:?}", e);
-
-                    log_data.push(format!("error : Failed to parse  signature: {:?}", e));
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
-
-                    return (StatusCode::BAD_REQUEST, Json(res));
-                }
-            };
-            let pubk = match input.publickey.parse::<PublicKey>() {
-                Ok(p) => {
-                    log_data.push("Success : public  key  parsed successfully".to_string());
-
-                    p
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse public key: {:?}", e);
-
-                    log_data.push(format!("error : Failed to parse  public key: {:?}", e));
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
-
-                    return (StatusCode::BAD_REQUEST, Json(res));
-                }
-            };
-            let addr = match ethaddr::Address::from_str_checksum(&input.wallet_address) {
-                Ok(a) => {
-                    log_data.push("wallet address parsed successfully".to_string());
-
-                    a
-                }
-                Err(e) => {
-                    tracing::error!("Failed to parse wallet address: {:?}", e);
-                    log_data.push(format!("Failed to parse wallet address: {:?}", e));
-
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
-
-                    return (StatusCode::BAD_REQUEST, Json(res));
-                }
-            };
-
-            let sig_hash = signature_hash(&sig, &pubk);
-
-            rev2.signature = Some(RevisionSignature {
-                signature: sig,
-                public_key: pubk,
-                signature_hash: sig_hash.clone(),
-                wallet_address: addr,
-            });
-
-            let timestamp_current = Timestamp::from(chrono::Utc::now().naive_utc());
-            rev2.metadata.time_stamp = timestamp_current.clone();
-
-            let metadata_hash_current =
-                metadata_hash(&doc.pages[0].domain_id, &timestamp_current, Some(ver1));
-
-            let verification_hash_current = verification_hash(
-                &rev2.content.content_hash,
-                &metadata_hash_current,
-                Some(&sig_hash),
-                None,
-            );
-
-            rev2.metadata.metadata_hash = metadata_hash_current;
-            rev2.metadata.verification_hash = verification_hash_current;
-
-            doc.pages[0]
-                .revisions
-                .push((verification_hash_current, rev2));
-
-            // Serialize the updated document
-            let page_data_new = match serde_json::to_string(&doc) {
-                Ok(data) => {
-                    log_data.push("revision  serialized  successfully".to_string());
-
-                    data
-                }
-                Err(e) => {
-                    tracing::error!("Failed to serialize updated page data: {:?}", e);
-
-                    log_data.push(format!("Failed to serialize updated page data : {:?}", e));
-
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
-
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-                }
-            };
-
-
-            let mut new_data = page_data.clone();
-            new_data.page_data =page_data_new.clone();
-
-
-            let mut conn = match server_database.pool.get() {
-                Ok(connection) => connection,
-                Err(e) => {
-                    log_data.push("Failed data not found in database".to_string());
-        
-                    log_data.push("Failed to get database connection".to_string());
-                    let res: ApiResponse = ApiResponse {
-                        logs: log_data,
-                        file: None,
-                        files: Vec::new(),
-                    };
-                    
-                                
-                    println!("Error Fetching connection {:#?}", res);
-                    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-                }
-            };
-        
-            // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
-            // let page_data_result = fetch_page_data(input.filename, & mut conn);
-
-            
-            let update_result = update_page_data(new_data.clone(), & mut conn);
-            if update_result.is_err(){
-                let e = update_result.err().unwrap();
-                tracing::error!("Failed to update page data: {:?}", e);
-                log_data.push(format!("Failed to update page data : {:?}", e));
-
-                let res: ApiResponse = ApiResponse {
-                    logs: log_data,
-                    file: None,
-                    files: Vec::new(),
-                };
-               return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-            }
-
-            let file_info = FileInfo {
-                id: new_data.id,
-                name: new_data.name,
-                extension: new_data.extension,
-                page_data: page_data_new.clone(),
-                owner: new_data.owner,
-                mode: new_data.mode,
-            };
-            let res: ApiResponse = ApiResponse {
-                logs: log_data,
-                file: Some(file_info),
-                files: Vec::new(),
-            };
-            return (StatusCode::OK, Json(res));
-
-            // Update the database with the new document
-            // let result = sqlx::query!(
-            //     "UPDATE pages SET page_data = ? WHERE id = ?",
-            //     page_data_new,
-            //     row.id
-            // )
-            // .execute(&server_database.sqliteDb)
-            // .await;
-
-            // // Handle the result of the update
-            // match result {
-            //     Ok(_) => {
-                    
-            //     }
-            //     Err(e) => {
-                   
-            //     }
-            // } 
-
-  
-    
+    //     }
+    // }
 }
 
 pub async fn explorer_delete_all_files(
@@ -1251,27 +1165,26 @@ pub async fn explorer_delete_all_files(
                 file: None,
                 files: Vec::new(),
             };
-            
-                        
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
-    let result = delete_all_data(&mut  conn);
+    let result = delete_all_data(&mut conn);
 
     match result {
         Ok(result_data) => {
             // Check the number of affected rows
             // if result_data.rows_affected() > 0 {
-                tracing::error!("Successfully deleted all the row with name");
-                log_data.push("Error : files data is deleted ".to_string());
-                let res: ApiResponse = ApiResponse {
-                    logs: log_data,
-                    file: None,
-                    files: Vec::new(),
-                };
-                return (StatusCode::OK, Json(res));
+            tracing::error!("Successfully deleted all the row with name");
+            log_data.push("Error : files data is deleted ".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+            return (StatusCode::OK, Json(res));
             // } else {
             //     tracing::error!("Error : No row deleted");
 
@@ -1330,15 +1243,13 @@ pub async fn explorer_delete_file(
                 file: None,
                 files: Vec::new(),
             };
-            
-                        
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
-
-    let result = delete_page_data(input.filename.clone(),&mut  conn);
+    let result = delete_page_data(input.filename.clone(), &mut conn);
 
     match result {
         Ok(result_data) => {
@@ -1407,14 +1318,6 @@ pub async fn explorer_witness_file(
 
     log_data.push("Success : file name is not  empty".to_string());
 
-    // Fetch a single row from the 'pages' table where name matches
-    // let row = sqlx::query!(
-    //     "SELECT id, name, extension, page_data , owner , mode FROM pages WHERE name = ? LIMIT 1",
-    //     input.filename
-    // )
-    // .fetch_optional(&server_database.sqliteDb)
-    // .await;
-
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
         Err(e) => {
@@ -1426,31 +1329,28 @@ pub async fn explorer_witness_file(
                 file: None,
                 files: Vec::new(),
             };
-            
-                        
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
+    let page_data_result = fetch_page_data(input.filename.clone(), &mut conn);
 
-    let page_data_result = fetch_page_data(input.filename.clone(),&mut  conn);
+    if page_data_result.is_err() {
+        tracing::error!("Failed not found  {}", page_data_result.err().unwrap());
 
-    if page_data_result.is_err(){
+        log_data.push("Failed data not found in database".to_string());
 
-        tracing::error!("Failed not found  {}",page_data_result.err().unwrap());
-
-            log_data.push("Failed data not found in database".to_string());
-
-            let res: ApiResponse = ApiResponse {
-                logs: log_data,
-                file: None,
-                files: Vec::new(),
-            };
-         return   (StatusCode::NOT_FOUND, Json(res))
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::NOT_FOUND, Json(res));
     }
 
-    let page_data =  page_data_result.unwrap();
+    let page_data = page_data_result.unwrap();
 
     log_data.push(format!(
         "Success :  Page data for {} not found in database",
@@ -1633,7 +1533,7 @@ pub async fn explorer_witness_file(
     };
 
     let mut new_data = page_data.clone();
-    new_data.page_data =page_data_new.clone();
+    new_data.page_data = page_data_new.clone();
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
@@ -1646,15 +1546,14 @@ pub async fn explorer_witness_file(
                 file: None,
                 files: Vec::new(),
             };
-            
-                        
+
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
 
-    let update_result = update_page_data(new_data.clone(), &mut  conn);
-    if update_result.is_err(){
+    let update_result = update_page_data(new_data.clone(), &mut conn);
+    if update_result.is_err() {
         let e = update_result.err().unwrap();
         tracing::error!("Failed to update page data: {:?}", e);
         log_data.push(format!("Failed to update page data : {:?}", e));
@@ -1664,7 +1563,7 @@ pub async fn explorer_witness_file(
             file: None,
             files: Vec::new(),
         };
-       return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
 
     let file_info = FileInfo {
@@ -1729,7 +1628,7 @@ pub async fn explorer_witness_file(
     // Handle database result errors
     // match row {
     //     Ok(Some(row)) => {
-           
+
     //     }
 
     //     Ok(None) => {
@@ -1783,4 +1682,3 @@ pub async fn explorer_witness_file(
 
 //     return (StatusCode::OK, Json(config_data));
 // }
-

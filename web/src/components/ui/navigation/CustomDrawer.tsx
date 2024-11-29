@@ -13,7 +13,7 @@ import {
 } from "../drawer"
 import { Button } from "../button"
 import { LuCheck, LuExternalLink, LuEye, LuX } from "react-icons/lu"
-import { Card, For, Group, Icon, Link, Span, Text } from "@chakra-ui/react"
+import { Card, For, Group, Icon, Link, Spacer, Span, Text } from "@chakra-ui/react"
 import { TimelineConnector, TimelineContent, TimelineDescription, TimelineItem, TimelineRoot, TimelineTitle } from "../timeline"
 import { PageData, Revision } from "../../../models/PageData"
 import { formatCryptoAddress, getLastRevisionVerificationHash, timeToHumanFriendly } from "../../../utils/functions"
@@ -24,6 +24,7 @@ import ReactLoading from "react-loading"
 import { WITNESS_NETWORK_MAP } from "../../../utils/constants"
 import { DownloadAquaChain, WitnessAquaChain, SignAquaChain, DeleteAquaChain } from "../../aqua_chain_actions"
 import { ApiFileInfo } from "../../../models/FileInfo"
+import FilePreview from "../../FilePreview"
 
 
 interface IItemDetail {
@@ -58,7 +59,7 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
     const loaderSize = '40px'
 
     return (
-        <>
+        <div>
             <TimelineItem>
                 <TimelineConnector
                     bg={verificationResult?.successful ? "green" : "red"}
@@ -69,12 +70,7 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                             !verificationResult ? (
                                 <ReactLoading type={'spin'} color={'blue'} height={loaderSize} width={loaderSize} />
                             ) : (
-                                <>
-                                    {
-                                        verificationResult.successful ? <LuCheck /> :
-                                            <LuX />
-                                    }
-                                </>
+                                verificationResult.successful ? <LuCheck /> : <LuX />
                             )
                         }
                     </Icon>
@@ -272,18 +268,19 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                     </Card.Root>
                 </TimelineContent>
             </TimelineItem>
-        </>
+        </div>
     )
 }
 
 interface IPageDataDetails {
-    pageData: PageData
+    fileInfo: ApiFileInfo
 }
 
-const ChainDetails = ({ pageData }: IPageDataDetails) => {
+const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
 
     const [open, setOpen] = useState(false)
     const [verificationResult, setVerificationResult] = useState<RevisionAquaChainResult | null>(null)
+    const pageData: PageData = JSON.parse(fileInfo.page_data)
 
     const file: ApiFileInfo = {
         id: 0,
@@ -301,7 +298,7 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
             doAlchemyKeyLookUp: true,
             version: 1.2
         });
-        console.log("Verification started")
+
         verifier.verifyAquaChain(pageData.pages[0]).then((res) => {
             setVerificationResult(res)
         }).catch((error: any) => {
@@ -313,10 +310,9 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
 
     useEffect(() => {
         if (open && pageData) {
-            console.info("Verification Trigger pulled")
             verifyAquaChain()
         }
-    }, [open, pageData])
+    }, [open])
 
     useEffect(() => {
         if (!pageData) {
@@ -325,7 +321,7 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
     }, [pageData])
 
     return (
-        <DrawerRoot open={open} size={{ base: 'full', md: 'xl' }} onOpenChange={(e) => setOpen(e.open)}>
+        <DrawerRoot open={open} size={{ base: 'full', md: 'lg' }} onOpenChange={(e) => setOpen(e.open)}>
             <DrawerBackdrop />
             <DrawerTrigger asChild>
                 <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'}>
@@ -338,6 +334,12 @@ const ChainDetails = ({ pageData }: IPageDataDetails) => {
                     <DrawerTitle>{pageData?.pages[0]?.title}</DrawerTitle>
                 </DrawerHeader>
                 <DrawerBody py={'lg'}>
+                    <Card.Root border={'none'} shadow={'md'} borderRadius={'xl'}>
+                        <Card.Body>
+                            <FilePreview fileInfo={fileInfo} />
+                        </Card.Body>
+                    </Card.Root>
+                    <Spacer height={'20px'} />
                     {/* <Text color={'gray.800'} _dark={{ color: 'white' }}>
                         Aqua Chain Details
                     </Text> */}
