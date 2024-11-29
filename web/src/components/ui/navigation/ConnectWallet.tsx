@@ -176,6 +176,7 @@ export default function ConnectWallet() {
             }
         }
         setLoading(false)
+        setIsOpen(false)
     }
 
 
