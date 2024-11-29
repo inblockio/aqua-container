@@ -32,7 +32,7 @@ pub async fn siwe_sign_in(
     log_data.push(format!("Received signature: {}", payload.signature));
 
     // Verify the SIWE message
-    match verify_siwe_message(payload.message, payload.signature).await {
+    match verify_siwe_message(payload.message, payload.signature, payload.domain).await {
         Ok(siwe_session) => {
             let mut conn = match server_database.pool.get() {
                 Ok(connection) => connection,
@@ -94,6 +94,7 @@ pub async fn siwe_sign_in(
 pub async fn verify_siwe_message(
     message: String,
     signature: String,
+    domain: String,
 ) -> Result<SiweSession, SiweError> {
     // Hash the message according to Ethereum's EIP-191 standard
     // Prepend "\x19Ethereum Signed Message:\n" + length of the message
@@ -123,7 +124,7 @@ pub async fn verify_siwe_message(
     let sig = <[u8; 65]>::from_hex(format!(r#"{}"#, signature)).unwrap();
 
     let verification_opts = VerificationOpts {
-        domain: Some("localhost:5173".parse().unwrap()),
+        domain: Some(domain.parse().unwrap()),
         // We can adjust the fields once we create database sessions. There is a table already
         // nonce: Some("kEWepMt9knR6lWJ6A".into()),
         // timestamp: Some(OffsetDateTime::parse("2021-12-08T00:00:00Z", &Rfc3339).unwrap()),

@@ -16,6 +16,7 @@ use tracing::{error, info};
 use crate::db::siwe::{insert_siwe_data };
 #[derive(Deserialize)]
 pub struct SiweRequest {
+    pub domain: String, // The domain in which the user is logging in from
     pub message: String,   // The SIWE message
     pub signature: String, // The Ethereum signature
 }

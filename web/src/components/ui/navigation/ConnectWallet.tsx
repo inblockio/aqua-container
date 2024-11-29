@@ -28,6 +28,7 @@ export default function ConnectWallet() {
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [connectionState, setConnectionState] = useState<'idle' | 'connecting' | 'success' | 'error'>('idle')
+    const [message, setMessage] = useState<string | null>(null)
     // const [avatar, setAvatar] = useState("")
     const [_progress, setProgress] = useState(0)
 
@@ -44,7 +45,6 @@ export default function ConnectWallet() {
         const domain = window.location.host;
         const origin = window.location.origin;
         const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        console.log("expiry: ", expiry,)
         const message = new SiweMessage({
             // Setting scheme is giving out lots of headaches
             // scheme: scheme,
@@ -72,6 +72,7 @@ export default function ConnectWallet() {
                 const signer = await provider.getSigner();
 
                 // Create a SIWE msg for signing
+                const domain = window.location.host;
                 const message = createSiweMessage(
                     signer.address,
                     'Sign in with Ethereum to the app.'
@@ -83,6 +84,7 @@ export default function ConnectWallet() {
 
                 formData.append('message', message);
                 formData.append('signature', remove0xPrefix(signature));
+                formData.append('domain', domain);
 
                 const response = await axios.post(ENDPOINTS.SIWE_SIGN_IN, formData, {
                     headers: {
@@ -106,6 +108,7 @@ export default function ConnectWallet() {
                     }
                 }
                 setLoading(false)
+                setMessage(null)
                 toaster.create({
                     description: "Sign In successful",
                     type: "success"
@@ -114,12 +117,18 @@ export default function ConnectWallet() {
                     setIsOpen(false)
                     resetState()
                     setLoading(false)
+                    setMessage(null)
                 }, 2000)
 
             } catch (error: any) {
-                setConnectionState("error")
-                setLoading(false)
-                console.error('Error during wallet connection or signing:', error);
+                if (error.toString().includes("4001")) {
+                    setConnectionState("error")
+                    setLoading(false)
+                    setMessage("You have rejected signing the message.")
+                } else {
+                    setConnectionState("error")
+                    setLoading(false)
+                }
             }
         } else {
             alert('MetaMask is not installed');
@@ -221,7 +230,10 @@ export default function ConnectWallet() {
                                 {connectionState === 'error' && (
                                     <>
                                         <LuXCircle color='red' strokeWidth='1px' size={iconSize} />
-                                        <Text fontSize={'md'} color={'red.700'}>Error connecting to wallet</Text>
+                                        <VStack gap={0}>
+                                            <Text fontSize={'md'} color={'red.700'}>Error connecting to wallet</Text>
+                                            <Text fontSize={'md'} color={'red.700'}>{message ?? ""}</Text>
+                                        </VStack>
                                     </>
                                 )}
                             </VStack>
