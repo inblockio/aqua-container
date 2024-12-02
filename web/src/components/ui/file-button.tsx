@@ -71,6 +71,7 @@ interface FileUploadItemProps extends VisibilityProps {
 
 const FileUploadItem = (props: FileUploadItemProps) => {
   const { file, showSize, clearable, fileIndex, uploadedIndexes, updateUploadedIndex } = props
+  let isJson = isJSONFile(file.name)
   return (
     <ChakraFileUpload.Item file={file}>
       <ChakraFileUpload.ItemPreview asChild>
@@ -88,15 +89,19 @@ const FileUploadItem = (props: FileUploadItemProps) => {
         <ChakraFileUpload.ItemName flex="1" />
       )}
       {
-        isJSONFile(file.name) ? (
+        isJson ? (
           <>
-          <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
-          <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
-          {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
+            <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
           </>
-        ): null
+        ) : null
       }
-      <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+      {
+        !isJson ? (
+          <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+        ) : null
+      }
 
       {clearable && (
         <ChakraFileUpload.ItemDeleteTrigger asChild>
