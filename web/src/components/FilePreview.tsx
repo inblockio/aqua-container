@@ -18,7 +18,6 @@ const FilePreview = ({ fileInfo }: IFilePreview) => {
     const fileTypeInfo = fileType(fileInfo);
 
     const pageData: PageData = JSON.parse(fileInfo.page_data)
-    console.log(pageData)
 
     if (pageData && pageData?.pages != null && pageData?.pages.length!! > 0) {
         const firstPage = pageData!.pages[0]; // Get the first page
@@ -41,6 +40,18 @@ const FilePreview = ({ fileInfo }: IFilePreview) => {
                     <source src={base64String} type="video/mp4" />
                     Your browser does not support the video tag.
                 </video>
+            );
+        }
+        else if (fileContent && fileTypeInfo === "Music") {
+            const base64String = `data:audio/mp3;base64,${fileContent.data}`;
+            return (
+                <audio
+                    controls
+                    style={{ borderRadius: '12px', width: '100%' }}
+                >
+                    <source src={base64String} type="audio/mp3" />
+                    Your browser does not support the audio tag.
+                </audio>
             );
         }
     }
