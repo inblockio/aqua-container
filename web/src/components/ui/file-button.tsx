@@ -2,6 +2,7 @@
 
 import type { ButtonProps, RecipeProps } from "@chakra-ui/react"
 import {
+  Box,
   Button,
   FileUpload as ChakraFileUpload,
   Icon,
@@ -46,7 +47,9 @@ export const FileUploadDropzone = forwardRef<
   return (
     <ChakraFileUpload.Dropzone ref={ref} {...rest}>
       <Icon fontSize="xl" color="fg.muted">
-        <LuUpload />
+        <Box>
+          <LuUpload />
+        </Box>
       </Icon>
       <ChakraFileUpload.DropzoneContent>
         <div>{label}</div>

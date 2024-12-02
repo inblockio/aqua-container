@@ -1,2 +1,3 @@
 pub  mod api_controller;
-pub mod form_controller;
+pub mod configuration_controller;
+pub mod auth_controller;

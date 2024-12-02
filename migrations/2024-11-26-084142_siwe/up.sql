@@ -1,3 +1,4 @@
+-- Your SQL goes here
 CREATE TABLE IF NOT EXISTS siwe_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     address TEXT NOT NULL,

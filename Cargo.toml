@@ -12,13 +12,10 @@ license = "MIT OR Apache-2.0"
 # use latest main from 
 axum = { git = "https://github.com/tokio-rs/axum", features = ["multipart"] }
 axum-extra = { git = "https://github.com/tokio-rs/axum" }
-bonsaidb = { git = "https://github.com/khonsulabs/bonsaidb", features = ["local"] }
 verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", branch = "main" }
 # aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", branch = "main" }
 aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", rev = "495735706073f86864ef9a461a80bddc30866f08" }
 
-# fixed versions
-chrono = "0.4.38"
 sha3 = "0.10.8"
 futures = "0.3"
 serde = "1.0.210"
@@ -30,8 +27,13 @@ tower-http = { version = "0.6.1", features = ["fs", "limit",  "trace", "cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 ethaddr = "0.2.2" # help use etherirum wallet addresses
-rusqlite = "0.32.1" # rust sqlite
-sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio-native-tls"] } # used to interacting with sqlite
+
+# rusqlite = "0.32.1" # rust sqlite
+# sqlx = { version = "0.8.2", features = ["sqlite", "runtime-tokio-native-tls"] } # used to interacting with sqlite
+diesel = { version = "2.2.0", features = ["sqlite", "r2d2", "returning_clauses_for_sqlite_3_35"]}
+
+chrono = {version ="0.4.38", features = ["serde"]}
+
 dotenv = "0.15"
 rand = "0.8.5"
 ethers = "2.0.14"
@@ -46,3 +48,4 @@ base64 = "0.22.1"
 flagset = { version = "0.4.5", features = ["serde"] }
 libsecp256k1 = "0.7.1"
 serde_json_path_to_error = "0.1.4"
+diesel_migrations = "2.2.0"

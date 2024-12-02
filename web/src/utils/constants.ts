@@ -30,7 +30,9 @@ export const WITNESS_NETWORK_MAP: Record<string, string> = {
 export const ENDPOINTS = {
   SIWE_SIGN_IN: `${API_BASE_ENDPOINT}/siwe`,
   FETCH_ADDRESS_BY_NONCE: `${API_BASE_ENDPOINT}/fetch_nonce_session`,
+  SIWE_SIGN_OUT: `${API_BASE_ENDPOINT}/siwe_logout`,
   FETCH_CONFIGURATION: `${API_BASE_ENDPOINT}/explorer_fetch_configuration`,
+
   UPDATE_CONFIGURATION: `${API_BASE_ENDPOINT}/explorer_update_configuration`,
   EXPOLORER_FETCH_FILES: `${API_BASE_ENDPOINT}/explorer_files`,
   SIGN_FILE: `${API_BASE_ENDPOINT}/explorer_sign_revision`,
