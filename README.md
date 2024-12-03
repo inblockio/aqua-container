@@ -66,7 +66,6 @@ rm pages.db  && export DATABASE_URL="sqlite:pages.db" && sqlx database create &&
 sqlx migrate add table_name
 ```
 
-
 ## How to run with Docker-Compose
 ### requirements:
 1. docker compose

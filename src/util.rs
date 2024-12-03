@@ -94,6 +94,9 @@ pub fn check_or_generate_domain() {
     } else {
         println!("API_DOMAIN is set: {}", api_domain);
     }
+
+
+    println!("REMOTE is set: {}", env::var("VITE_REMOTE").unwrap_or_default());
 }
 
 // Function to update the .env file with the new API_DOMAIN

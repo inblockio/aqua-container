@@ -2,6 +2,7 @@ FROM rust:latest as builder_rust
 
 ENV DATABASE_URL="sqlite:pages.db"
 
+
 WORKDIR /build
 COPY . .
 
