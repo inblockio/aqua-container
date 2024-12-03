@@ -2,8 +2,9 @@
 
 export const SEPOLIA_SMART_CONTRACT_ADDRESS = "0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611"
 
-export const API_BASE_ENDPOINT = "http://127.0.0.1:3600"
+// export const API_BASE_ENDPOINT =  "http://127.0.0.1:3600"
 
+export const API_BASE_ENDPOINT = `http://${import.meta.env.VITE_REMOTE || '127.0.0.1'}:${ import.meta.env.VITE_REMOTE_PORT || 3600}`;
 
 export const SESSION_COOKIE_NAME = "pkc_nonce"
 

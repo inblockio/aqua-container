@@ -12,6 +12,8 @@ declare global {
 
 function App() {
 
+  
+
   return (
     <>
       <LoadConfiguration />
