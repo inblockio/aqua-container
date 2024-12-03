@@ -6,7 +6,9 @@ export/*
 users.db
 users.db-shm
 users.db-wal
+pages.db
+pages.db-shm
+pages.db-wal
 .idea
 node_modules
-.env
 .vscode

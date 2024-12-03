@@ -63,13 +63,23 @@ Multi-User File-Management
 2. docker
 
 ### Run:
-```
+
+```bash
 docker compose up
 ```
 
-Create a local image
-```
+### Running a local image
+
+Create an image
+
+```bash
  docker build -f actionfiles/aqua_container/dockerfile/Dockerfile  -t aqua_local .
+```
+
+Running the image
+
+```bash
+docker run --env-file .env -p 3000:3000 -p 3600:3600 aqua_local
 ```
 
 
