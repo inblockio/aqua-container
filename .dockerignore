@@ -1,0 +1,40 @@
+# Common exclusions for all projects
+**/.git
+**/.env
+**/.DS_Store
+web/node_modules/
+node_modules/
+node_modules/*
+target/
+web/dist/
+dist/*
+build/
+coverage/
+
+# Rust-specific exclusions
+**/Cargo.lock      # Avoid caching issues; include if reproducible builds are needed
+**/Cargo.toml.orig # Temporary files created during Cargo updates
+**/target          # Compiled Rust files
+**/debug/          # Debug build artifacts
+**/release/        # Release build artifacts
+
+# Vite-specific exclusions
+**/node_modules    # Dependencies are re-installed during build
+**/dist            # Build output directory
+**/.vite           # Temporary Vite cache
+**/vite.config.ts  # Development-only configurations, if any
+
+# Docker-specific exclusions
+Dockerfile*
+.dockerignore      # Avoid copying itself into the image
+
+# Logs and temporary files
+**/*.log           # Log files
+**/tmp             # Temporary directories
+**/out             # Build output
+**/npm-debug.log*  # npm debug logs
+
+# Editor/IDE settings
+**/.vscode
+**/.idea
+**/*.swp

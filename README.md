@@ -46,25 +46,16 @@ Multi-User File-Management
 2. node and npm.
 
 ## How to run
-1. `export DATABASE_URL="sqlite:pages.db"`
+1. `export DATABASE_URL="sqlite:users.db"`
    `sqlx database create`
    `sqlx migrate run`
     `cd web && npm i  `
 2. `cargo run `
 3. `cd web && npm run dev`
-4. `http://localhost:3000/` use local host domain for oidc to work.
+4. `http://localhost:5173/` use local host domain for oidc to work.
 
-## How to clear db and set it up again 
 
-```bash
-rm pages.db  && export DATABASE_URL="sqlite:pages.db" && sqlx database create && sqlx migrate run
-```
 
-## Hot to create a new table 
-
-```bash
-sqlx migrate add table_name
-```
 
 ## How to run with Docker-Compose
 ### requirements:
@@ -75,6 +66,12 @@ sqlx migrate add table_name
 ```
 docker compose up
 ```
+
+Create a local image
+```
+ docker build -f actionfiles/aqua_container/dockerfile/Dockerfile  -t aqua_local .
+```
+
 
 ## Good to know.
 1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching  the channel.

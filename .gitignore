@@ -3,9 +3,9 @@ uploads/
 Cargo.lock
 b0nsa1.bonsaidb/
 export/*
-pages.db
-pages.db-shm
-pages.db-wal
+users.db
+users.db-shm
+users.db-wal
 .idea
 node_modules
 .env

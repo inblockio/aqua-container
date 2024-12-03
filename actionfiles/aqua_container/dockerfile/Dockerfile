@@ -1,6 +1,6 @@
 FROM rust:latest as builder_rust
 
-ENV DATABASE_URL="sqlite:pages.db"
+ENV DATABASE_URL="sqlite:users.db"
 
 WORKDIR /build
 COPY . .
@@ -19,7 +19,7 @@ RUN npm run build
 
 FROM node:latest
 
-RUN export DATABASE_URL="/app/data/sqlite:pages.db"
+RUN export DATABASE_URL="/app/data/sqlite:users.db"
 EXPOSE 3000
 EXPOSE 3600
 
