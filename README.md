@@ -82,6 +82,20 @@ Running the image
 docker run --env-file .env -p 3000:3000 -p 3600:3600 aqua_local
 ```
 
+#### Stop the local running image
+
+List all images
+
+```bash
+docker ps
+```
+
+Stop specific image
+
+```bash
+docker stop <IMAGE_ID>
+```
+
 
 ## Good to know.
 1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching  the channel.
