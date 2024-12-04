@@ -3,6 +3,7 @@ use crate::db::siwe::delete_siwe_session_by_nonce;
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::fetch_siwe_session_by_nonce;
 use crate::db::siwe::insert_siwe_data;
+use crate::db::user_profiles::insert_user_profile_data;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use ethers::types::Signature;
@@ -62,6 +63,23 @@ pub async fn siwe_sign_in(
 
                 return (StatusCode::BAD_REQUEST, Json(res));
             }
+
+            // Creating a user profile
+            let res = insert_user_profile_data(siwe_session.address.clone(), &mut conn);
+            if res.is_err() {
+                let e = res.err().unwrap();
+
+                error!("Error occured inserting session into db: {:#?}", e);
+                log_data.push("Failed to create sign in session".to_string());
+                let res = SiweResponse {
+                    logs: log_data,
+                    success: false,
+                    session: None,
+                };
+
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+
 
             log_data.push(format!(
                 "SIWE sign-in successful for address: {}",

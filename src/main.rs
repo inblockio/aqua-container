@@ -63,7 +63,7 @@ use controllers::auth_controller::{
     siwe_sign_in, verify_siwe_message, fetch_nonce_session
 
 };
-use controllers::configuration_controller::{explorer_fetch_configuration, explorer_update_configuration};
+use controllers::user_profile_controller::{explorer_fetch_user_profile, explorer_update_user_profile};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
@@ -127,12 +127,12 @@ async fn main() {
         .route("/explorer_delete_file", post(explorer_delete_file))
         .route("/explorer_delete_all_files", get(explorer_delete_all_files))
         .route(
-            "/explorer_fetch_configuration",
-            get(explorer_fetch_configuration),
+            "/explorer_fetch_user_profile",
+            get(explorer_fetch_user_profile),
         )
         .route(
-            "/explorer_update_configuration",
-            post(explorer_update_configuration),
+            "/explorer_update_user_profile",
+            post(explorer_update_user_profile),
         )
         .route("/siwe", post(siwe_sign_in))
         .route("/fetch_nonce_session", post(fetch_nonce_session))

@@ -73,13 +73,13 @@ docker compose up
 Create an image
 
 ```bash
- docker build -f actionfiles/aqua_container/dockerfile/Dockerfile  -t aqua_local .
+docker build -f actionfiles/aqua_container/dockerfile/Dockerfile  -t aqua_local .
 ```
 
 Running the image
 
 ```bash
-docker run --env-file .env -p 3000:3000 -p 3600:3600 aqua_local
+docker run -p 3000:3000 -p 3600:3600 aqua_local
 ```
 
 #### Stop the local running image

@@ -22,7 +22,20 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    user_profiles (id) {
+        id -> Nullable<Integer>,
+        address -> Text,
+        chain -> Text,
+        theme -> Text,
+        contract_address -> Text,
+        file_mode -> Text,
+        domain_name -> Text,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     pages,
     siwe_sessions,
+    user_profiles,
 );

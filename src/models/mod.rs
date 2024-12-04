@@ -6,6 +6,7 @@ use diesel::prelude::*;
 pub mod file;
 pub mod page_data;
 pub mod input;
+pub mod user_profiles;
 use chrono::{DateTime, Utc};
 
 pub type DB_POOL = r2d2::Pool<ConnectionManager<SqliteConnection>>;
@@ -38,4 +39,19 @@ pub struct SiweSessionsTable {
     pub nonce: String,
     pub issued_at: String,
     pub expiration_time: Option<String>,
+}
+
+
+
+#[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
+#[diesel(table_name = crate::schema::user_profiles)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct UserProfilesTable {
+    pub id: Option<i32>,
+    pub address: String,
+    pub theme: String,
+    pub contract_address: String,
+    pub domain_name: String,
+    pub chain: String,
+    pub file_mode: String
 }
