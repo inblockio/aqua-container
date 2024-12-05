@@ -119,8 +119,7 @@ export const VerifyFile = ({ file }: IDropzoneAction) => {
                 // navigate("/details");
                 // Handle the JSON data here
             })
-            .catch((error) => {
-                console.error("Error reading JSON file:", error.message);
+            .catch(() => {
                 // Handle the error here
             });
         setVerifying(false)

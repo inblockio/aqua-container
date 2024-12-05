@@ -129,7 +129,7 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
             } catch (error) {
                 setWitnessing(false)
                 toaster.create({
-                    description: `Error during wallet connection or witnessing: ${error}`,
+                    description: `Error during witnessing`,
                     type: "error"
                 })
             }
@@ -248,7 +248,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
 
                     } catch (error) {
                         toaster.create({
-                            description: `Error during signature submission: ${error}`,
+                            description: `Error during signature submission`,
                             type: "error"
                         })
                     }
@@ -257,7 +257,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
             } catch (error) {
                 setSigning(false)
                 toaster.create({
-                    description: `Error during wallet connection or signing: ${error}`,
+                    description: `Error during signing`,
                     type: "error"
                 })
             }

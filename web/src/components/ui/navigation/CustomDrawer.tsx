@@ -160,11 +160,12 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                                                     displayValue={formatCryptoAddress(revision.signature.signature_hash, 4, 6)}
                                                     value={revision.signature.signature_hash} showCopyIcon={true}
                                                 />
-                                                <ItemDetail label="Signature Hash:"
-                                                    displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                                                <ItemDetail label="Wallet Address:"
+                                                    // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                                                    displayValue={revision.signature.wallet_address}
                                                     value={revision.signature.wallet_address} showCopyIcon={true}
                                                 />
-                                                <ItemDetail label="Signature Hash:"
+                                                <ItemDetail label="Public Key:"
                                                     displayValue={formatCryptoAddress(revision.signature.public_key, 4, 6)}
                                                     value={revision.signature.public_key} showCopyIcon={true}
                                                 />

@@ -1,6 +1,8 @@
 FROM rust:latest as builder_rust
 
 ENV DATABASE_URL="sqlite:users.db"
+ENV VITE_REMOTE_PORT=3601 
+ENV VITE_REMOTE=127.0.0.1
 
 WORKDIR /build
 COPY . .

@@ -54,13 +54,13 @@ const LoadConfiguration = () => {
                 'metamask_address': address
             }
         });
-
+        
         if (response.status === 200) {
             setUserProfile({
-                network: response.data.chain,
-                domain: response.data.domain,
-                fileMode: response.data.mode,
-                contractAddress: response.data.contract,
+                network: response.data.user_profile.chain,
+                domain: response.data.user_profile.domain,
+                fileMode: response.data.user_profile.mode,
+                contractAddress: response.data.user_profile.contract,
             })
         }
     }
