@@ -63,7 +63,7 @@ interface ISigningAndWitnessing {
 }
 
 export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
-    const { configuration, files, setFiles, metamaskAddress } = useStore(appStore)
+    const { user_profile, files, setFiles, metamaskAddress } = useStore(appStore)
     const [witnessing, setWitnessing] = useState(false)
 
 
@@ -84,12 +84,12 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
                 }
 
                 const networkId = await getCurrentNetwork()
-                const currentChainId = ETH_CHAINID_MAP[configuration.network]
+                const currentChainId = ETH_CHAINID_MAP[user_profile.network]
                 if (networkId !== currentChainId) {
                     await switchNetwork(currentChainId)
                 }
-                const contract_address = ETH_CHAIN_ADDRESSES_MAP[configuration.network]
-                const network = configuration.network
+                const contract_address = ETH_CHAIN_ADDRESSES_MAP[user_profile.network]
+                const network = user_profile.network
 
                 const params = [
                     {
@@ -155,7 +155,7 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
 }
 
 export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
-    const { configuration, files, setFiles, metamaskAddress } = useStore(appStore)
+    const { user_profile, files, setFiles, metamaskAddress } = useStore(appStore)
     const [signing, setSigning] = useState(false)
 
     const signFileHandler = async () => {
@@ -181,7 +181,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                 const provider = new ethers.BrowserProvider(window.ethereum);
 
                 const networkId = await getCurrentNetwork()
-                const currentChainId = ETH_CHAINID_MAP[configuration.network]
+                const currentChainId = ETH_CHAINID_MAP[user_profile.network]
                 if (networkId !== currentChainId) {
                     await switchNetwork(currentChainId)
                 }

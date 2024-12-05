@@ -152,7 +152,7 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files, configuration } = useStore(appStore)
+    const { metamaskAddress, setFiles, files, user_profile } = useStore(appStore)
 
     const importAquaChain = async () => {
 
@@ -191,7 +191,7 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
                 name: res.file.name,
                 extension: res.file.extension,
                 page_data: res.file.page_data,
-                mode: configuration.fileMode ?? "",
+                mode: user_profile.fileMode ?? "",
                 owner: metamaskAddress ?? "",
             };
             setFiles([...files, file])
