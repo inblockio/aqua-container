@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { ApiFileInfo } from './models/FileInfo';
 
 type AppStoreState = {
-    configuration: {
+    user_profile: {
         network: string,
         domain: string,
         fileMode: string,
@@ -17,8 +17,8 @@ type AppStoreState = {
 }
 
 type AppStoreActions = {
-    setConfiguration: (
-        config: AppStoreState['configuration'],
+    setUserProfile: (
+        config: AppStoreState['user_profile'],
     ) => void,
     setMetamaskAddress: (
         address: AppStoreState['metamaskAddress'],
@@ -62,17 +62,17 @@ const appStore = createStore<TAppStore>()(
     persist(
         (set) => ({
             // Initial state
-            configuration: {
+            user_profile: {
                 network: 'mainnet',
                 domain: 'dHy4ds_dsf',
                 fileMode: 'public',
-                contractAddress: '',
+                contractAddress: '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',
             },
             files: [],
             metamaskAddress: '',
             avatar: "",
             // Actions
-            setConfiguration: (config) => set({ configuration: config }),
+            setUserProfile: (config) => set({ user_profile: config }),
             setMetamaskAddress: (
                 address: AppStoreState['metamaskAddress'],
             ) => set({ metamaskAddress: address }),

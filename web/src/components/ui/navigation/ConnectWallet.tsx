@@ -23,7 +23,7 @@ import { toaster } from '../toaster'
 
 export default function ConnectWallet() {
 
-    const { metamaskAddress, setMetamaskAddress, setFiles, avatar, setAvatar } = useStore(appStore);
+    const { metamaskAddress, setMetamaskAddress, setFiles, avatar, setAvatar, setUserProfile } = useStore(appStore);
 
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -103,8 +103,17 @@ export default function ConnectWallet() {
                         setCookie(SESSION_COOKIE_NAME, `${responseData.session.nonce}`, expirationDate)
                         setConnectionState('success')
 
+                        setUserProfile({
+                            network: response.data.user_profile.chain,
+                            domain: response.data.user_profile.domain_name,
+                            fileMode: response.data.user_profile.file_mode,
+                            contractAddress: response.data.user_profile.contract_address,
+                        })
+
                         let files = await fetchFiles(walletAddress);
                         setFiles(files)
+
+
                     }
                 }
                 setLoading(false)

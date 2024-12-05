@@ -44,6 +44,7 @@ pub async fn siwe_sign_in(
                         logs: log_data,
                         success: false,
                         session: None,
+                        user_profile: None,
                     };
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -59,6 +60,7 @@ pub async fn siwe_sign_in(
                     logs: log_data,
                     success: false,
                     session: None,
+                    user_profile: None,
                 };
 
                 return (StatusCode::BAD_REQUEST, Json(res));
@@ -75,6 +77,7 @@ pub async fn siwe_sign_in(
                     logs: log_data,
                     success: false,
                     session: None,
+                    user_profile: None,
                 };
 
                 return (StatusCode::BAD_REQUEST, Json(res));
@@ -89,6 +92,7 @@ pub async fn siwe_sign_in(
                 logs: log_data.clone(),
                 success: true,
                 session: Some(siwe_session.clone()),
+                user_profile: Some(res.unwrap()),
             };
             return (StatusCode::OK, Json(res));
         }
@@ -101,6 +105,7 @@ pub async fn siwe_sign_in(
                 logs: log_data,
                 success: false,
                 session: None,
+                user_profile: None,
             };
 
             (StatusCode::BAD_REQUEST, Json(res))
@@ -138,6 +143,8 @@ pub async fn verify_siwe_message(
     if recovered_address != ethers::types::H160(_message.address) {
         return Err(SiweError::AddressMismatch);
     }
+    // let cased_address = ethers::types::H160::from_str(&format!("{:?}", recovered_address)).expect("Invalid Ethereum address");
+    // println!("Cased address: {:?}", cased_address);
 
     let sig = <[u8; 65]>::from_hex(format!(r#"{}"#, signature)).unwrap();
 
@@ -184,6 +191,7 @@ pub async fn fetch_nonce_session(
                 logs: log_data,
                 success: false,
                 session: None,
+                user_profile: None
             };
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
@@ -208,7 +216,7 @@ pub async fn fetch_nonce_session(
 }
 
 
-pub async fn session_logou_by_nonce(
+pub async fn session_logout_by_nonce(
     State(server_database): State<Db>,
     Form(payload): Form<SiweNonceRequest>,
 ) -> (StatusCode, Json<SiweResponse>) {
@@ -224,6 +232,7 @@ pub async fn session_logou_by_nonce(
                 logs: log_data,
                 success: false,
                 session: None,
+                user_profile: None,
             };
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
@@ -238,6 +247,7 @@ pub async fn session_logou_by_nonce(
                     logs: log_data,
                     success: false,
                     session: None,
+                    user_profile: None,
                 };
                 return (StatusCode::NOT_FOUND, Json(res));
             }
@@ -247,6 +257,7 @@ pub async fn session_logou_by_nonce(
                 logs: log_data,
                 success: true,
                 session: None,
+                user_profile: None,
             };
             (StatusCode::OK, Json(res))
         }
@@ -257,6 +268,7 @@ pub async fn session_logou_by_nonce(
                 logs: log_data,
                 success: false,
                 session: None,
+                user_profile: None,
             };
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }

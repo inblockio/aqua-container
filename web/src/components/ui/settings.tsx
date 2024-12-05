@@ -28,28 +28,29 @@ const fileModes = createListCollection({
 })
 
 const SettingsForm = () => {
-    const { setConfiguration, configuration } = useStore(appStore)
-    const [activeNetwork, setActiveNetwork] = useState<string>(configuration.network ?? '')
-    const [domain, setDomain] = useState<string>(configuration.domain ?? '')
-    const [mode, setMode] = useState<string>(configuration.fileMode ?? 'public')
-    const [contract, setContract] = useState<string>(configuration.contractAddress ?? '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611')
+    const { setUserProfile, user_profile } = useStore(appStore)
+    const [activeNetwork, setActiveNetwork] = useState<string>(user_profile.network)
+    const [domain, setDomain] = useState<string>(user_profile.domain)
+    const [mode, setMode] = useState<string>(user_profile.fileMode)
+    const [contract, setContract] = useState<string>(user_profile.contractAddress ?? "0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611")
 
-    const updateConfiguration = async () => {
+    const updateUserProfile = async () => {
         const formData = new URLSearchParams();
         formData.append('chain', activeNetwork);
         formData.append('domain', domain);
         formData.append('mode', mode);
         formData.append('contract', contract);
+        formData.append('theme', 'light');
 
 
-        const response = await axios.post(ENDPOINTS.UPDATE_CONFIGURATION, formData, {
+        const response = await axios.post(ENDPOINTS.UPDATE_USER_PROFILE, formData, {
             headers: {
                 // 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
 
         if (response.status === 200) {
-            setConfiguration({
+            setUserProfile({
                 contractAddress: contract,
                 network: activeNetwork,
                 domain: domain,
@@ -109,7 +110,7 @@ const SettingsForm = () => {
                 </RadioCardRoot>
             </Field>
             <Group>
-                <Button onClick={updateConfiguration}>Save</Button>
+                <Button onClick={updateUserProfile}>Save</Button>
             </Group>
         </VStack>
     )

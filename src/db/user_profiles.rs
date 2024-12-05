@@ -13,8 +13,10 @@ use diesel::result::Error as DieselError;
 pub fn insert_user_profile_data(
     address_par: String,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
-) -> Result<i64, String> {
+) -> Result<UserProfilesTable, String> {
     let user_profile = fetch_user_profile(address_par.clone(), db_connection);
+
+    println!("Checking if user exists: {:?}", user_profile);
 
     if user_profile.is_err(){
         if user_profile.clone().err().unwrap() == "No user profile found with filename".to_string(){
@@ -26,10 +28,10 @@ pub fn insert_user_profile_data(
     }
 
     if user_profile.is_ok(){
-        return Ok(user_profile.unwrap().id.unwrap().try_into().unwrap())
+        return Ok(user_profile.unwrap())
     }
 
-    let record = UserProfilesTable {
+    let mut record = UserProfilesTable {
         id: None,
         address: address_par,
         theme: env::var("THEME").unwrap_or_default(),
@@ -39,14 +41,17 @@ pub fn insert_user_profile_data(
         file_mode: env::var("FILE_MODE").unwrap_or_default(),
     };
 
+    println!("Inserted record: {:?}", record);
+
     let inserted_id: i32 = diesel::insert_into(crate::schema::user_profiles::table)
         .values(&record)
         .returning(crate::schema::user_profiles::dsl::id)
         .get_result::<Option<i32>>(db_connection)
         .map_err(|e| format!("Error saving new siwe data: {}", e))?
         .unwrap_or(-1); // Provide a default value if None
-
-    Ok(inserted_id as i64)
+    record.id = Some(inserted_id);
+    println!("Returned record: {:?}", record);
+    Ok(record)
 }
 
 pub fn fetch_user_profile(

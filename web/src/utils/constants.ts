@@ -32,9 +32,13 @@ export const ENDPOINTS = {
   SIWE_SIGN_IN: `${API_BASE_ENDPOINT}/siwe`,
   FETCH_ADDRESS_BY_NONCE: `${API_BASE_ENDPOINT}/fetch_nonce_session`,
   SIWE_SIGN_OUT: `${API_BASE_ENDPOINT}/siwe_logout`,
-  FETCH_CONFIGURATION: `${API_BASE_ENDPOINT}/explorer_fetch_configuration`,
 
-  UPDATE_CONFIGURATION: `${API_BASE_ENDPOINT}/explorer_update_configuration`,
+  // FETCH_CONFIGURATION: `${API_BASE_ENDPOINT}/explorer_fetch_configuration`,
+  // UPDATE_CONFIGURATION: `${API_BASE_ENDPOINT}/explorer_update_configuration`,
+
+  FETCH_USER_PROFILE: `${API_BASE_ENDPOINT}/explorer_fetch_user_profile`,
+  UPDATE_USER_PROFILE: `${API_BASE_ENDPOINT}/explorer_update_user_profile`,
+
   EXPOLORER_FETCH_FILES: `${API_BASE_ENDPOINT}/explorer_files`,
   SIGN_FILE: `${API_BASE_ENDPOINT}/explorer_sign_revision`,
   WITNESS_FILE: `${API_BASE_ENDPOINT}/explorer_witness_file`,

@@ -42,16 +42,16 @@ pub struct SiweSessionsTable {
 }
 
 
-
+ 
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::user_profiles)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct UserProfilesTable {
     pub id: Option<i32>,
     pub address: String,
+    pub chain: String,
     pub theme: String,
     pub contract_address: String,
+    pub file_mode: String,
     pub domain_name: String,
-    pub chain: String,
-    pub file_mode: String
 }

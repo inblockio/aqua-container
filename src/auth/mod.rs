@@ -1,4 +1,5 @@
 use crate::db::siwe::fetch_siwe_data;
+use crate::models::UserProfilesTable;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use ethers::types::Signature;
@@ -39,6 +40,7 @@ pub struct SiweResponse {
     pub logs: Vec<String>,
     pub success: bool,
     pub session: Option<SiweSession>,
+    pub user_profile: Option<UserProfilesTable>
 }
 
 #[derive(Debug)]

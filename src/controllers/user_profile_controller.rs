@@ -104,6 +104,7 @@ pub async fn explorer_fetch_user_profile(
     };
 
     let user_profile = fetch_user_profile(metamask_address.to_owned(), &mut conn);
+    println!("Fetched user profile: {:?}", user_profile);
 
     if user_profile.is_err() {
         return (StatusCode::NOT_FOUND, Json(res));

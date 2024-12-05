@@ -9,7 +9,7 @@ import { ethers } from "ethers";
 
 
 const LoadConfiguration = () => {
-    const { setMetamaskAddress, setConfiguration, setFiles, setAvatar } = useStore(appStore)
+    const { setMetamaskAddress, setUserProfile, setFiles, setAvatar } = useStore(appStore)
 
     const fetchAddressGivenANonce = async (nonce: string) => {
         try {
@@ -31,6 +31,7 @@ const LoadConfiguration = () => {
                     setAvatar(avatar)
                     let files = await fetchFiles(address);
                     setFiles(files)
+                    fetchUserProfile(_address)
                 }
             }
         }
@@ -45,16 +46,17 @@ const LoadConfiguration = () => {
         }
     }
 
-    const fetchConfiguration = async () => {
+    const fetchUserProfile = async (address: string) => {
 
-        const response = await axios.get(ENDPOINTS.FETCH_CONFIGURATION, {
+        const response = await axios.get(ENDPOINTS.FETCH_USER_PROFILE, {
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'metamask_address': address
             }
         });
 
         if (response.status === 200) {
-            setConfiguration({
+            setUserProfile({
                 network: response.data.chain,
                 domain: response.data.domain,
                 fileMode: response.data.mode,
@@ -77,10 +79,10 @@ const LoadConfiguration = () => {
         }
     }, []);
 
-    useEffect(() => {
-        //fetch configuration
-        fetchConfiguration()
-    }, [])
+    // useEffect(() => {
+    //     //fetch user profile
+    //     fetchUserProfile()
+    // }, [metamaskAddress])
 
     return (
         <></>
