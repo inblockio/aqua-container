@@ -63,7 +63,7 @@ const appStore = createStore<TAppStore>()(
         (set) => ({
             // Initial state
             user_profile: {
-                network: 'mainnet',
+                network: 'sepolia',
                 domain: 'dHy4ds_dsf',
                 fileMode: 'public',
                 contractAddress: '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',

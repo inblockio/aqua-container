@@ -33,6 +33,16 @@ const LoadConfiguration = () => {
                     setFiles(files)
                     fetchUserProfile(_address)
                 }
+            } else {
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                setFiles([])
+                setUserProfile({
+                    network: '',
+                    domain: '',
+                    fileMode: '',
+                    contractAddress: '',
+                })
             }
         }
         catch (error: any) {
@@ -40,7 +50,7 @@ const LoadConfiguration = () => {
                 setMetamaskAddress(null)
                 setAvatar(undefined)
                 setFiles([])
-            }else{
+            } else {
 
             }
         }
@@ -54,7 +64,7 @@ const LoadConfiguration = () => {
                 'metamask_address': address
             }
         });
-        
+
         if (response.status === 200) {
             setUserProfile({
                 network: response.data.user_profile.chain,

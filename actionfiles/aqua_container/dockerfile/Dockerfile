@@ -1,8 +1,7 @@
 FROM rust:latest as builder_rust
 
-ENV DATABASE_URL="sqlite:users.db"
-ENV VITE_REMOTE_PORT=3601 
-ENV VITE_REMOTE=127.0.0.1
+ENV DATABASE_URL="aquafier.db"
+ENV VITE_API_ENDPOINT="http://localhost:3600"
 
 WORKDIR /build
 COPY . .
@@ -21,7 +20,7 @@ RUN npm run build
 
 FROM node:latest
 
-RUN export DATABASE_URL="/app/data/sqlite:users.db"
+# RUN export DATABASE_URL="/app/data/sqlite:users.db"
 EXPOSE 3000
 EXPOSE 3600
 
