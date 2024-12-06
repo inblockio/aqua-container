@@ -10,7 +10,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde_json::Value;
 use sha3::{Digest, Sha3_512};
-use verifier::util::content_hash;
+use aqua_verifier::util::content_hash;
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;

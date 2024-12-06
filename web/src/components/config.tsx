@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { Axios, AxiosError } from "axios";
 import { useEffect } from "react";
 import { fetchFiles, generateAvatar, getCookie } from "../utils/functions";
 import { ENDPOINTS } from "../utils/constants";
@@ -25,11 +25,11 @@ const LoadConfiguration = () => {
             if (response.status === 200) {
                 const _address = response.data?.address
                 if (_address) {
-                    let address = ethers.getAddress(_address)
+                    const address = ethers.getAddress(_address)
                     setMetamaskAddress(address)
-                    let avatar = generateAvatar(address)
+                    const avatar = generateAvatar(address)
                     setAvatar(avatar)
-                    let files = await fetchFiles(address);
+                    const files = await fetchFiles(address);
                     setFiles(files)
                     fetchUserProfile(_address)
                 }
@@ -45,13 +45,13 @@ const LoadConfiguration = () => {
                 })
             }
         }
-        catch (error: any) {
+        catch (error: AxiosError |  unknown) {
             if (error?.response?.status === 404) {
                 setMetamaskAddress(null)
                 setAvatar(undefined)
                 setFiles([])
             } else {
-
+console.log("An error from the api ", error);
             }
         }
     }

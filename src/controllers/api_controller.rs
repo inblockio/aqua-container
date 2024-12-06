@@ -34,7 +34,7 @@ use ethaddr::address;
 use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
-use verifier::util::{
+use aqua_verifier::util::{
     content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
 };
 extern crate serde_json_path_to_error as serde_json;

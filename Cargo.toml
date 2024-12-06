@@ -12,9 +12,9 @@ license = "MIT OR Apache-2.0"
 # use latest main from 
 axum = { git = "https://github.com/tokio-rs/axum", features = ["multipart"] }
 axum-extra = { git = "https://github.com/tokio-rs/axum" }
-verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", branch = "main" }
+# verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", branch = "main" }
 # aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", branch = "main" }
-aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", rev = "495735706073f86864ef9a461a80bddc30866f08" }
+# aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", rev = "495735706073f86864ef9a461a80bddc30866f08" }
 
 sha3 = "0.10.8"
 futures = "0.3"
@@ -49,3 +49,5 @@ flagset = { version = "0.4.5", features = ["serde"] }
 libsecp256k1 = "0.7.1"
 serde_json_path_to_error = "0.1.4"
 diesel_migrations = "2.2.0"
+aqua-verifier = "1.2.0"
+aqua-verifier-rs-types = "1.2.0"
