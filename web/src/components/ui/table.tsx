@@ -20,7 +20,7 @@ import { Alert } from "./alert"
 
 
 const FilesTable = () => {
-    const { files } = useStore(appStore)
+    const { files, backend_url } = useStore(appStore)
     const [selection, setSelection] = useState<string[]>([])
 
     const hasSelection = selection.length > 0
@@ -57,9 +57,9 @@ const FilesTable = () => {
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <DownloadAquaChain file={item} />
                     <ChainDetails fileInfo={item} />
-                    <WitnessAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <SignAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <DeleteAquaChain filename={item.name} />
+                    <WitnessAquaChain filename={item.name} backend_url= {backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <DeleteAquaChain filename={item.name}   backend_url ={backend_url}/>
                 </Group>
             </Table.Cell>
         </Table.Row>

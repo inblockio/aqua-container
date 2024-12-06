@@ -5,7 +5,6 @@ import { Field } from "./field"
 import { useState } from "react"
 import { RadioCardItem, RadioCardRoot } from "./radio-card"
 import { ColorModeButton } from "./color-mode"
-import { ENDPOINTS } from "../../utils/constants"
 import axios from "axios"
 import { useStore } from "zustand"
 import appStore from "../../store"
@@ -28,7 +27,7 @@ const fileModes = createListCollection({
 })
 
 const SettingsForm = () => {
-    const { setUserProfile, user_profile } = useStore(appStore)
+    const { setUserProfile, user_profile , backend_url} = useStore(appStore)
     const [activeNetwork, setActiveNetwork] = useState<string>(user_profile.network)
     const [domain, setDomain] = useState<string>(user_profile.domain)
     const [mode, setMode] = useState<string>(user_profile.fileMode)
@@ -43,7 +42,9 @@ const SettingsForm = () => {
         formData.append('theme', 'light');
 
 
-        const response = await axios.post(ENDPOINTS.UPDATE_USER_PROFILE, formData, {
+        const url = `${backend_url}/explorer_update_user_profile`;
+        console.log("url is ", url);
+        const response = await axios.post(url, formData, {
             headers: {
                 // 'Content-Type': 'application/x-www-form-urlencoded'
             }
@@ -118,13 +119,14 @@ const SettingsForm = () => {
 
 const DeleteFiles = () => {
     const [deleting, setDeleting] = useState(false)
-    const { setFiles } = useStore(appStore)
+    const { setFiles, backend_url } = useStore(appStore)
 
     const deleteFile = async () => {
         try {
 
             setDeleting(true)
-            const response = await axios.get(ENDPOINTS.DELETE_ALL_FILES, {
+            const url = `${backend_url}/explorer_delete_all_files`;
+            const response = await axios.get(url, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }

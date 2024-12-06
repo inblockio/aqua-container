@@ -25,6 +25,8 @@ import { WITNESS_NETWORK_MAP } from "../../../utils/constants"
 import { DownloadAquaChain, WitnessAquaChain, SignAquaChain, DeleteAquaChain } from "../../aqua_chain_actions"
 import { ApiFileInfo } from "../../../models/FileInfo"
 import FilePreview from "../../FilePreview"
+import { useStore } from "zustand"
+import appStore from "../../../store"
 
 
 interface IItemDetail {
@@ -279,6 +281,7 @@ interface IPageDataDetails {
 
 const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
 
+    const {  backend_url } = useStore(appStore)
     const [open, setOpen] = useState(false)
     const [verificationResult, setVerificationResult] = useState<RevisionAquaChainResult | null>(null)
     const pageData: PageData = JSON.parse(fileInfo.page_data)
@@ -365,9 +368,9 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
                         <Button variant="outline" size={'sm'}>Close</Button>
                     </DrawerActionTrigger>
                     <DownloadAquaChain file={file} />
-                    <WitnessAquaChain filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
-                    <SignAquaChain filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
-                    <DeleteAquaChain filename={file.name} />
+                    <WitnessAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
+                    <SignAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
+                    <DeleteAquaChain  backend_url={backend_url} filename={file.name} />
                 </DrawerFooter>
                 <DrawerCloseTrigger />
             </DrawerContent>

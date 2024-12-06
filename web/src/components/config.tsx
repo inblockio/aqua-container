@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useEffect } from "react";
 import { fetchFiles, generateAvatar, getCookie } from "../utils/functions";
-import { ENDPOINTS } from "../utils/constants";
 import { useStore } from "zustand";
 import appStore from "../store";
 import { toaster } from "./ui/toaster";
@@ -9,27 +8,30 @@ import { ethers } from "ethers";
 
 
 const LoadConfiguration = () => {
-    const { setMetamaskAddress, setUserProfile, setFiles, setAvatar } = useStore(appStore)
+    const { setMetamaskAddress, setUserProfile, setFiles, setAvatar, backend_url } = useStore(appStore)
 
     const fetchAddressGivenANonce = async (nonce: string) => {
         try {
             const formData = new URLSearchParams();
             formData.append('nonce', nonce);
 
-            const response = await axios.post(ENDPOINTS.FETCH_ADDRESS_BY_NONCE, formData, {
+            const url = `${backend_url}/fetch_nonce_session`;
+              console.log("url is ", url)
+            const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }
             });
 
             if (response.status === 200) {
+               const url2 = `${backend_url}/explorer_files`;
                 const _address = response.data?.address
                 if (_address) {
                     const address = ethers.getAddress(_address)
                     setMetamaskAddress(address)
                     const avatar = generateAvatar(address)
                     setAvatar(avatar)
-                    const files = await fetchFiles(address);
+                    const files = await fetchFiles(address, url2);
                     setFiles(files)
                     fetchUserProfile(_address)
                 }
@@ -58,7 +60,10 @@ console.log("An error from the api ", error);
 
     const fetchUserProfile = async (address: string) => {
 
-        const response = await axios.get(ENDPOINTS.FETCH_USER_PROFILE, {
+      const url = `${backend_url}/explorer_fetch_user_profile`;
+      console.log("url is ", url);
+      
+        const response = await axios.get(url, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'metamask_address': address

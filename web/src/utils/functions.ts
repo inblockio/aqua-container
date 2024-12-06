@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { ApiFileInfo } from "../models/FileInfo";
 import { PageData } from "../models/PageData";
-import { documentTypes, ENDPOINTS, imageTypes, musicTypes, videoTypes } from "./constants";
+import { documentTypes,  imageTypes, musicTypes, videoTypes } from "./constants";
 import { AvatarGenerator } from 'random-avatar-generator';
 
 export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
@@ -74,9 +74,10 @@ export async function switchNetwork(chainId: string) {
 }
 
 
-export async function fetchFiles(publicMetaMaskAddress: string): Promise<Array<ApiFileInfo>> {
+export async function fetchFiles(publicMetaMaskAddress: string, url: string): Promise<Array<ApiFileInfo>> {
     try {
-        const query = await fetch(ENDPOINTS.EXPOLORER_FETCH_FILES, {
+      
+        const query = await fetch(url, {
             method: 'GET',
             headers: {
                 'metamask_address': publicMetaMaskAddress

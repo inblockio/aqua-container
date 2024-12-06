@@ -6,7 +6,6 @@ import appStore from "../store";
 import { useEffect, useState } from "react";
 import { ApiFileInfo } from "../models/FileInfo";
 import { toaster } from "./ui/toaster";
-import { ENDPOINTS } from "../utils/constants";
 import { readJsonFile } from "../utils/functions";
 import ChainDetails from "./ui/navigation/CustomDrawer";
 
@@ -23,7 +22,7 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files } = useStore(appStore)
+    const { metamaskAddress, setFiles, files, backend_url } = useStore(appStore)
 
     const uploadFile = async () => {
         if (!file) {
@@ -40,7 +39,9 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
 
         setUploading(true)
         try {
-            const response = await axios.post(ENDPOINTS.UPLOAD_FILE, formData, {
+            const url = `${backend_url}/explorer_file_upload`
+            console.log("url ", url)
+            const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     "metamask_address": metamaskAddress
@@ -151,7 +152,7 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files, user_profile } = useStore(appStore)
+    const { metamaskAddress, setFiles, files, user_profile , backend_url} = useStore(appStore)
 
     const importAquaChain = async () => {
 
@@ -168,7 +169,9 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
         formData.append('account', "example");
         setUploading(true)
         try {
-            const response = await axios.post(ENDPOINTS.IMPORT_AQUA_CHAIN, formData, {
+            const url = `${backend_url}/explorer_aqua_file_upload`;
+            console.log("importAquaChain url ", url)
+            const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     "metamask_address": metamaskAddress

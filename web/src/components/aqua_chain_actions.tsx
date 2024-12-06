@@ -2,7 +2,7 @@ import { LuDelete, LuDownload, LuFileSignature, LuGlasses } from "react-icons/lu
 import { Button } from "./ui/button"
 import { ethers } from "ethers"
 import { getCurrentNetwork, switchNetwork } from "../utils/functions"
-import { ENDPOINTS, ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP } from "../utils/constants"
+import {  ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP } from "../utils/constants"
 import { useStore } from "zustand"
 import appStore from "../store"
 import axios from "axios"
@@ -12,7 +12,7 @@ import { useState } from "react"
 import sha3 from 'js-sha3'
 import { PageData } from "../models/PageData"
 
-async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any) {
+async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url : string) {
 
     const formData = new URLSearchParams();
 
@@ -21,9 +21,9 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
     formData.append('wallet_address', ownerAddress);
     formData.append('network', network);
 
+   const url =`${backend_url}/explorer_witness_file`
 
-
-    let response = await axios.post(ENDPOINTS.WITNESS_FILE, formData, {
+    let response = await axios.post(url, formData, {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -60,10 +60,11 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
 interface ISigningAndWitnessing {
     filename: string
     lastRevisionVerificationHash?: string
+    backend_url : string
 }
 
 export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
-    const { user_profile, files, setFiles, metamaskAddress } = useStore(appStore)
+    const { user_profile, files, setFiles, metamaskAddress, backend_url } = useStore(appStore)
     const [witnessing, setWitnessing] = useState(false)
 
 
@@ -109,7 +110,7 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
                         params: params,
                     })
                     .then(txhash => {
-                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles).then(() => {
+                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles, backend_url).then(() => {
 
                         }).catch(() => {
 
@@ -155,7 +156,7 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
 }
 
 export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
-    const { user_profile, files, setFiles, metamaskAddress } = useStore(appStore)
+    const { user_profile, files, setFiles, metamaskAddress, backend_url } = useStore(appStore)
     const [signing, setSigning] = useState(false)
 
     const signFileHandler = async () => {
@@ -214,7 +215,8 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                         formData.append('publickey', publicKey)
                         formData.append('wallet_address', signerAddress);
 
-                        const response = await axios.post(ENDPOINTS.SIGN_FILE, formData, {
+                      let url = `${backend_url}/explorer_sign_revision`;
+                        const response = await axios.post(url, formData, {
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }
@@ -279,7 +281,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
 }
 
 
-export const DeleteAquaChain = ({ filename }: ISigningAndWitnessing) => {
+export const DeleteAquaChain = ({ filename, backend_url }: ISigningAndWitnessing ) => {
     const { files, setFiles } = useStore(appStore)
     const [deleting, setDeleting] = useState(false)
 
@@ -288,7 +290,8 @@ export const DeleteAquaChain = ({ filename }: ISigningAndWitnessing) => {
         const formData = new URLSearchParams();
         formData.append('filename', filename);
 
-        const response = await axios.post(ENDPOINTS.DELETE_FILE, formData, {
+        const url = `${backend_url}/explorer_delete_file`
+        const response = await axios.post(url, formData, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             }

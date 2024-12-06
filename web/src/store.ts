@@ -14,6 +14,7 @@ type AppStoreState = {
     files: ApiFileInfo[],
     metamaskAddress: string | null
     avatar:string | undefined
+    backend_url: string
 }
 
 type AppStoreActions = {
@@ -28,6 +29,9 @@ type AppStoreActions = {
     ) => void,
     setFiles: (
         files: AppStoreState['files'],
+    ) => void
+    setBackEndUrl: (
+        backend_url: AppStoreState['backend_url'],
     ) => void
 
 }
@@ -71,6 +75,7 @@ const appStore = createStore<TAppStore>()(
             files: [],
             metamaskAddress: '',
             avatar: "",
+            backend_url:"http://0.0.0.0:0",
             // Actions
             setUserProfile: (config) => set({ user_profile: config }),
             setMetamaskAddress: (
@@ -82,6 +87,9 @@ const appStore = createStore<TAppStore>()(
             setFiles: (
                 files: AppStoreState['files'],
             ) => set({ files: files }),
+            setBackEndUrl: (
+                backend_url: AppStoreState['backend_url'],
+            ) => set({ backend_url: backend_url }),
         }),
         {
             name: 'app-store', // Unique name for storage key
