@@ -1,7 +1,7 @@
 FROM rust:latest as builder_rust
 
 ENV DATABASE_URL="aquafier.db"
-ENV VITE_API_ENDPOINT="http://localhost:3600"
+# ENV VITE_API_ENDPOINT="http://localhost:3600"
 
 WORKDIR /build
 COPY . .

@@ -4,11 +4,22 @@ use crate::models::{PagesTable, UserProfilesTable, DB_POOL};
 use chrono::{NaiveDateTime, Utc};
 use diesel::r2d2::{self, ConnectionManager, PooledConnection};
 use diesel::SqliteConnection;
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 use diesel::prelude::*;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
+
+pub fn create_domain() -> String {
+    let random_domain: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .map(char::from)
+        .collect();
+    return random_domain;
+}
 
 pub fn insert_user_profile_data(
     address_par: String,
@@ -36,12 +47,10 @@ pub fn insert_user_profile_data(
         address: address_par,
         theme: env::var("THEME").unwrap_or_default(),
         contract_address: env::var("CONTRACT_ADDRESS").unwrap_or_default(),
-        domain_name: env::var("API_DOMAIN").unwrap_or_default(),
+        domain_name: create_domain(),
         chain: env::var("CHAIN").unwrap_or_default(),
         file_mode: env::var("FILE_MODE").unwrap_or_default(),
     };
-
-    println!("Inserted record: {:?}", record);
 
     let inserted_id: i32 = diesel::insert_into(crate::schema::user_profiles::table)
         .values(&record)
@@ -50,7 +59,7 @@ pub fn insert_user_profile_data(
         .map_err(|e| format!("Error saving new siwe data: {}", e))?
         .unwrap_or(-1); // Provide a default value if None
     record.id = Some(inserted_id);
-    println!("Returned record: {:?}", record);
+    
     Ok(record)
 }
 

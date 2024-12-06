@@ -1,7 +1,6 @@
 services:
   aqua-container:
-    pull_policy: always
-    image: ghcr.io/inblockio/aqua-container:github-action
+    image: aqua_local
     ports:
       - 3000:3000
       - 3600:3600

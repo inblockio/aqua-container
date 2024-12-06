@@ -11,6 +11,7 @@ use ethers_core::k256::schnorr::SigningKey;
 use ethers_core::types::Address;
 use ethers_core::utils::keccak256;
 use hex::FromHex;
+use rand::distributions::Alphanumeric;
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
@@ -19,6 +20,7 @@ use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
+use rand::{thread_rng, Rng};
 
 use crate::auth::{SiweError, SiweNonceRequest, SiweResponse, SiweSession};
 
@@ -82,7 +84,6 @@ pub async fn siwe_sign_in(
 
                 return (StatusCode::BAD_REQUEST, Json(res));
             }
-
 
             log_data.push(format!(
                 "SIWE sign-in successful for address: {}",
@@ -191,7 +192,7 @@ pub async fn fetch_nonce_session(
                 logs: log_data,
                 success: false,
                 session: None,
-                user_profile: None
+                user_profile: None,
             };
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
@@ -214,7 +215,6 @@ pub async fn fetch_nonce_session(
     };
     return (StatusCode::OK, Json(Some(siwe)));
 }
-
 
 pub async fn session_logout_by_nonce(
     State(server_database): State<Db>,
