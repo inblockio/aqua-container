@@ -1,14 +1,9 @@
 #!/bin/bash
 
-# Set environment variables from .env file
-export $(cat /app/.env | xargs)
+if [[ -z "${BACKEND_URL}" ]]; then
+  export BACKEND_URL=http://127.0.0.1:3600
+fi
 
-# Start backend
-./backend/aqua-container &
+sed -i -e "s|BACKEND_URL_PLACEHOLDER|$BACKEND_URL|g" /app/frontend/config.json
 
-# Start frontend using Vite preview
-cd /app/frontend
-VITE_API_ENDPOINT=$VITE_API_ENDPOINT npm run preview --port 3000 --host 0.0.0.0 &
-
-# Wait for background processes
-wait
+serve frontend & ./backend/aqua-container
