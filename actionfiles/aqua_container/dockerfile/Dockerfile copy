@@ -1,17 +1,12 @@
 FROM rust:latest as builder_rust
 
-ENV DATABASE_URL="sqlite:pages.db"
-
+ENV DATABASE_URL="aquafier.db"
+# ENV VITE_API_ENDPOINT="http://localhost:3600"
 
 WORKDIR /build
 COPY . .
 
 RUN rustup default nightly
-
-#Remove this! Handle migrations etc in code
-RUN cargo install sqlx-cli
-RUN sqlx database create
-RUN sqlx migrate run
 
 RUN cargo build --package aqua-container --bin aqua-container --release
 
@@ -25,10 +20,9 @@ RUN npm run build
 
 FROM node:latest
 
-RUN export DATABASE_URL="/app/data/sqlite:pages.db"
+# RUN export DATABASE_URL="/app/data/sqlite:users.db"
 EXPOSE 3000
 EXPOSE 3600
-EXPOSE 5173
 
 WORKDIR /app
 
@@ -44,8 +38,5 @@ RUN mkdir /app/data
 
 COPY ./actionfiles/aqua_container/script/start_aqua.sh .
 RUN chmod +x ./start_aqua.sh
-
-#Remove this! Handle migrations etc in code
-RUN curl --proto '=https' -o install_rust.sh --tlsv1.2 -sSf https://sh.rustup.rs && chmod +x install_rust.sh && ./install_rust.sh -y && rm ./install_rust.sh &&  /root/.cargo/bin/cargo install sqlx-cli
 
 CMD "./start_aqua.sh"

@@ -1,21 +1,16 @@
 services:
   aqua-container:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_API_ENDPOINT: ${VITE_API_ENDPOINT}
     image: aqua_local
     ports:
       - 3000:3000
       - 3600:3600
     volumes:
       - app_data:/app/data
-      - .env:/app/.env  # Mount .env file into the container
     environment:
       - VITE_API_ENDPOINT=${VITE_API_ENDPOINT}
     env_file:
       - .env
+
 
 volumes:
   app_data:
