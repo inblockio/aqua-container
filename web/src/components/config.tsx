@@ -1,4 +1,4 @@
-import axios, { Axios, AxiosError } from "axios";
+import axios from "axios";
 import { useEffect } from "react";
 import { fetchFiles, generateAvatar, getCookie } from "../utils/functions";
 import { ENDPOINTS } from "../utils/constants";
@@ -45,7 +45,7 @@ const LoadConfiguration = () => {
                 })
             }
         }
-        catch (error: AxiosError |  unknown) {
+        catch (error: any) {
             if (error?.response?.status === 404) {
                 setMetamaskAddress(null)
                 setAvatar(undefined)
