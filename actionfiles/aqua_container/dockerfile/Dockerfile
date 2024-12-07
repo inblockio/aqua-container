@@ -1,6 +1,7 @@
 FROM rust:latest as builder_rust
 
 ENV DATABASE_URL="aquafier.db"
+# ENV VITE_API_ENDPOINT="http://localhost:3600"
 
 WORKDIR /build
 COPY . .
@@ -14,17 +15,12 @@ FROM node:latest as builder_npm
 WORKDIR /build
 
 COPY ./web .
-
-# Accept the environment variable during build
-ARG VITE_API_ENDPOINT
-ENV VITE_API_ENDPOINT=${VITE_API_ENDPOINT}
-
 RUN npm i
 RUN npm run build
-RUN npm run preview -- --port 3000 & # This is just for reference, we'll move this to the start script
 
 FROM node:latest
 
+# RUN export DATABASE_URL="/app/data/sqlite:users.db"
 EXPOSE 3000
 EXPOSE 3600
 
@@ -36,7 +32,7 @@ COPY --from=builder_rust /build/target/release/aqua-container /app/backend/
 RUN mkdir /app/frontend
 COPY --from=builder_npm /build/dist /app/frontend
 
-RUN npm install --global pm2 vite
+RUN npm install --global serve
 
 RUN mkdir /app/data
 
