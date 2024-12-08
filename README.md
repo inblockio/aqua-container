@@ -1,64 +1,73 @@
 # aqua-container
+
 Aqua container is a rust implmentation of aqua protocol.It enables data to be signed , witnessed and verified.
-This project has  an axum web server (with ssr  web page) and  a solid js frontend to display  the above capabilities.
+This project has an axum web server (with ssr web page) and a solid js frontend to display the above capabilities.
 
 ## Phase 1 - Features:
 
 Functionality milestones Fileupload & Hasher:
+
 1) [DONE] Upload file to Database [Support: doc,ots,pdf,png,jpg, more...]
 2) [DONE] Turn file into Aqua-Chain
 3) [DONE] Export Aqua-Chain (no signature, no witness) as JSON
 4) [DONE] Sign Aqua-Chain with Metamask-Wallet
 5) [DONE] Import Aqua-Chain
-6) [DONE] Extend existing Aqua-Chain with new Signature 
+6) [DONE] Extend existing Aqua-Chain with new Signature
 7) [DONE] Witness Aqua-Chain on Chain
 8) [ONGOIN] Allow for choosing witness network from config.
 9) [TODO] Make user profile to handle some information ie config, email, payments
 
 UI-Interface:
+
 1) [DONE] Beautify website with CSS
 2) [DONE] Make it mobile-responsive
 
-Functionality milestones Verifier: 
+Functionality milestones Verifier:
+
 1) [DONE] Upload Aqua-Chain for verification
 2) [DONE] Verification of Aqua-Chain (print to console)
 3) [DONE] Display verification results on the website
 4) [DONE] Independent upload for verification. Show verification with detailed verification details.
 
 Pages:
-1) [DONE][v1.2] Hasher 
+
+1) [DONE][v1.2] Hasher
 2) [DONE][v1.2] Verifier
 3) [ONGOIN] Config (configure Witness, see version of Software etc.)
 
 ## Phase 2 - Features:
 
 Multi-User File-Management
+
 1) [DONE] Support multi-user access rights for DB
 2) [ONGOING] IntTODOegrate SIWE-OIDC login functionality
-3) [] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on server))
+3) [] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on
+   server))
 
 ## Known Limitation.
-1. The metamask siwe-oidc session is not persisted as such api  restart log you out
-2.  
+
+1. The metamask siwe-oidc session is not persisted as such api restart log you out
+2.
+
 ## Requirements
 
 1. Rust and `sqlx` (` cargo install sqlx-cli`)
 2. node and npm.
 
 ## How to run
+
 1. `export DATABASE_URL="sqlite:users.db"`
    `sqlx database create`
    `sqlx migrate run`
-    `cd web && npm i  `
+   `cd web && npm i  `
 2. `cargo run `
 3. `cd web && npm run dev`
 4. `http://localhost:5173/` use local host domain for oidc to work.
 
-
-
-
 ## How to run with Docker-Compose
+
 ### requirements:
+
 1. docker compose
 2. docker
 
@@ -70,33 +79,38 @@ docker compose up
 
 ### Running a local image
 
-Create an image
+Run with local changes:
 
-```bash
-docker build -f actionfiles/aqua_container/dockerfile/Dockerfile  -t aqua_local .
+```
+#    image: ghcr.io/inblockio/aqua-container:github-action
+    build:
+      context: .
+      dockerfile: actionfiles/aqua_container/dockerfile/Dockerfile
 ```
 
-Running the image
+uncomment the build section and add a '#' to the image config
 
-```bash
-docker run -p 3000:3000 -p 3600:3600 aqua_local
+start:
+
 ```
-
-#### Stop the local running image
-
-List all images
-
-```bash
-docker ps
+docker compose up --build
 ```
-
-Stop specific image
-
-```bash
-docker stop <IMAGE_ID>
-```
-
 
 ## Good to know.
-1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching  the channel.
-2.   Use the latest verion of node and npm.
+
+1. The project uses rust nighly.Use `rustup toolchain install nightly`  or check the rust documentation on switching the
+   channel.
+2. Use the latest verion of node and npm.
+
+### run with existing nginx proxy and acme
+
+just remove everything from the compose file except the aqua-container section. If the nginx is in a another compose
+file, make sure that the nginx can reach the aqua container via network. see https://stackoverflow.com/a/38089080
+
+## Limit
+
+### upload limit
+
+Currently, our NGINX has a limit of 100 MB. If this needs to be increased, the Dockerfile in the
+repository https://github.com/inblockio/nginx-proxy must be adjusted. To apply the changes, wait briefly (~1 minute) and
+pull the latest image using docker compose pull.
