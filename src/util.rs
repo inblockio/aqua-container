@@ -1,6 +1,7 @@
 use aqua_verifier_rs_types::models::revision::Revision;
 use aqua_verifier_rs_types::models::hash::Hash;
 use aqua_verifier_rs_types::models::content::RevisionContent;
+use diesel::r2d2::ConnectionManager;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
 // use guardian_common::custom_types::{Hash, Revision, RevisionContent};
@@ -9,9 +10,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use serde_json::Value;
 use sha3::{Digest, Sha3_512};
-use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::{Pool, Sqlite};
-use verifier::util::content_hash;
+use aqua_verifier::util::content_hash;
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
@@ -20,26 +19,47 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use std::collections::HashMap;
 
 use crate::models::file::FileDataInformation;
+use diesel::{r2d2, Connection};
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
-pub async fn db_set_up() -> Pool<Sqlite> {
-    let db_file_path = "./pages.db";
-    let db_url = format!("sqlite://{}", db_file_path);
 
-    // Check if the database file exists, if not, create it
-    if !Path::new(db_file_path).exists() {
-        println!("please run `sqlx database create` then `sqlx migrate run` ")
-    } else {
-        println!("db exists {}", db_url)
-    }
+const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+type DB = diesel::sqlite::Sqlite;
 
-    // Initialize SQLite connection pool
-    let pool = SqlitePoolOptions::new()
-        .connect(db_url.as_str())
-        .await
-        .expect("Failed to connect to SQLite");
-
-    return pool;
+pub fn run_db_migrations(conn: &mut impl MigrationHarness<DB>) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    conn.run_pending_migrations(MIGRATIONS)?;
+    Ok(())
 }
+
+pub fn establish_connection() ->  r2d2::Pool<ConnectionManager<SqliteConnection>> {
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set");
+    
+        println!("Database url {}",database_url );
+    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
+    
+    r2d2::Pool::builder()
+        .build(manager)
+        .expect("Failed to create database pool")
+}
+
+
+
+// pub fn run_migrations(connection: &mut impl MigrationHarness<diesel::sqlite::Sqlite>) ->  {
+
+//     let MIGRATIONS: EmbeddedMigrations = embed_migrations!("../migrations");
+
+//     // This will run the necessary migrations.
+//     //
+//     // See the documentation for `MigrationHarness` for
+//     // all available methods.
+//     connection.run_pending_migrations(MIGRATIONS)?;
+
+  
+// }
+
 
 pub fn check_or_generate_domain() {
     // Check if API_DOMAIN is set
@@ -74,6 +94,9 @@ pub fn check_or_generate_domain() {
     } else {
         println!("API_DOMAIN is set: {}", api_domain);
     }
+
+
+    println!("REMOTE is set: {}", env::var("VITE_REMOTE").unwrap_or_default());
 }
 
 // Function to update the .env file with the new API_DOMAIN

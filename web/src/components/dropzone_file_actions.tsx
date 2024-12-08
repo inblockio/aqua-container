@@ -3,11 +3,11 @@ import { Button } from "./ui/button";
 import axios from "axios";
 import { useStore } from "zustand";
 import appStore from "../store";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ApiFileInfo } from "../models/FileInfo";
 import { toaster } from "./ui/toaster";
-import { ENDPOINTS } from "../utils/constants";
 import { readJsonFile } from "../utils/functions";
+import ChainDetails from "./ui/navigation/CustomDrawer";
 
 
 interface IDropzoneAction {
@@ -22,7 +22,7 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files } = useStore(appStore)
+    const { metamaskAddress, setFiles, files, backend_url } = useStore(appStore)
 
     const uploadFile = async () => {
         if (!file) {
@@ -39,7 +39,9 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
 
         setUploading(true)
         try {
-            const response = await axios.post(ENDPOINTS.UPLOAD_FILE, formData, {
+            const url = `${backend_url}/explorer_file_upload`
+            console.log("url ", url)
+            const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     "metamask_address": metamaskAddress
@@ -94,7 +96,7 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
 export const VerifyFile = ({ file }: IDropzoneAction) => {
 
     const [verifying, setVerifying] = useState(false)
-    const [_hashChainForVerification, setHashChain] = useState<ApiFileInfo>()
+    const [hashChainForVerification, setHashChain] = useState<ApiFileInfo>()
     // const [uploaded, setUploaded] = useState(false)
 
     // const { metamaskAddress, setFiles, files } = useStore(appStore)
@@ -118,18 +120,29 @@ export const VerifyFile = ({ file }: IDropzoneAction) => {
                 // navigate("/details");
                 // Handle the JSON data here
             })
-            .catch((error) => {
-                console.error("Error reading JSON file:", error.message);
+            .catch(() => {
                 // Handle the error here
             });
         setVerifying(false)
     };
 
+    useEffect(() => {
+        handleVerifyAquaJsonFile()
+    }, [])
+
     return (
-        <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'80px'} onClick={handleVerifyAquaJsonFile} loading={verifying}>
-            <LuScan />
-            Verify
-        </Button>
+        <>
+            {
+                hashChainForVerification ? (
+                    <ChainDetails fileInfo={hashChainForVerification} />
+                ) : (
+                    <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'80px'} loading={verifying} disabled>
+                        <LuScan />
+                        LOading Chain
+                    </Button>
+                )
+            }
+        </>
     )
 }
 
@@ -139,7 +152,7 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files } = useStore(appStore)
+    const { metamaskAddress, setFiles, files, user_profile , backend_url} = useStore(appStore)
 
     const importAquaChain = async () => {
 
@@ -156,7 +169,9 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
         formData.append('account', "example");
         setUploading(true)
         try {
-            const response = await axios.post(ENDPOINTS.IMPORT_AQUA_CHAIN, formData, {
+            const url = `${backend_url}/explorer_aqua_file_upload`;
+            console.log("importAquaChain url ", url)
+            const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                     "metamask_address": metamaskAddress
@@ -178,8 +193,8 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
                 name: res.file.name,
                 extension: res.file.extension,
                 page_data: res.file.page_data,
-                mode: '',
-                owner: ''
+                mode: user_profile.fileMode ?? "",
+                owner: metamaskAddress ?? "",
             };
             setFiles([...files, file])
             // setUploadedFilesIndexes(value => [...value, fileIndex])

@@ -5,7 +5,6 @@ import { Field } from "./field"
 import { useState } from "react"
 import { RadioCardItem, RadioCardRoot } from "./radio-card"
 import { ColorModeButton } from "./color-mode"
-import { ENDPOINTS } from "../../utils/constants"
 import axios from "axios"
 import { useStore } from "zustand"
 import appStore from "../../store"
@@ -28,28 +27,31 @@ const fileModes = createListCollection({
 })
 
 const SettingsForm = () => {
-    const { setConfiguration, configuration } = useStore(appStore)
-    const [activeNetwork, setActiveNetwork] = useState<string>(configuration.network ?? '')
-    const [domain, setDomain] = useState<string>(configuration.domain ?? '')
-    const [mode, setMode] = useState<string>(configuration.fileMode ?? 'public')
-    const [contract, setContract] = useState<string>(configuration.contractAddress ?? '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611')
+    const { setUserProfile, user_profile , backend_url} = useStore(appStore)
+    const [activeNetwork, setActiveNetwork] = useState<string>(user_profile.network)
+    const [domain, setDomain] = useState<string>(user_profile.domain)
+    const [mode, setMode] = useState<string>(user_profile.fileMode)
+    const [contract, setContract] = useState<string>(user_profile.contractAddress ?? "0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611")
 
-    const updateConfiguration = async () => {
+    const updateUserProfile = async () => {
         const formData = new URLSearchParams();
         formData.append('chain', activeNetwork);
         formData.append('domain', domain);
         formData.append('mode', mode);
         formData.append('contract', contract);
+        formData.append('theme', 'light');
 
 
-        const response = await axios.post(ENDPOINTS.UPDATE_CONFIGURATION, formData, {
+        const url = `${backend_url}/explorer_update_user_profile`;
+        console.log("url is ", url);
+        const response = await axios.post(url, formData, {
             headers: {
                 // 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
 
         if (response.status === 200) {
-            setConfiguration({
+            setUserProfile({
                 contractAddress: contract,
                 network: activeNetwork,
                 domain: domain,
@@ -109,7 +111,7 @@ const SettingsForm = () => {
                 </RadioCardRoot>
             </Field>
             <Group>
-                <Button onClick={updateConfiguration}>Save</Button>
+                <Button onClick={updateUserProfile}>Save</Button>
             </Group>
         </VStack>
     )
@@ -117,13 +119,14 @@ const SettingsForm = () => {
 
 const DeleteFiles = () => {
     const [deleting, setDeleting] = useState(false)
-    const { setFiles } = useStore(appStore)
+    const { setFiles, backend_url } = useStore(appStore)
 
     const deleteFile = async () => {
         try {
 
             setDeleting(true)
-            const response = await axios.get(ENDPOINTS.DELETE_ALL_FILES, {
+            const url = `${backend_url}/explorer_delete_all_files`;
+            const response = await axios.get(url, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 }

@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { ApiFileInfo } from "../models/FileInfo";
 import { PageData } from "../models/PageData";
-import { documentTypes, ENDPOINTS, imageTypes, musicTypes, videoTypes } from "./constants";
+import { documentTypes,  imageTypes, musicTypes, videoTypes } from "./constants";
 import { AvatarGenerator } from 'random-avatar-generator';
 
 export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
@@ -74,9 +74,10 @@ export async function switchNetwork(chainId: string) {
 }
 
 
-export async function fetchFiles(publicMetaMaskAddress: string): Promise<Array<ApiFileInfo>> {
+export async function fetchFiles(publicMetaMaskAddress: string, url: string): Promise<Array<ApiFileInfo>> {
     try {
-        const query = await fetch(ENDPOINTS.EXPOLORER_FETCH_FILES, {
+      
+        const query = await fetch(url, {
             method: 'GET',
             headers: {
                 'metamask_address': publicMetaMaskAddress
@@ -319,3 +320,17 @@ export function generateAvatar(_address: string) {
 //     const blob = new Blob(byteArrays, { type: contentType });
 //     return blob;
 // };
+
+export function fileType(file: ApiFileInfo): string {
+    if (imageTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Image";
+    } else if (documentTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Document";
+    } else if (musicTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Music";
+    } else if (videoTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Video";
+    } else {
+        return "unknown";
+    }
+}

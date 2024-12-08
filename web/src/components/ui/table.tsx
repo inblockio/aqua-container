@@ -20,7 +20,7 @@ import { Alert } from "./alert"
 
 
 const FilesTable = () => {
-    const { files } = useStore(appStore)
+    const { files, backend_url } = useStore(appStore)
     const [selection, setSelection] = useState<string[]>([])
 
     const hasSelection = selection.length > 0
@@ -56,10 +56,10 @@ const FilesTable = () => {
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <DownloadAquaChain file={item} />
-                    <ChainDetails pageData={JSON.parse(item.page_data)} />
-                    <WitnessAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <SignAquaChain filename={item.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <DeleteAquaChain filename={item.name} />
+                    <ChainDetails fileInfo={item} />
+                    <WitnessAquaChain filename={item.name} backend_url= {backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <DeleteAquaChain filename={item.name}   backend_url ={backend_url}/>
                 </Group>
             </Table.Cell>
         </Table.Row>
@@ -97,11 +97,13 @@ const FilesTable = () => {
                         <Table.Body>
                             {rows}
                             {rows.length === 0 ?
-                                <Alert title="No Data">
+                                <Table.Row>
                                     <Table.Cell colSpan={6}>
-                                        Please upload some files or import an Aqua Chain
+                                        <Alert title="No Data">
+                                            Please upload some files or import an Aqua Chain
+                                        </Alert>
                                     </Table.Cell>
-                                </Alert>
+                                </Table.Row>
                                 : null}
                         </Table.Body>
                     </Table.Root>
