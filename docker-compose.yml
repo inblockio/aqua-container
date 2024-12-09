@@ -1,6 +1,7 @@
 services:
   aqua-container:
     image: ghcr.io/inblockio/aqua-container:github-action
+    pull_policy: always
 #    build:
 #      context: .
 #      dockerfile: actionfiles/aqua_container/dockerfile/Dockerfile
