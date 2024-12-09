@@ -15,7 +15,8 @@ import {
 import { forwardRef, useState } from "react"
 import { LuFile, LuUpload, LuX } from "react-icons/lu"
 import { ImportAquaChain, UploadFile, VerifyFile } from "../dropzone_file_actions"
-import { isJSONFile } from "../../utils/functions"
+import { determineFileType, isJSONFile } from "../../utils/functions"
+import React from "react"
 
 export interface FileUploadRootProps extends ChakraFileUpload.RootProps {
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>
@@ -131,21 +132,46 @@ interface FileUploadListProps
 
 export const FileUploadList = forwardRef<HTMLUListElement, FileUploadListProps>(
   function FileUploadList(props, ref) {
+    const [processedFiles, setProcessedFiles] = useState<File[]>([])
     const [uploadedIndexes, setUploadedIndexes] = useState<number[]>([])
     const { showSize, clearable, files, ...rest } = props
 
     const fileUpload = useFileUploadContext()
     const acceptedFiles = files ?? fileUpload.acceptedFiles
 
-    if (acceptedFiles.length === 0) return null
+
+    // Process files without extensions
+    React.useEffect(() => {
+      const processFiles = async () => {
+        const processedFilesList = await Promise.all(
+          acceptedFiles.map(async (file) => {
+            // If the file doesn't have an extension, try to determine and rename it
+            if (!file.name.includes('.')) {
+              return await determineFileType(file);
+            }
+            return file;
+          })
+        );
+        setProcessedFiles(processedFilesList);
+      };
+
+      if (acceptedFiles.length > 0) {
+        processFiles();
+      }
+    }, [acceptedFiles]);
+
+
 
     const updateUploadedIndexes = (fileIndex: number) => {
       setUploadedIndexes(current => ([...current, fileIndex]))
     }
 
+
+    if (acceptedFiles.length === 0) return null
+    
     return (
       <ChakraFileUpload.ItemGroup ref={ref} {...rest}>
-        {acceptedFiles.map((file, index: number) => (
+        {processedFiles.map((file, index: number) => (
           <FileUploadItem
             key={file.name}
             file={file}

@@ -18,23 +18,67 @@ interface IStatistic {
 
 const Statistic = (props: IStatistic) => {
 
+     // <StatRoot shadow={'sm'} borderRadius={'xl'} px={'4'} py="6" h={'100%'}>
+        //     <Group>
+        //         <Box>
+        //             <Image  src={props.image} w={'60px'} h={'60px'} />
+        //         </Box>
+        //         <VStack gap={0} alignItems={'start'}>
+        //             <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
+        //             <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
+        //         </VStack>
+        //     </Group>
+        //     <StatHelpText mt={'2'} fontWeight={400} fontSize={'medium'} display={'inline-flex'}>
+        //         {props.size}
+        //         <LuDot />
+        //         {`${props.files} Files`}
+        //     </StatHelpText>
+        // </StatRoot>
     return (
-        <StatRoot shadow={'sm'} borderRadius={'xl'} px={'4'} py="6" h={'100%'}>
-            <Group>
-                <Box>
-                    <Image src={props.image} w={'60px'} h={'60px'} />
-                </Box>
-                <VStack gap={0} alignItems={'start'}>
-                    <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
-                    <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
-                </VStack>
-            </Group>
-            <StatHelpText mt={'2'} fontWeight={400} fontSize={'medium'} display={'inline-flex'}>
-                {props.size}
-                <LuDot />
-                {`${props.files} Files`}
-            </StatHelpText>
-        </StatRoot>
+        <StatRoot 
+        shadow={'sm'} 
+        borderRadius={'xl'} 
+        px={'4'} 
+        py="6" 
+        h={'100%'}
+    >
+        <Group align="center" gap="md">
+            <Box 
+                display="flex" 
+                alignItems="center" 
+                justifyContent="center" 
+                w={'60px'} 
+                h={'60px'} 
+                borderRadius="md"
+            >
+                <Image 
+                    src={props.image} 
+                    alt={`${props.title} icon`}
+                    objectFit="contain"
+                    w={'100%'} 
+                    h={'100%'} 
+                    maxWidth={'60px'} 
+                    maxHeight={'60px'}
+                />
+            </Box>
+            <VStack gap={0} alignItems={'start'} flex={1}>
+                <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
+                <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
+            </VStack>
+        </Group>
+        <StatHelpText 
+            mt={'2'} 
+            fontWeight={400} 
+            fontSize={'medium'} 
+            display={'inline-flex'} 
+            alignItems="center"
+        >
+            {props.size}
+            <LuDot />
+            {`${props.files} Files`}
+        </StatHelpText>
+    </StatRoot>
+       
     )
 }
 
@@ -45,50 +89,49 @@ const calculateTotalFilesSize = (files: ApiFileInfo[]) => {
         // Debug the structure
         // debugPageDataStructure(pageData);
 
-        let currentSize = sumFileContentSize(pageData)
+        const currentSize = sumFileContentSize(pageData)
         size += currentSize
     }
     return size
 }
-
 const getFileTypeProportions = (files: ApiFileInfo[]) => {
+    const fileTypes = ["image", "document", "music", "video"];
 
-    let fileTypes = ["image", "document", "music", "video"];
+    const filesUiState: Record<string, UiFileTypes> = {}
 
-    // let filesUiState: Array<UiFileTypes> = [];
-    let filesUiState: Record<string, UiFileTypes> = {}
-
-    let totalFilesSize = calculateTotalFilesSize(files)
+    const totalFilesSize = calculateTotalFilesSize(files)
 
     for (const element of fileTypes) {
-
-        let fileItemData = filterFilesByType(files, element)
+        const fileItemData = filterFilesByType(files, element)
 
         let size = 0;
         for (const element of fileItemData) {
             const pageData: PageData = JSON.parse(element.page_data);
-            // Debug the structure
-            // debugPageDataStructure(pageData);
-
-            let currentSize = sumFileContentSize(pageData)
+            const currentSize = sumFileContentSize(pageData)
             size += currentSize
         }
 
-        // console.log("element " + element + " length " + fileItemData.length + "  file " + element + " size  " + size);
-        let percentage = size / totalFilesSize * 100
-        let usingText = `Using ${percentage.toFixed(2)}% of storage`
-        let hSize = humanReadableFileSize(size)
+        // Handle potential division by zero or NaN scenarios
+        const percentage = totalFilesSize > 0 
+            ? (size / totalFilesSize * 100)
+            : 0;
 
-        let item: UiFileTypes = {
+        const usingText = `Using ${
+            isNaN(percentage) 
+                ? "0.00" 
+                : percentage.toFixed(2)
+        }% of storage`
+
+        const hSize = humanReadableFileSize(size)
+
+        const item: UiFileTypes = {
             name: element,
             usingText: usingText,
             size: hSize,
             totalFiles: `${fileItemData.length}`
         }
 
-        // filesUiState.push(item)
         filesUiState[element] = item
-
     }
     return filesUiState
 }
@@ -96,7 +139,7 @@ const getFileTypeProportions = (files: ApiFileInfo[]) => {
 
 export default function Statistics() {
     const { files } = useStore(appStore)
-    let storageUsage = getFileTypeProportions(files)
+    const storageUsage = getFileTypeProportions(files)
     
     return (
         <SimpleGrid columns={{ base: 2, md: 2, lg: 4 }} gapX={'4'} gapY={'4'}>
