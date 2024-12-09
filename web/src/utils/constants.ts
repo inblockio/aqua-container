@@ -54,6 +54,10 @@ export const initializeBackendUrl = async (): Promise<string> => {
     console.log("Data from config ", configData);
     // Update the BACKEND_URL
     BACKEND_URL = configData.BACKEND_URL || "http://127.0.0.1:3600";
+    if (BACKEND_URL == "BACKEND_URL_PLACEHOLDER"){
+      console.log("resulting to default .....")
+      BACKEND_URL="http://127.0.0.1:3600";
+    }
     console.log("Config Backend URL", BACKEND_URL);
   } catch (err) {
     // If there's an error, it will use the default URL

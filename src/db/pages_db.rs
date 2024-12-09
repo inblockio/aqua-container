@@ -126,6 +126,19 @@ pub fn delete_page_data(
     Ok(deleted_count as i8)
 }
 
+pub fn delete_all_user_files(
+    user_address: String,
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+) -> Result<i8, String> {
+    use crate::schema::pages::dsl::*;
+
+    let deleted_count = diesel::delete(pages.filter(owner.eq(&user_address)))
+        .execute(db_connection)
+        .map_err(|e| format!("Error deleting page data: {}", e))?;
+
+    Ok(deleted_count as i8)
+}
+
 pub fn delete_all_data(
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<(), String> {

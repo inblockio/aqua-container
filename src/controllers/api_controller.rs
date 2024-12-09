@@ -40,8 +40,7 @@ use aqua_verifier::util::{
 extern crate serde_json_path_to_error as serde_json;
 use crate::db::pages_db::{
     db_data, delete_all_data, delete_page_data, fetch_all_pages_data_per_user, fetch_page_data,
-    insert_page_data, update_page_data,
-};
+    insert_page_data, update_page_data,delete_all_user_files};
 use dotenv::{dotenv, vars};
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
@@ -1153,6 +1152,24 @@ pub async fn explorer_delete_all_files(
     // let result = sqlx::query!("DELETE FROM pages ",)
     //     .execute(&server_database.sqliteDb)
     //     .await;
+    let user_address: Result<String, String> = match headers.get("metamask_address") {
+        Some(value) => match value.to_str() {
+            Ok(address) => Ok(address.to_string()), // Successfully extracted address
+            Err(_) => Err("Failed to parse the metamask_address header.".to_string()),
+        },
+        None => Err("metamask_address header not found.".to_string()), // Header not found
+    };
+
+if user_address.is_err() {
+    log_data
+        .push("Unable to parse metamask address/ Metamask address not provided".to_string());
+    let res: ApiResponse = ApiResponse {
+        logs: log_data.clone(),
+        file: None,
+        files: Vec::new(),
+    };
+    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+}
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
@@ -1171,7 +1188,8 @@ pub async fn explorer_delete_all_files(
         }
     };
 
-    let result = delete_all_data(&mut conn);
+    let addr = user_address.unwrap();
+    let result = delete_all_user_files(addr,&mut conn);
 
     match result {
         Ok(result_data) => {
