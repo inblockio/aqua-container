@@ -76,7 +76,7 @@ const SettingsForm = () => {
                     </Group>
                 </Card.Body>
             </Card.Root>
-            <Field invalid={false} label="Domain Name" errorText="This field is required">
+            <Field invalid={false} label="Domain Name" helperText="self-issued identity claim used for generating/verifying aqua chain" errorText="This field is required">
                 <Input placeholder="Domain Name" value={domain} onChange={e => setDomain(e.currentTarget.value)} />
             </Field>
             <Field invalid={false} label="Contract Address" errorText="This field is required" >
@@ -96,7 +96,8 @@ const SettingsForm = () => {
                     </HStack>
                 </RadioCardRoot>
             </Field>
-            <Field invalid={false} label="Default File Mode" helperText="Is a file public or private" errorText="This field is required">
+            {/* <Field invalid={false} label="Default File Mode" helperText="Is a file public or private" errorText="This field is required"> */}
+            <Field invalid={false} label="Default File Mode" helperText="Any one can view the file or the file should be visible only to you." errorText="This field is required">
                 <RadioCardRoot defaultValue="public" value={mode} onValueChange={e => setMode(e.value)}>
                     <HStack align="stretch">
                         {fileModes.items.map((item) => (
@@ -119,7 +120,7 @@ const SettingsForm = () => {
 
 const DeleteFiles = () => {
     const [deleting, setDeleting] = useState(false)
-    const { setFiles, backend_url } = useStore(appStore)
+    const { setFiles, backend_url, metamaskAddress } = useStore(appStore)
 
     const deleteFile = async () => {
         try {
@@ -128,7 +129,8 @@ const DeleteFiles = () => {
             const url = `${backend_url}/explorer_delete_all_files`;
             const response = await axios.get(url, {
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'metamask_address':metamaskAddress ?? ''
                 }
             });
 

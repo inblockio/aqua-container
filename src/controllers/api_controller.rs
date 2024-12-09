@@ -6,6 +6,9 @@ use crate::util::{
     get_content_type, get_file_info, make_empty_hash, update_env_file,
 };
 use crate::Db;
+use aqua_verifier::util::{
+    content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
+};
 use aqua_verifier_rs_types::models::base64::Base64;
 use aqua_verifier_rs_types::models::content::RevisionContentContent;
 use aqua_verifier_rs_types::models::content::{FileContent, RevisionContent};
@@ -34,13 +37,11 @@ use ethaddr::address;
 use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
-use aqua_verifier::util::{
-    content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
-};
 extern crate serde_json_path_to_error as serde_json;
 use crate::db::pages_db::{
-    db_data, delete_all_data, delete_page_data, fetch_all_pages_data_per_user, fetch_page_data,
-    insert_page_data, update_page_data,delete_all_user_files};
+    db_data, delete_all_data, delete_all_user_files, delete_page_data,
+    fetch_all_pages_data_per_user, fetch_page_data, insert_page_data, update_page_data,
+};
 use dotenv::{dotenv, vars};
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
@@ -950,7 +951,7 @@ pub async fn explorer_sign_revision(
                 };
                 return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
             }
-        };  
+        };
 
     let mut doc = deserialized;
     let len = doc.pages[0].revisions.len();
@@ -1123,35 +1124,14 @@ pub async fn explorer_sign_revision(
         files: Vec::new(),
     };
     return (StatusCode::OK, Json(res));
-
-    // Update the database with the new document
-    // let result = sqlx::query!(
-    //     "UPDATE pages SET page_data = ? WHERE id = ?",
-    //     page_data_new,
-    //     row.id
-    // )
-    // .execute(&server_database.sqliteDb)
-    // .await;
-
-    // // Handle the result of the update
-    // match result {
-    //     Ok(_) => {
-
-    //     }
-    //     Err(e) => {
-
-    //     }
-    // }
 }
 
 pub async fn explorer_delete_all_files(
     State(server_database): State<Db>,
+    headers: HeaderMap,
 ) -> (StatusCode, Json<ApiResponse>) {
     let mut log_data: Vec<String> = Vec::new();
 
-    // let result = sqlx::query!("DELETE FROM pages ",)
-    //     .execute(&server_database.sqliteDb)
-    //     .await;
     let user_address: Result<String, String> = match headers.get("metamask_address") {
         Some(value) => match value.to_str() {
             Ok(address) => Ok(address.to_string()), // Successfully extracted address
@@ -1160,16 +1140,16 @@ pub async fn explorer_delete_all_files(
         None => Err("metamask_address header not found.".to_string()), // Header not found
     };
 
-if user_address.is_err() {
-    log_data
-        .push("Unable to parse metamask address/ Metamask address not provided".to_string());
-    let res: ApiResponse = ApiResponse {
-        logs: log_data.clone(),
-        file: None,
-        files: Vec::new(),
-    };
-    return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-}
+    if user_address.is_err() {
+        log_data
+            .push("Unable to parse metamask address/ Metamask address not provided".to_string());
+        let res: ApiResponse = ApiResponse {
+            logs: log_data.clone(),
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
 
     let mut conn = match server_database.pool.get() {
         Ok(connection) => connection,
@@ -1189,7 +1169,7 @@ if user_address.is_err() {
     };
 
     let addr = user_address.unwrap();
-    let result = delete_all_user_files(addr,&mut conn);
+    let result = delete_all_user_files(addr, &mut conn);
 
     match result {
         Ok(result_data) => {

@@ -74,7 +74,12 @@ interface FileUploadItemProps extends VisibilityProps {
 
 const FileUploadItem = (props: FileUploadItemProps) => {
   const { file, showSize, clearable, fileIndex, uploadedIndexes, updateUploadedIndex } = props
-  let isJson = isJSONFile(file.name)
+  const isJson = isJSONFile(file.name)
+
+  // if file uploaded remove from file upload item
+  if(uploadedIndexes.includes(fileIndex)) {
+    return (<div></div>)
+  }
   return (
     <ChakraFileUpload.Item file={file}>
       <ChakraFileUpload.ItemPreview asChild>
@@ -102,6 +107,7 @@ const FileUploadItem = (props: FileUploadItemProps) => {
       }
       {
         !isJson ? (
+          
           <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
         ) : null
       }
