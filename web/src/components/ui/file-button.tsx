@@ -2,6 +2,7 @@
 
 import type { ButtonProps, RecipeProps } from "@chakra-ui/react"
 import {
+  Box,
   Button,
   FileUpload as ChakraFileUpload,
   Icon,
@@ -13,8 +14,9 @@ import {
 } from "@chakra-ui/react"
 import { forwardRef, useState } from "react"
 import { LuFile, LuUpload, LuX } from "react-icons/lu"
-import { ImportAquaChain, UploadFile } from "../dropzone_file_actions"
-import { isJSONFile } from "../../utils/functions"
+import { ImportAquaChain, UploadFile, VerifyFile } from "../dropzone_file_actions"
+import { determineFileType, isJSONFile } from "../../utils/functions"
+import React from "react"
 
 export interface FileUploadRootProps extends ChakraFileUpload.RootProps {
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>
@@ -46,7 +48,9 @@ export const FileUploadDropzone = forwardRef<
   return (
     <ChakraFileUpload.Dropzone ref={ref} {...rest}>
       <Icon fontSize="xl" color="fg.muted">
-        <LuUpload />
+        <Box>
+          <LuUpload />
+        </Box>
       </Icon>
       <ChakraFileUpload.DropzoneContent>
         <div>{label}</div>
@@ -71,6 +75,12 @@ interface FileUploadItemProps extends VisibilityProps {
 
 const FileUploadItem = (props: FileUploadItemProps) => {
   const { file, showSize, clearable, fileIndex, uploadedIndexes, updateUploadedIndex } = props
+  const isJson = isJSONFile(file.name)
+
+  // if file uploaded remove from file upload item
+  if(uploadedIndexes.includes(fileIndex)) {
+    return (<div></div>)
+  }
   return (
     <ChakraFileUpload.Item file={file}>
       <ChakraFileUpload.ItemPreview asChild>
@@ -88,15 +98,20 @@ const FileUploadItem = (props: FileUploadItemProps) => {
         <ChakraFileUpload.ItemName flex="1" />
       )}
       {
-        isJSONFile(file.name) ? (
+        isJson ? (
           <>
-          <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
-          {/* <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} /> */}
-          {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
+            <ImportAquaChain file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
           </>
-        ): null
+        ) : null
       }
-      <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+      {
+        !isJson ? (
+          
+          <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+        ) : null
+      }
 
       {clearable && (
         <ChakraFileUpload.ItemDeleteTrigger asChild>
@@ -117,21 +132,46 @@ interface FileUploadListProps
 
 export const FileUploadList = forwardRef<HTMLUListElement, FileUploadListProps>(
   function FileUploadList(props, ref) {
+    const [processedFiles, setProcessedFiles] = useState<File[]>([])
     const [uploadedIndexes, setUploadedIndexes] = useState<number[]>([])
     const { showSize, clearable, files, ...rest } = props
 
     const fileUpload = useFileUploadContext()
     const acceptedFiles = files ?? fileUpload.acceptedFiles
 
-    if (acceptedFiles.length === 0) return null
+
+    // Process files without extensions
+    React.useEffect(() => {
+      const processFiles = async () => {
+        const processedFilesList = await Promise.all(
+          acceptedFiles.map(async (file) => {
+            // If the file doesn't have an extension, try to determine and rename it
+            if (!file.name.includes('.')) {
+              return await determineFileType(file);
+            }
+            return file;
+          })
+        );
+        setProcessedFiles(processedFilesList);
+      };
+
+      if (acceptedFiles.length > 0) {
+        processFiles();
+      }
+    }, [acceptedFiles]);
+
+
 
     const updateUploadedIndexes = (fileIndex: number) => {
       setUploadedIndexes(current => ([...current, fileIndex]))
     }
 
+
+    if (acceptedFiles.length === 0) return null
+    
     return (
       <ChakraFileUpload.ItemGroup ref={ref} {...rest}>
-        {acceptedFiles.map((file, index: number) => (
+        {processedFiles.map((file, index: number) => (
           <FileUploadItem
             key={file.name}
             file={file}

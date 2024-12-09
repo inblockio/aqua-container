@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 import { ApiFileInfo } from "../models/FileInfo";
 import { PageData } from "../models/PageData";
-import { documentTypes, ENDPOINTS, imageTypes, musicTypes, videoTypes } from "./constants";
+import { documentTypes,  imageTypes, musicTypes, videoTypes } from "./constants";
 import { AvatarGenerator } from 'random-avatar-generator';
 
 export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
@@ -74,9 +74,10 @@ export async function switchNetwork(chainId: string) {
 }
 
 
-export async function fetchFiles(publicMetaMaskAddress: string): Promise<Array<ApiFileInfo>> {
+export async function fetchFiles(publicMetaMaskAddress: string, url: string): Promise<Array<ApiFileInfo>> {
     try {
-        const query = await fetch(ENDPOINTS.EXPOLORER_FETCH_FILES, {
+      
+        const query = await fetch(url, {
             method: 'GET',
             headers: {
                 'metamask_address': publicMetaMaskAddress
@@ -211,18 +212,18 @@ export function timeToHumanFriendly(timestamp: string | undefined): string {
         return '-'
     }
     // Extract the date components
-    let year = timestamp.substring(0, 4);
-    let month = Number(timestamp.substring(4, 6)) - 1; // Months are zero-indexed in JS
-    let day = timestamp.substring(6, 8);
-    let hours = timestamp.substring(8, 10);
-    let minutes = timestamp.substring(10, 12);
-    let seconds = timestamp.substring(12, 14);
+    const year = timestamp.substring(0, 4);
+    const month = Number(timestamp.substring(4, 6)) - 1; // Months are zero-indexed in JS
+    const day = timestamp.substring(6, 8);
+    const hours = timestamp.substring(8, 10);
+    const minutes = timestamp.substring(10, 12);
+    const seconds = timestamp.substring(12, 14);
 
     // Create a new Date object
-    let date = new Date(Date.UTC(Number(year), month, Number(day), Number(hours), Number(minutes), Number(seconds)));
+    const date = new Date(Date.UTC(Number(year), month, Number(day), Number(hours), Number(minutes), Number(seconds)));
 
     // Format the date in a human-friendly way
-    let options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
     return date.toLocaleDateString('en-US', options)
 }
 
@@ -295,10 +296,113 @@ export const isJSONFile = (fileName: string) => {
 }
 
 export function generateAvatar(_address: string) {
-    let address = ethers.getAddress(_address)
-    let generator = new AvatarGenerator()
+    const address = ethers.getAddress(_address)
+    const generator = new AvatarGenerator()
     return generator.generateRandomAvatar(address)
 }
+
+
+// Utility function to determine file type and potentially rename
+export const determineFileType = async (file: File): Promise<File> => {
+    // If file already has an extension, return as is
+    if (file.name.includes('.')) return file;
+  
+    try {
+      // Attempt to read the file contents
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+  
+      // Advanced MIME type detection using file signatures
+      let extension = '';
+      let detectedMimeType = '';
+  
+      // PDF signature
+      if (uint8Array[0] === 0x25 && uint8Array[1] === 0x50 && uint8Array[2] === 0x44 && uint8Array[3] === 0x46) {
+        extension = '.pdf';
+        detectedMimeType = 'application/pdf';
+      }
+      // PNG signature
+      else if (uint8Array[0] === 0x89 && uint8Array[1] === 0x50 && uint8Array[2] === 0x4E && uint8Array[3] === 0x47) {
+        extension = '.png';
+        detectedMimeType = 'image/png';
+      }
+      // JPEG signature
+      else if (uint8Array[0] === 0xFF && uint8Array[1] === 0xD8 && uint8Array[2] === 0xFF) {
+        extension = '.jpg';
+        detectedMimeType = 'image/jpeg';
+      }
+      // JSON signature (looks like a JSON object or array start)
+      else if (uint8Array[0] === 0x7B || uint8Array[0] === 0x5B) {
+        try {
+          // Attempt to parse as JSON
+          const jsonTest = new TextDecoder().decode(uint8Array);
+          JSON.parse(jsonTest);
+          extension = '.json';
+          detectedMimeType = 'application/json';
+        } catch {
+          // Not a valid JSON
+        }
+      }
+      // Excel XLSX signature
+      else if (
+        uint8Array[0] === 0x50 && uint8Array[1] === 0x4B && 
+        uint8Array[2] === 0x03 && uint8Array[3] === 0x04
+      ) {
+        extension = '.xlsx';
+        detectedMimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      }
+      // CSV/Text detection (try to parse as CSV or check for text-like content)
+      else {
+        try {
+          const text = new TextDecoder().decode(uint8Array);
+          // Check if content looks like CSV (contains commas or semicolons)
+          if (/[,;]/.test(text)) {
+            extension = '.csv';
+            detectedMimeType = 'text/csv';
+          } else {
+            extension = '.txt';
+            detectedMimeType = 'text/plain';
+          }
+        } catch {
+          extension = '.bin';
+          detectedMimeType = 'application/octet-stream';
+        }
+      }
+  
+      // If no extension was detected, fall back to original file type or generic
+      if (!extension) {
+        extension = file.type ? `.${file.type.split('/').pop()}` : '.bin';
+        detectedMimeType = file.type || 'application/octet-stream';
+      }
+  
+      // Create a new file with the determined extension
+      const renamedFile = new File([uint8Array], `${file.name}${extension}`, {
+        type: detectedMimeType,
+        lastModified: file.lastModified
+      });
+  
+      return renamedFile;
+    } catch (error) {
+      console.error('Error determining file type:', error);
+      
+      // Fallback: use file type or add a generic extension
+      const fallbackExtension = file.type 
+        ? `.${file.type.split('/').pop()}`
+        : (file.name.includes('.') ? '' : '.bin');
+      
+      const fallbackFile = new File(
+        [await file.arrayBuffer()], 
+        `${file.name}${fallbackExtension}`, 
+        {
+          type: file.type || 'application/octet-stream',
+          lastModified: file.lastModified
+        }
+      );
+  
+      return fallbackFile;
+    }
+  }
+
 
 // const b64toBlob = (b64Data: string, contentType = "", sliceSize = 512) => {
 //     const byteCharacters = atob(b64Data);
@@ -319,3 +423,17 @@ export function generateAvatar(_address: string) {
 //     const blob = new Blob(byteArrays, { type: contentType });
 //     return blob;
 // };
+
+export function fileType(file: ApiFileInfo): string {
+    if (imageTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Image";
+    } else if (documentTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Document";
+    } else if (musicTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Music";
+    } else if (videoTypes.includes(file.extension.replace(/\s+/g, ''))) {
+        return "Video";
+    } else {
+        return "unknown";
+    }
+}

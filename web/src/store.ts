@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { ApiFileInfo } from './models/FileInfo';
 
 type AppStoreState = {
-    configuration: {
+    user_profile: {
         network: string,
         domain: string,
         fileMode: string,
@@ -14,11 +14,12 @@ type AppStoreState = {
     files: ApiFileInfo[],
     metamaskAddress: string | null
     avatar:string | undefined
+    backend_url: string
 }
 
 type AppStoreActions = {
-    setConfiguration: (
-        config: AppStoreState['configuration'],
+    setUserProfile: (
+        config: AppStoreState['user_profile'],
     ) => void,
     setMetamaskAddress: (
         address: AppStoreState['metamaskAddress'],
@@ -28,6 +29,9 @@ type AppStoreActions = {
     ) => void,
     setFiles: (
         files: AppStoreState['files'],
+    ) => void
+    setBackEndUrl: (
+        backend_url: AppStoreState['backend_url'],
     ) => void
 
 }
@@ -62,17 +66,18 @@ const appStore = createStore<TAppStore>()(
     persist(
         (set) => ({
             // Initial state
-            configuration: {
-                network: 'mainnet',
+            user_profile: {
+                network: 'sepolia',
                 domain: 'dHy4ds_dsf',
                 fileMode: 'public',
-                contractAddress: '',
+                contractAddress: '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',
             },
             files: [],
             metamaskAddress: '',
             avatar: "",
+            backend_url:"http://0.0.0.0:0",
             // Actions
-            setConfiguration: (config) => set({ configuration: config }),
+            setUserProfile: (config) => set({ user_profile: config }),
             setMetamaskAddress: (
                 address: AppStoreState['metamaskAddress'],
             ) => set({ metamaskAddress: address }),
@@ -82,6 +87,9 @@ const appStore = createStore<TAppStore>()(
             setFiles: (
                 files: AppStoreState['files'],
             ) => set({ files: files }),
+            setBackEndUrl: (
+                backend_url: AppStoreState['backend_url'],
+            ) => set({ backend_url: backend_url }),
         }),
         {
             name: 'app-store', // Unique name for storage key

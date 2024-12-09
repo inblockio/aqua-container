@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useEffect } from "react";
 import { fetchFiles, generateAvatar, getCookie } from "../utils/functions";
-import { ENDPOINTS } from "../utils/constants";
 import { useStore } from "zustand";
 import appStore from "../store";
 import { toaster } from "./ui/toaster";
@@ -9,43 +8,74 @@ import { ethers } from "ethers";
 
 
 const LoadConfiguration = () => {
-    const { setMetamaskAddress, setConfiguration, setFiles, setAvatar } = useStore(appStore)
-    const fetchAddressGivenANonce = async (nonce: string) => {
-        const formData = new URLSearchParams();
-        formData.append('nonce', nonce);
+    const { setMetamaskAddress, setUserProfile, setFiles, setAvatar, backend_url } = useStore(appStore)
 
-        const response = await axios.post(ENDPOINTS.FETCH_ADDRESS_BY_NONCE, formData, {
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+    const fetchAddressGivenANonce = async (nonce: string) => {
+        try {
+            const formData = new URLSearchParams();
+            formData.append('nonce', nonce);
+
+            const url = `${backend_url}/fetch_nonce_session`;
+              console.log("url is ", url)
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            });
+
+            if (response.status === 200) {
+               const url2 = `${backend_url}/explorer_files`;
+                const _address = response.data?.address
+                if (_address) {
+                    const address = ethers.getAddress(_address)
+                    setMetamaskAddress(address)
+                    const avatar = generateAvatar(address)
+                    setAvatar(avatar)
+                    const files = await fetchFiles(address, url2);
+                    setFiles(files)
+                    fetchUserProfile(_address)
+                }
+            } else {
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                setFiles([])
+                setUserProfile({
+                    network: '',
+                    domain: '',
+                    fileMode: '',
+                    contractAddress: '',
+                })
             }
-        });
-        if (response.status === 200) {
-            const _address = response.data?.address
-            if (_address) {
-                let address = ethers.getAddress(_address)
-                setMetamaskAddress(address)
-                let avatar = generateAvatar(address)
-                setAvatar(avatar)
-                let files = await fetchFiles(address);
-                setFiles(files)
+        }
+        catch (error: any) {
+            if (error?.response?.status === 404) {
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                setFiles([])
+            } else {
+console.log("An error from the api ", error);
             }
         }
     }
 
-    const fetchConfiguration = async () => {
+    const fetchUserProfile = async (address: string) => {
 
-        const response = await axios.get(ENDPOINTS.FETCH_CONFIGURATION, {
+      const url = `${backend_url}/explorer_fetch_user_profile`;
+      console.log("url is ", url);
+      
+        const response = await axios.get(url, {
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'metamask_address': address
             }
         });
 
         if (response.status === 200) {
-            setConfiguration({
-                network: response.data.chain,
-                domain: response.data.domain,
-                fileMode: response.data.mode,
-                contractAddress: response.data.contract,
+            setUserProfile({
+                network: response.data.user_profile.chain,
+                domain: response.data.user_profile.domain,
+                fileMode: response.data.user_profile.mode,
+                contractAddress: response.data.user_profile.contract,
             })
         }
     }
@@ -64,10 +94,10 @@ const LoadConfiguration = () => {
         }
     }, []);
 
-    useEffect(() => {
-        //fetch configuration
-        fetchConfiguration()
-    }, [])
+    // useEffect(() => {
+    //     //fetch user profile
+    //     fetchUserProfile()
+    // }, [metamaskAddress])
 
     return (
         <></>
