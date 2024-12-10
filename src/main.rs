@@ -84,7 +84,8 @@ async fn status_handler() -> Json<serde_json::Value> {
 ///
 ///  The react js project shows   example of how the aqua protocol can be utilised it
 ///  enables generation of aqua chain json file, witnessing and validation  of the qua chain file
-#[tokio::main]
+// #[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
@@ -145,7 +146,7 @@ async fn main() {
         .with_state(server_database)
         .layer(CorsLayer::permissive())
         .layer(TraceLayer::new_for_http())
-        .layer(DefaultBodyLimit::max(20 * 1024 * 1024));
+        .layer(DefaultBodyLimit::max(50 * 1024 * 1024));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3600")
         .await

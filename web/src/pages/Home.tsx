@@ -7,7 +7,7 @@ import FilesTable from "../components/ui/table"
 const Home = () => {
     return (
         <>
-            <Container fluid maxWidth={{ base: 'vw', md: '10/12' }} py={'14'}>
+            <Container fluid maxWidth={{ base: 'vw', md: '10/12' }} py={'14'} px={{base: 1, md: 10}}>
                 <VStack alignItems={'start'} gap={'10'}>
                     <FileUploadRoot borderRadius={'2xl'} alignItems="stretch" maxFiles={10} cursor={'pointer'} >
                         <FileUploadDropzone

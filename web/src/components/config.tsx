@@ -16,7 +16,7 @@ const LoadConfiguration = () => {
             formData.append('nonce', nonce);
 
             const url = `${backend_url}/fetch_nonce_session`;
-              console.log("url is ", url)
+            console.log("url is ", url)
             const response = await axios.post(url, formData, {
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
@@ -24,7 +24,7 @@ const LoadConfiguration = () => {
             });
 
             if (response.status === 200) {
-               const url2 = `${backend_url}/explorer_files`;
+                const url2 = `${backend_url}/explorer_files`;
                 const _address = response.data?.address
                 if (_address) {
                     const address = ethers.getAddress(_address)
@@ -53,16 +53,16 @@ const LoadConfiguration = () => {
                 setAvatar(undefined)
                 setFiles([])
             } else {
-console.log("An error from the api ", error);
+                console.log("An error from the api ", error);
             }
         }
     }
 
     const fetchUserProfile = async (address: string) => {
 
-      const url = `${backend_url}/explorer_fetch_user_profile`;
-      console.log("url is ", url);
-      
+        const url = `${backend_url}/explorer_fetch_user_profile`;
+        console.log("url is ", url);
+
         const response = await axios.get(url, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -92,7 +92,7 @@ console.log("An error from the api ", error);
                 type: "info",
             })
         }
-    }, []);
+    }, [backend_url]);
 
     // useEffect(() => {
     //     //fetch user profile

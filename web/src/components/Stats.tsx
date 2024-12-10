@@ -18,67 +18,68 @@ interface IStatistic {
 
 const Statistic = (props: IStatistic) => {
 
-     // <StatRoot shadow={'sm'} borderRadius={'xl'} px={'4'} py="6" h={'100%'}>
-        //     <Group>
-        //         <Box>
-        //             <Image  src={props.image} w={'60px'} h={'60px'} />
-        //         </Box>
-        //         <VStack gap={0} alignItems={'start'}>
-        //             <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
-        //             <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
-        //         </VStack>
-        //     </Group>
-        //     <StatHelpText mt={'2'} fontWeight={400} fontSize={'medium'} display={'inline-flex'}>
-        //         {props.size}
-        //         <LuDot />
-        //         {`${props.files} Files`}
-        //     </StatHelpText>
-        // </StatRoot>
+    // <StatRoot shadow={'sm'} borderRadius={'xl'} px={'4'} py="6" h={'100%'}>
+    //     <Group>
+    //         <Box>
+    //             <Image  src={props.image} w={'60px'} h={'60px'} />
+    //         </Box>
+    //         <VStack gap={0} alignItems={'start'}>
+    //             <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
+    //             <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
+    //         </VStack>
+    //     </Group>
+    //     <StatHelpText mt={'2'} fontWeight={400} fontSize={'medium'} display={'inline-flex'}>
+    //         {props.size}
+    //         <LuDot />
+    //         {`${props.files} Files`}
+    //     </StatHelpText>
+    // </StatRoot>
     return (
-        <StatRoot 
-        shadow={'sm'} 
-        borderRadius={'xl'} 
-        px={'4'} 
-        py="6" 
-        h={'100%'}
-    >
-        <Group align="center" gap="md">
-            <Box 
-                display="flex" 
-                alignItems="center" 
-                justifyContent="center" 
-                w={'60px'} 
-                h={'60px'} 
-                borderRadius="md"
-            >
-                <Image 
-                    src={props.image} 
-                    alt={`${props.title} icon`}
-                    objectFit="contain"
-                    w={'100%'} 
-                    h={'100%'} 
-                    maxWidth={'60px'} 
-                    maxHeight={'60px'}
-                />
-            </Box>
-            <VStack gap={0} alignItems={'start'} flex={1}>
-                <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
-                <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
-            </VStack>
-        </Group>
-        <StatHelpText 
-            mt={'2'} 
-            fontWeight={400} 
-            fontSize={'medium'} 
-            display={'inline-flex'} 
-            alignItems="center"
+        <StatRoot
+            shadow={'sm'}
+            borderRadius={'xl'}
+            px={'4'}
+            py="6"
+            h={'100%'}
         >
-            {props.size}
-            <LuDot />
-            {`${props.files} Files`}
-        </StatHelpText>
-    </StatRoot>
-       
+            <Group align="center" gap="md">
+                <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    w={{ base: '40px', md: '60px' }}
+                    h={{ base: '40px', md: '60px' }}
+                    overflow={"hidden"}
+                    borderRadius="md"
+                >
+                    <Image
+                        src={props.image}
+                        alt={`${props.title} icon`}
+                        objectFit="contain"
+                        w={'100%'}
+                        h={'100%'}
+                        maxWidth={'60px'}
+                        maxHeight={'60px'}
+                    />
+                </Box>
+                <VStack gap={0} alignItems={'start'} flex={1}>
+                    <Text fontWeight={500} fontSize={'xl'}>{props.title}</Text>
+                    <StatLabel fontWeight={400} fontSize={'small'}>{props.tagline}</StatLabel>
+                </VStack>
+            </Group>
+            <StatHelpText
+                mt={'2'}
+                fontWeight={400}
+                fontSize={'medium'}
+                display={'inline-flex'}
+                alignItems="center"
+            >
+                {props.size}
+                <LuDot />
+                {`${props.files} Files`}
+            </StatHelpText>
+        </StatRoot>
+
     )
 }
 
@@ -112,15 +113,14 @@ const getFileTypeProportions = (files: ApiFileInfo[]) => {
         }
 
         // Handle potential division by zero or NaN scenarios
-        const percentage = totalFilesSize > 0 
+        const percentage = totalFilesSize > 0
             ? (size / totalFilesSize * 100)
             : 0;
 
-        const usingText = `Using ${
-            isNaN(percentage) 
-                ? "0.00" 
+        const usingText = `Using ${isNaN(percentage)
+                ? "0.00"
                 : percentage.toFixed(2)
-        }% of storage`
+            }% of storage`
 
         const hSize = humanReadableFileSize(size)
 
@@ -140,7 +140,7 @@ const getFileTypeProportions = (files: ApiFileInfo[]) => {
 export default function Statistics() {
     const { files } = useStore(appStore)
     const storageUsage = getFileTypeProportions(files)
-    
+
     return (
         <SimpleGrid columns={{ base: 2, md: 2, lg: 4 }} gapX={'4'} gapY={'4'}>
             <GridItem>

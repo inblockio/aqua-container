@@ -42,7 +42,7 @@ const ItemDetail = ({ label, value, displayValue, showCopyIcon }: IItemDetail) =
         <Group>
             <Text>{label}</Text>
             <Group>
-                <Text fontFamily={"monospace"}>{displayValue}</Text>
+                <Text fontFamily={"monospace"} textWrap={'wrap'} wordBreak={'break-word'}>{displayValue}</Text>
                 <ClipboardRoot value={value} hidden={!showCopyIcon}>
                     <ClipboardIconButton size={'xs'} />
                 </ClipboardRoot>
@@ -337,7 +337,7 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
                 <DrawerHeader bg={{ base: verificationResult ? verificationResult?.successful ? 'green.100' : 'red.100' : 'rgb(188 220 255 / 22%)', _dark: verificationResult ? verificationResult?.successful ? 'green.900' : 'red.900' : 'rgba(0, 0, 0, 0.3)' }}>
                     <DrawerTitle>{pageData?.pages[0]?.title}</DrawerTitle>
                 </DrawerHeader>
-                <DrawerBody py={'lg'}>
+                <DrawerBody py={'lg'} px={1}>
                     <Card.Root border={'none'} shadow={'md'} borderRadius={'xl'}>
                         <Card.Body>
                             <FilePreview fileInfo={fileInfo} />
@@ -363,7 +363,7 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
                     {/* )}
                     </For> */}
                 </DrawerBody>
-                <DrawerFooter>
+                <DrawerFooter flexWrap={'wrap'}>
                     <DrawerActionTrigger asChild>
                         <Button variant="outline" size={'sm'}>Close</Button>
                     </DrawerActionTrigger>

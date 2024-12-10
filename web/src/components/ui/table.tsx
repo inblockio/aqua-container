@@ -1,6 +1,6 @@
 "use client"
 
-import { Card, CardBody, FormatByte, Group, Kbd, Table, Text } from "@chakra-ui/react"
+import { Box, Card, CardBody, FormatByte, Group, Kbd,  Table, Text, VStack } from "@chakra-ui/react"
 import {
     ActionBarContent,
     ActionBarRoot,
@@ -25,6 +25,14 @@ const FilesTable = () => {
 
     const hasSelection = selection.length > 0
     const indeterminate = hasSelection && selection.length < files.length
+
+    // const handleShare = () => {
+        // if (navigator.canShare) {
+        //     navigator.share({
+        //         url: "https://github.com/share"
+        //     })
+        // }
+    // }
 
     const rows = files?.map((item: any) => (
         <Table.Row
@@ -55,23 +63,47 @@ const FilesTable = () => {
             </Table.Cell>
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
+                    {/* <Button onClick={handleShare}>Share</Button> */}
                     <DownloadAquaChain file={item} />
                     <ChainDetails fileInfo={item} />
-                    <WitnessAquaChain filename={item.name} backend_url= {backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <DeleteAquaChain filename={item.name}   backend_url ={backend_url}/>
+                    <DeleteAquaChain filename={item.name} backend_url={backend_url} />
                 </Group>
             </Table.Cell>
         </Table.Row>
     ))
 
+    const smallScreenView = files?.map((item: any) => (
+        <Box bg={'gray.100'} _dark={{
+            bg: 'blackAlpha.950'
+        }} p={2} borderRadius={'10px'}>
+        <VStack textAlign={'start'}>
+            <Text textAlign={'start'} w={'100%'}>{item.name}</Text>
+            <Group alignItems={'start'} flexWrap={'wrap'}>
+                {/* <Button onClick={handleShare}>Share</Button> */}
+                <DownloadAquaChain file={item} />
+                <ChainDetails fileInfo={item} />
+                <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                <DeleteAquaChain filename={item.name} backend_url={backend_url} />
+            </Group>
+        </VStack>
+        </Box>
+    ))
+
     return (
-        <Card.Root px={0} borderRadius={'2xl'}>
+        <Card.Root px={1} borderRadius={'2xl'}>
             <Card.Header>
                 <Text fontWeight={500} fontSize={'2xl'}>Files</Text>
             </Card.Header>
             <CardBody px={0}>
-                <Table.ScrollArea>
+                <Box hideFrom={'md'}>
+                    <VStack gap={4}>
+                        {smallScreenView}
+                    </VStack>
+                </Box>
+                <Table.ScrollArea hideBelow={'md'}>
                     <Table.Root borderRadius={'2xl'} borderCollapse={'collapse'} borderSpacing={'4'}>
                         <Table.Header>
                             <Table.Row>
