@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Card, CardBody, FormatByte, Group, Kbd, Show, Table, Text, VStack } from "@chakra-ui/react"
+import { Box, Card, CardBody, FormatByte, Group, Kbd,  Table, Text, VStack } from "@chakra-ui/react"
 import {
     ActionBarContent,
     ActionBarRoot,
@@ -26,13 +26,13 @@ const FilesTable = () => {
     const hasSelection = selection.length > 0
     const indeterminate = hasSelection && selection.length < files.length
 
-    const handleShare = () => {
+    // const handleShare = () => {
         // if (navigator.canShare) {
         //     navigator.share({
         //         url: "https://github.com/share"
         //     })
         // }
-    }
+    // }
 
     const rows = files?.map((item: any) => (
         <Table.Row
