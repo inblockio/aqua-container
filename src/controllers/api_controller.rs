@@ -436,11 +436,11 @@ pub async fn explorer_aqua_file_upload(
         }
     };
 
-    tracing::debug!(
-        "Processing aqua  upload Account {} - File data {:#?} ",
-        account,
-        aqua_json,
-    );
+    // tracing::debug!(
+    //     "Processing aqua  upload Account {} - File data {:#?} ",
+    //     account,
+    //     aqua_json,
+    // );
 
     let mut mode = "private".to_string();
     let file_mode = env::var("FILE_MODE").unwrap_or_default();
@@ -461,7 +461,7 @@ pub async fn explorer_aqua_file_upload(
     let chain: Option<&HashChain> = aqua_json.pages.get(0);
 
     if (chain.is_none()) {
-        tracing::error!("Aqua JSON data erorr first chain not found");
+        // tracing::error!("Aqua JSON data erorr first chain not found");
         res.logs
             .push("Aqua data data erorr first chain not found".to_string());
         return (StatusCode::BAD_REQUEST, Json(res));
@@ -481,7 +481,7 @@ pub async fn explorer_aqua_file_upload(
             }
         });
     if (genesis_revision.is_none()) {
-        tracing::error!("Aqua JSON data erorr genesis revision not found");
+        // tracing::error!("Aqua JSON data erorr genesis revision not found");
         res.logs
             .push("Aqua data data erorr genesis revision not found".to_string());
         return (StatusCode::BAD_REQUEST, Json(res));

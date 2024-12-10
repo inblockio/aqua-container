@@ -13,3 +13,4 @@ pages.db-wal
 node_modules
 .vscode
 update.md
+aquafier.db

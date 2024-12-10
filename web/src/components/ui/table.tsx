@@ -26,6 +26,14 @@ const FilesTable = () => {
     const hasSelection = selection.length > 0
     const indeterminate = hasSelection && selection.length < files.length
 
+    const handleShare = () => {
+        if(navigator.canShare()){
+            navigator.share({
+                url: "https://github.com/share"
+            })
+        }
+    }
+
     const rows = files?.map((item: any) => (
         <Table.Row
             key={item.id}
@@ -55,6 +63,7 @@ const FilesTable = () => {
             </Table.Cell>
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
+                    <Button onClick={handleShare}>Share</Button>
                     <DownloadAquaChain file={item} />
                     <ChainDetails fileInfo={item} />
                     <WitnessAquaChain filename={item.name} backend_url= {backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
