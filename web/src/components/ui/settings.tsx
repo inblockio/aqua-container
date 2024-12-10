@@ -27,7 +27,7 @@ const fileModes = createListCollection({
 })
 
 const SettingsForm = () => {
-    const { setUserProfile, user_profile , backend_url} = useStore(appStore)
+    const { setUserProfile, user_profile , backend_url, metamaskAddress} = useStore(appStore)
     const [activeNetwork, setActiveNetwork] = useState<string>(user_profile.network)
     const [domain, setDomain] = useState<string>(user_profile.domain)
     const [mode, setMode] = useState<string>(user_profile.fileMode)
@@ -36,14 +36,15 @@ const SettingsForm = () => {
     const updateUserProfile = async () => {
         const formData = new URLSearchParams();
         formData.append('chain', activeNetwork);
-        formData.append('domain', domain);
-        formData.append('mode', mode);
-        formData.append('contract', contract);
+        formData.append('domain_name', domain);
+        formData.append('file_mode', mode);
+        formData.append('contract_address', contract);
+        formData.append("address", metamaskAddress ?? "")
         formData.append('theme', 'light');
 
 
         const url = `${backend_url}/explorer_update_user_profile`;
-        console.log("url is ", url);
+        
         const response = await axios.post(url, formData, {
             headers: {
                 // 'Content-Type': 'application/x-www-form-urlencoded'
