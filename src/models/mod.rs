@@ -7,6 +7,7 @@ pub mod file;
 pub mod page_data;
 pub mod input;
 pub mod user_profiles;
+pub mod share_data;
 use chrono::{DateTime, Utc};
 
 pub type DB_POOL = r2d2::Pool<ConnectionManager<SqliteConnection>>;
@@ -28,6 +29,7 @@ pub struct PagesTable {
     pub owner: String,
     pub mode: String,
     pub created_at: String,
+    pub is_shared : bool
 }
 
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
@@ -41,6 +43,16 @@ pub struct SiweSessionsTable {
     pub expiration_time: Option<String>,
 }
 
+
+#[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
+#[diesel(table_name = crate::schema::share_data)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
+pub struct ShareDataTable {
+    pub id: Option<i32>,
+    pub file_name: String,
+    pub identifier: String,
+    pub created_time: String,
+}
 
  
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]

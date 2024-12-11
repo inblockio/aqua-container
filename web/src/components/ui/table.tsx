@@ -28,7 +28,15 @@ const FilesTable = () => {
     const hasSelection = selection.length > 0
     const indeterminate = hasSelection && selection.length < files.length
 
-    const rows = filesToDisplay?.map((item: any) => (
+    // const handleShare = () => {
+        // if (navigator.canShare) {
+        //     navigator.share({
+        //         url: "https://github.com/share"
+        //     })
+        // }
+    // }
+
+    const rows = files?.map((item: any) => (
         <Table.Row
             key={item.id}
             data-selected={selection.includes(item.fileName) ? "" : undefined}

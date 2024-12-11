@@ -77,6 +77,9 @@ Multi-User File-Management
 docker compose up
 ```
 
+### Update:
+docker compose checks the lastest version on every startup
+
 ### Running a local image
 
 Run with local changes:

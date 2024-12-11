@@ -16,6 +16,7 @@ pub struct db_data {
     pub page_data: String,
     pub mode: String,
     pub owner: String,
+    pub is_shared:  bool
 }
 
 pub fn insert_page_data(
@@ -34,6 +35,7 @@ pub fn insert_page_data(
         page_data: data.page_data,
         owner: data.owner,
         created_at: datetime_string,
+        is_shared: data.is_shared,
     };
 
     let inserted_id: i32 = diesel::insert_into(crate::schema::pages::table)
@@ -69,6 +71,7 @@ pub fn fetch_page_data(
         page_data: result.page_data,
         mode: result.mode,
         owner: result.owner,
+        is_shared:  result.is_shared
     })
 }
 
@@ -106,6 +109,7 @@ pub fn update_page_data(
             page_data.eq(&data.page_data),
             mode.eq(&data.mode),
             owner.eq(&data.owner),
+            is_shared.eq(&data.is_shared)
         ))
         .execute(db_connection)
         .map_err(|e| format!("Error updating page data: {}", e))?;

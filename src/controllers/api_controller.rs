@@ -567,6 +567,7 @@ pub async fn explorer_aqua_file_upload(
         page_data: json_string,
         mode: mode,
         owner: metamask_address.to_string(),
+        is_shared: false,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -842,6 +843,7 @@ pub async fn explorer_file_upload(
         page_data: json_string,
         mode: mode,
         owner: metamask_address.to_string(),
+        is_shared: false,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -1117,6 +1119,7 @@ pub async fn explorer_sign_revision(
         page_data: page_data_new.clone(),
         owner: new_data.owner,
         mode: new_data.mode,
+        
     };
     let res: ApiResponse = ApiResponse {
         logs: log_data,

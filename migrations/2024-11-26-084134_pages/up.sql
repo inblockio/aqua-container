@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS pages (
                                      page_data TEXT NOT NULL,
                                      owner TEXT NOT NULL,
                                      mode TEXT NOT NULL,
-                                     created_at TEXT NOT NULL
+                                     created_at TEXT NOT NULL,
+                                     is_shared BOOLEAN DEFAULT false NOT NULL
                                     --  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

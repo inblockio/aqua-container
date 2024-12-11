@@ -9,6 +9,16 @@ diesel::table! {
         owner -> Text,
         mode -> Text,
         created_at -> Text,
+        is_shared -> Bool,
+    }
+}
+
+diesel::table! {
+    share_data (id) {
+        id -> Nullable<Integer>,
+        file_name -> Text,
+        identifier -> Text,
+        created_time -> Text,
     }
 }
 
@@ -36,6 +46,7 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     pages,
+    share_data,
     siwe_sessions,
     user_profiles,
 );
