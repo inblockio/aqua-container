@@ -13,6 +13,15 @@ diesel::table! {
 }
 
 diesel::table! {
+    share_data (id) {
+        id -> Nullable<Integer>,
+        file_name -> Text,
+        identifier -> Text,
+        created_time -> Text,
+    }
+}
+
+diesel::table! {
     siwe_sessions (id) {
         id -> Nullable<Integer>,
         address -> Text,
@@ -36,6 +45,7 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     pages,
+    share_data,
     siwe_sessions,
     user_profiles,
 );

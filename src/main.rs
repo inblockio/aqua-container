@@ -58,7 +58,7 @@ use controllers::{api_controller::{
     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file,
      explorer_file_upload, explorer_sign_revision,
      explorer_witness_file, fetch_explorer_files,
-}, auth_controller::session_logout_by_nonce};
+}, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
 use controllers::auth_controller::{
     siwe_sign_in, verify_siwe_message, fetch_nonce_session
 
@@ -84,7 +84,7 @@ async fn status_handler() -> Json<serde_json::Value> {
 ///
 ///  The react js project shows   example of how the aqua protocol can be utilised it
 ///  enables generation of aqua chain json file, witnessing and validation  of the qua chain file
-// #[tokio::main]
+
 #[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() {
     tracing_subscriber::fmt()
@@ -142,6 +142,8 @@ async fn main() {
         .route("/siwe", post(siwe_sign_in))
         .route("/fetch_nonce_session", post(fetch_nonce_session))
         .route("/siwe_logout", post(session_logout_by_nonce))
+        .route("/share_data/{share_identifier}", get(get_share_data))
+        .route("/share_data", post(save_share_data))
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())
