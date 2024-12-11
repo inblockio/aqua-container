@@ -53,6 +53,71 @@ const FilePreview = ({ fileInfo }: IFilePreview) => {
                     Your browser does not support the audio tag.
                 </audio>
             );
+        } else if (fileContent && fileTypeInfo === "Document") {
+
+
+            if (fileInfo.extension.replace(/\s+/g, '') == "application/pdf") {
+
+                const base64String = `data:application/pdf;base64,${fileContent.data}`;
+                return (
+                    <object
+                        data={base64String}
+                        type="application/pdf"
+                        width="100%"
+                        height="800px"
+                        className="rounded-xl"
+                        style={{
+                            borderRadius: '12px',
+                            width: '100%',
+                            border: 'none',
+                            height: '500px'
+                        }}
+                    >
+                        <param name="view" value="FitH" />
+                        <param name="pagemode" value="none" />
+                    </object>
+                );
+            } else if (["text/plain", "text/csv", "text/json"].includes(fileInfo.extension.replace(/\s+/g, ''))) {
+                // Decode base64 to string
+                const decodedContent = atob(fileContent.data);
+
+                console.log("decodedContent ==>", decodedContent)
+    
+                // Determine syntax highlighting and formatting based on file type
+                let formattedContent = decodedContent;
+                if (fileInfo.extension.replace(/\s+/g, '') === "text/json") {
+                    try {
+                        // Pretty print JSON with indentation
+                        formattedContent = JSON.stringify(JSON.parse(decodedContent), null, 2);
+                    } catch (error) {
+                        console.error("Error parsing json for preview ", error)
+                        // If JSON parsing fails, show original content
+                        formattedContent = decodedContent;
+                    }
+                }
+
+                console.log("formattedContent ==> ", formattedContent)
+    
+                return (
+                    <div 
+                        style={{
+                            backgroundColor: '#f4f4f4',
+                            color:"black",
+                            borderRadius: '12px',
+                            padding: '15px',
+                            maxHeight: '600px',
+                            overflowY: 'auto',
+                            fontFamily: 'monospace',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word'
+                        }}
+                    >
+                        {formattedContent}
+                    </div>
+                );
+            }else{
+                console.log("document not captured ",fileInfo.extension )
+            }
         }
     }
     return <div >
