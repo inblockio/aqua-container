@@ -142,7 +142,7 @@ pub async fn save_share_data(
 
         return (StatusCode::NOT_FOUND, Json(res));
     }
-
+    
     // 1. Get current UTC time as a DateTime<Utc>
     let current_utc = Utc::now();
     let time_data = current_utc.format("%Y-%m-%d %H:%M:%S UTC");
@@ -166,6 +166,19 @@ pub async fn save_share_data(
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
 
+    let mut page_data =  page_data_result.unwrap();
+    page_data.is_shared = true;
+
+    // update db file is  shared 
+    let  update_result =  update_page_data(page_data, & mut conn);
+
+    if update_result.is_err(){
+        
+        res.logs
+            .push(format!("error updating system  {:#?}",update_result.err() ));
+
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
 
     return (StatusCode::OK, Json(res));
 }

@@ -29,6 +29,7 @@ pub struct PagesTable {
     pub owner: String,
     pub mode: String,
     pub created_at: String,
+    pub is_shared : bool
 }
 
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]

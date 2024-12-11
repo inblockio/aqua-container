@@ -9,6 +9,7 @@ diesel::table! {
         owner -> Text,
         mode -> Text,
         created_at -> Text,
+        is_shared -> Bool,
     }
 }
 
