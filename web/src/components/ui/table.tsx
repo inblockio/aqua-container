@@ -36,7 +36,7 @@ const FilesTable = () => {
         // }
     // }
 
-    const rows = files?.map((item: any) => (
+    const rows = filesToDisplay?.map((item: any) => (
         <Table.Row
             key={item.id}
             data-selected={selection.includes(item.fileName) ? "" : undefined}
