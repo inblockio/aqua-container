@@ -1,8 +1,8 @@
-import { LuDelete, LuDownload, LuFileSignature, LuGlasses } from "react-icons/lu"
+import { LuDelete, LuDownload, LuFileSignature, LuGlasses, LuShare, LuShare2 } from "react-icons/lu"
 import { Button } from "./ui/button"
 import { ethers } from "ethers"
 import { getCurrentNetwork, switchNetwork } from "../utils/functions"
-import {  ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP } from "../utils/constants"
+import { ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP } from "../utils/constants"
 import { useStore } from "zustand"
 import appStore from "../store"
 import axios from "axios"
@@ -11,8 +11,14 @@ import { toaster } from "./ui/toaster"
 import { useState } from "react"
 import sha3 from 'js-sha3'
 import { PageData } from "../models/PageData"
+import { DialogActionTrigger, DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot, DialogTitle, DialogTrigger } from "./ui/dialog"
+import { generateNonce } from "siwe"
+import Loading from "react-loading"
+import { Box, Center, Text, VStack } from "@chakra-ui/react"
+import { ClipboardButton, ClipboardIconButton, ClipboardInput, ClipboardLabel, ClipboardRoot } from "./ui/clipboard"
+import { InputGroup } from "./ui/input-group"
 
-async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url : string) {
+async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url: string) {
 
     const formData = new URLSearchParams();
 
@@ -21,7 +27,7 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
     formData.append('wallet_address', ownerAddress);
     formData.append('network', network);
 
-   const url =`${backend_url}/explorer_witness_file`
+    const url = `${backend_url}/explorer_witness_file`
 
     let response = await axios.post(url, formData, {
         headers: {
@@ -60,7 +66,7 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
 interface ISigningAndWitnessing {
     filename: string
     lastRevisionVerificationHash?: string
-    backend_url : string
+    backend_url: string
 }
 
 export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
@@ -215,7 +221,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                         formData.append('publickey', publicKey)
                         formData.append('wallet_address', signerAddress);
 
-                      let url = `${backend_url}/explorer_sign_revision`;
+                        let url = `${backend_url}/explorer_sign_revision`;
                         const response = await axios.post(url, formData, {
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -281,7 +287,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
 }
 
 
-export const DeleteAquaChain = ({ filename, backend_url }: ISigningAndWitnessing ) => {
+export const DeleteAquaChain = ({ filename, backend_url }: ISigningAndWitnessing) => {
     const { files, setFiles } = useStore(appStore)
     const [deleting, setDeleting] = useState(false)
 
@@ -390,5 +396,91 @@ export const DownloadAquaChain = ({ file }: { file: ApiFileInfo }) => {
             <LuDownload />
             Download Aqua-Chain
         </Button>
+    )
+}
+
+interface IShareButton {
+    id: number | null
+    filename: string | null
+}
+
+export const ShareButton = ({ filename }: IShareButton) => {
+
+    const [isOpen, setIsOpen] = useState(false)
+    const [sharing, setSharing] = useState(false)
+    const [shared, setShared] = useState<string | null>(null)
+
+    const handleShare = () => {
+        setSharing(true)
+        // let id_to_share = id;
+        let unique_identifier = `${Date.now()}_${generateNonce()}`
+
+        setSharing(false)
+        const domain = window.location.origin;
+        setShared(`${domain}/share/${unique_identifier}`)
+
+    }
+
+    return (
+        <>
+            <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'168px'} onClick={() => setIsOpen(true)}>
+                <LuShare2 />
+                Share
+            </Button>
+            <DialogRoot open={isOpen} onOpenChange={e => setIsOpen(e.open)}>
+                {/* <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        Open Dialog
+                    </Button>
+                </DialogTrigger> */}
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{`Sharing ${filename}`}</DialogTitle>
+                    </DialogHeader>
+                    <DialogBody>
+                        <VStack textAlign={'start'}>
+                            <p>
+                                {`You are about to share ${filename}. Once a file is shared, don't delete it otherwise it will be broken if one tries to import it.`}
+                            </p>
+                            {
+                                sharing ?
+                                    <Center>
+                                        <Loading />
+                                    </Center>
+                                    : null
+                            }
+                            {
+                                shared ?
+                                    <Box w={'100%'}>
+                                        <ClipboardRoot value={shared}>
+                                            <ClipboardLabel>Shared Document Link</ClipboardLabel>
+                                            <InputGroup width="full" endElement={<ClipboardIconButton me="-2" />}>
+                                                <ClipboardInput />
+                                            </InputGroup>
+                                            <Text fontSize={'sm'} mt={'2'}>Copy the link above and share</Text>
+                                        </ClipboardRoot>
+                                    </Box>
+                                    : null
+                            }
+                        </VStack>
+                    </DialogBody>
+                    <DialogFooter>
+                        <DialogActionTrigger asChild>
+                            <Button variant="outline" borderRadius={'md'}>Cancel</Button>
+                        </DialogActionTrigger>
+                        {
+                            shared ? (
+                                <ClipboardRoot value={shared}>
+                                    <ClipboardButton borderRadius={'md'} variant={'solid'} />
+                                </ClipboardRoot>
+                            ) : (
+                                <Button onClick={handleShare} borderRadius={'md'}>Share</Button>
+                            )
+                        }
+                    </DialogFooter>
+                    <DialogCloseTrigger />
+                </DialogContent>
+            </DialogRoot>
+        </>
     )
 }

@@ -281,8 +281,8 @@ interface IPageDataDetails {
 
 const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
 
-    const {  backend_url } = useStore(appStore)
-    const [open, setOpen] = useState(false)
+    const { backend_url } = useStore(appStore)
+    const [isOpen, setIsOpen] = useState(false)
     const [verificationResult, setVerificationResult] = useState<RevisionAquaChainResult | null>(null)
     const pageData: PageData = JSON.parse(fileInfo.page_data)
 
@@ -313,68 +313,77 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
     }
 
     useEffect(() => {
-        if (open && pageData) {
+        if (isOpen && pageData) {
             verifyAquaChain()
         }
     }, [open])
 
     useEffect(() => {
         if (!pageData) {
-            setOpen(false)
+            setIsOpen(false)
         }
     }, [pageData])
 
     return (
-        <DrawerRoot open={open} size={{ base: 'full', md: 'lg' }} onOpenChange={(e) => setOpen(e.open)}>
-            <DrawerBackdrop />
-            <DrawerTrigger asChild>
-                <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'}>
-                    <LuEye />
-                    Details
-                </Button>
-            </DrawerTrigger>
-            <DrawerContent borderLeftRadius={'xl'} overflow={'hidden'}>
-                <DrawerHeader bg={{ base: verificationResult ? verificationResult?.successful ? 'green.100' : 'red.100' : 'rgb(188 220 255 / 22%)', _dark: verificationResult ? verificationResult?.successful ? 'green.900' : 'red.900' : 'rgba(0, 0, 0, 0.3)' }}>
-                    <DrawerTitle>{pageData?.pages[0]?.title}</DrawerTitle>
-                </DrawerHeader>
-                <DrawerBody py={'lg'} px={1}>
-                    <Card.Root border={'none'} shadow={'md'} borderRadius={'xl'}>
-                        <Card.Body>
-                            <FilePreview fileInfo={fileInfo} />
-                        </Card.Body>
-                    </Card.Root>
-                    <Spacer height={'20px'} />
-                    {/* <Text color={'gray.800'} _dark={{ color: 'white' }}>
+        <>
+            {/* <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'} onClick={() => setIsOpen(true)}>
+                <LuEye />
+                Details
+            </Button> */}
+
+            <DrawerRoot open={isOpen} size={{ base: 'full', md: 'lg' }} onOpenChange={(e) => setIsOpen(e.open)}>
+                <DrawerBackdrop />
+                <DrawerTrigger asChild>
+                    <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'}>
+                        <LuEye />
+                        Details
+                    </Button>
+                </DrawerTrigger>
+                <DrawerContent borderLeftRadius={'xl'} overflow={'hidden'}>
+                    <DrawerHeader bg={{ base: verificationResult ? verificationResult?.successful ? 'green.100' : 'red.100' : 'rgb(188 220 255 / 22%)', _dark: verificationResult ? verificationResult?.successful ? 'green.900' : 'red.900' : 'rgba(0, 0, 0, 0.3)' }}>
+                        <DrawerTitle>{pageData?.pages[0]?.title}</DrawerTitle>
+                    </DrawerHeader>
+                    <DrawerBody py={'lg'} px={1}>
+                        <Card.Root border={'none'} shadow={'md'} borderRadius={'xl'}>
+                            <Card.Body>
+                                <FilePreview fileInfo={fileInfo} />
+                            </Card.Body>
+                        </Card.Root>
+                        <Spacer height={'20px'} />
+                        {/* <Text color={'gray.800'} _dark={{ color: 'white' }}>
                         Aqua Chain Details
                     </Text> */}
-                    {/* <For
+                        {/* <For
                         each={pageData.pages}
                     >
                         {(hashChain, hashChainIndex) => ( */}
-                    <TimelineRoot size="lg" variant="subtle" maxW="xl">
-                        <For
-                            each={Object.values(pageData.pages[0].revisions)}
-                        >
-                            {(revision, index) => (
-                                <RevisionDisplay key={`revision_${index}`} revision={revision} verificationResult={verificationResult?.revisionResults[index]} />
-                            )}
-                        </For>
-                    </TimelineRoot>
-                    {/* )}
+                        <TimelineRoot size="lg" variant="subtle" maxW="xl">
+                            <For
+                                each={Object.values(pageData.pages[0].revisions)}
+                            >
+                                {(revision, index) => (
+                                    <RevisionDisplay key={`revision_${index}`} revision={revision} verificationResult={verificationResult?.revisionResults[index]} />
+                                )}
+                            </For>
+                        </TimelineRoot>
+                        {/* )}
                     </For> */}
-                </DrawerBody>
-                <DrawerFooter flexWrap={'wrap'}>
-                    <DrawerActionTrigger asChild>
-                        <Button variant="outline" size={'sm'}>Close</Button>
-                    </DrawerActionTrigger>
-                    <DownloadAquaChain file={file} />
-                    <WitnessAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
-                    <SignAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
-                    <DeleteAquaChain  backend_url={backend_url} filename={file.name} />
-                </DrawerFooter>
-                <DrawerCloseTrigger />
-            </DrawerContent>
-        </DrawerRoot>
+                    </DrawerBody>
+                    <DrawerFooter flexWrap={'wrap'}>
+                        <DrawerActionTrigger asChild>
+                            <Button variant="outline" size={'sm'}>Close</Button>
+                        </DrawerActionTrigger>
+                        <DownloadAquaChain file={file} />
+                        <WitnessAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
+                        <SignAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
+                        <DeleteAquaChain backend_url={backend_url} filename={file.name} />
+                    </DrawerFooter>
+                    <DrawerCloseTrigger />
+                </DrawerContent>
+            </DrawerRoot>
+
+
+        </>
     )
 }
 
