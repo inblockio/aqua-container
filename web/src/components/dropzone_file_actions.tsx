@@ -7,7 +7,9 @@ import { useEffect, useState } from "react";
 import { ApiFileInfo } from "../models/FileInfo";
 import { toaster } from "./ui/toaster";
 import { readJsonFile } from "../utils/functions";
-import ChainDetails from "./ui/navigation/CustomDrawer";
+import { ChainDetailsBtn } from "./ui/navigation/CustomDrawer";
+import { Container, Group, Text } from "@chakra-ui/react";
+import { Alert } from "./ui/alert";
 
 
 interface IDropzoneAction {
@@ -25,6 +27,18 @@ export const UploadFile = ({ file, uploadedIndexes, fileIndex, updateUploadedInd
     const { metamaskAddress, setFiles, files, backend_url } = useStore(appStore)
 
     const uploadFile = async () => {
+
+        const existingChainFile = files.find(_file => file.name === _file.name)
+
+        if (existingChainFile) {
+            toaster.create({
+                description: "You already have the file. Delete before importing this",
+                type: "info"
+            })
+            return
+        }
+
+
         if (!file) {
             toaster.create({
                 description: "No file selected!",
@@ -97,6 +111,7 @@ export const VerifyFile = ({ file }: IDropzoneAction) => {
 
     const [verifying, setVerifying] = useState(false)
     const [hashChainForVerification, setHashChain] = useState<ApiFileInfo>()
+    const [_isVerificationSuccessful, setIsVerificationSuccessful] = useState(false)
     // const [uploaded, setUploaded] = useState(false)
 
     // const { metamaskAddress, setFiles, files } = useStore(appStore)
@@ -134,11 +149,11 @@ export const VerifyFile = ({ file }: IDropzoneAction) => {
         <>
             {
                 hashChainForVerification ? (
-                    <ChainDetails fileInfo={hashChainForVerification} />
+                    <ChainDetailsBtn fileInfo={hashChainForVerification} callBack={(res) => setIsVerificationSuccessful(res)} />
                 ) : (
                     <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'80px'} loading={verifying} disabled>
                         <LuScan />
-                        LOading Chain
+                        Loading Chain
                     </Button>
                 )
             }
@@ -147,12 +162,12 @@ export const VerifyFile = ({ file }: IDropzoneAction) => {
 }
 
 
-export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUploadedIndex }: IDropzoneAction) => {
+export const ImportAquaChainFromFile = ({ file, uploadedIndexes, fileIndex, updateUploadedIndex }: IDropzoneAction) => {
 
     const [uploading, setUploading] = useState(false)
     const [uploaded, setUploaded] = useState(false)
 
-    const { metamaskAddress, setFiles, files, user_profile , backend_url} = useStore(appStore)
+    const { metamaskAddress, setFiles, files, user_profile, backend_url } = useStore(appStore)
 
     const importAquaChain = async () => {
 
@@ -220,5 +235,121 @@ export const ImportAquaChain = ({ file, uploadedIndexes, fileIndex, updateUpload
             <LuImport />
             Import
         </Button>
+    )
+}
+
+interface ImportChainFromChainProps { fileInfo: ApiFileInfo, isVerificationSuccessful: boolean }
+
+export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }: ImportChainFromChainProps) => {
+
+    const [uploading, setUploading] = useState(false)
+    const [_uploaded, setUploaded] = useState(false)
+    const [dbFiles, setDbFiles] = useState<ApiFileInfo[]>([])
+
+    const { metamaskAddress, setFiles, files, user_profile, backend_url } = useStore(appStore)
+
+    const importAquaChain = async () => {
+
+        const existingChainFile = dbFiles.find(file => file.name === fileInfo.name)
+
+        if (existingChainFile) {
+            toaster.create({
+                description: `You already have the file called "${fileInfo.name}". Delete before importing this `,
+                type: "error"
+            })
+            return
+        }
+
+        // Create a JSON file from the page_data object
+        const fileData = fileInfo.page_data // JSON.stringify(fileInfo.page_data, null, 2); // Convert to JSON string
+        const file = new File([fileData], fileInfo.name, {
+            type: "application/json",
+        });
+
+        if (!file) {
+            toaster.create({
+                description: "No file selected!",
+                type: "error"
+            })
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('account', `${metamaskAddress}`);
+
+        setUploading(true)
+
+        try {
+            const url = `${backend_url}/explorer_file_upload`
+            console.log("importAquaChain url ", url)
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    "metamask_address": metamaskAddress
+                },
+            });
+
+            const res = response.data
+
+            // let logs: Array<string> = res.logs
+            // logs.forEach((item) => {
+            //     console.log("**>" + item + "\n.")
+            // })
+
+            // console.log("Upload res: ", res)
+
+            // Assuming the API returns an array of FileInfo objects
+            const file: ApiFileInfo = {
+                id: res.file.id,
+                name: res.file.name,
+                extension: res.file.extension,
+                page_data: res.file.page_data,
+                mode: user_profile.fileMode ?? "",
+                owner: metamaskAddress ?? "",
+            };
+            setFiles([...files, file])
+            // setUploadedFilesIndexes(value => [...value, fileIndex])
+            toaster.create({
+                description: "Aqua Chain imported successfully",
+                type: "success"
+            })
+            setUploading(false)
+            setUploaded(true)
+            return;
+        } catch (error) {
+            setUploading(false)
+            toaster.create({
+                description: `Failed to import chain: ${error}`,
+                type: "error"
+            })
+        }
+    };
+
+    useEffect(() => {
+        setDbFiles(files)
+    }, [files])
+
+    return (
+        <Container maxW={'xl'}>
+            <Alert title="Import Aqua Chain" icon={<LuImport />}>
+                <Group gap={"10"}>
+                    <Text>
+                        Do you want to import this Aqua Chain?
+                    </Text>
+                    <Button size={'lg'} colorPalette={'blue'} variant={'solid'} onClick={importAquaChain} disabled={!isVerificationSuccessful} loading={uploading}>
+                        <LuImport />
+                        Import
+                    </Button>
+                </Group>
+            </Alert>
+            {/* <Alert.Root colorPalette={'orange'}>
+                Would you like to import the file?
+                <Button size={'lg'} colorPalette={'blue'} variant={'subtle'} onClick={importAquaChain} disabled={!isVerificationSuccessful} loading={uploading}>
+                    <LuImport />
+                    Import
+                </Button>
+            </Alert.Root> */}
+        </Container>
     )
 }

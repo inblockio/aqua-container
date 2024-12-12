@@ -1,4 +1,4 @@
-import { LuDelete, LuDownload, LuFileSignature, LuGlasses, LuShare, LuShare2 } from "react-icons/lu"
+import { LuDelete, LuDownload, LuGlasses, LuShare2, LuSignature } from "react-icons/lu"
 import { Button } from "./ui/button"
 import { ethers } from "ethers"
 import { getCurrentNetwork, switchNetwork } from "../utils/functions"
@@ -11,7 +11,7 @@ import { toaster } from "./ui/toaster"
 import { useState } from "react"
 import sha3 from 'js-sha3'
 import { PageData } from "../models/PageData"
-import { DialogActionTrigger, DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot, DialogTitle, DialogTrigger } from "./ui/dialog"
+import { DialogActionTrigger, DialogBody, DialogCloseTrigger, DialogContent, DialogFooter, DialogHeader, DialogRoot, DialogTitle } from "./ui/dialog"
 import { generateNonce } from "siwe"
 import Loading from "react-loading"
 import { Box, Center, Text, VStack } from "@chakra-ui/react"
@@ -280,7 +280,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
 
     return (
         <Button size={'xs'} colorPalette={'blue'} variant={'subtle'} w={'80px'} onClick={signFileHandler} loading={signing}>
-            <LuFileSignature />
+            <LuSignature />
             Sign
         </Button>
     )
@@ -405,25 +405,46 @@ interface IShareButton {
 }
 
 export const ShareButton = ({ filename }: IShareButton) => {
-
+    const {backend_url}  = useStore(appStore)
     const [isOpen, setIsOpen] = useState(false)
     const [sharing, setSharing] = useState(false)
     const [shared, setShared] = useState<string | null>(null)
 
-    const handleShare = () => {
+    const handleShare = async () => {
         setSharing(true)
         // let id_to_share = id;
         let unique_identifier = `${Date.now()}_${generateNonce()}`
 
-        setSharing(false)
-        const domain = window.location.origin;
-        setShared(`${domain}/share/${unique_identifier}`)
+        const url = `${backend_url}/share_data`;
+        const formData = new URLSearchParams();
+        formData.append('filename', filename ?? "");
+        formData.append('identifier', unique_identifier);
+
+        const response = await axios.post(url, formData, {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        });
+
+        console.log(response)
+
+        if(response.status === 200){   
+            setSharing(false)
+            const domain = window.location.origin;
+            setShared(`${domain}/share/${unique_identifier}`)
+        }
+        else{
+            toaster.create({
+                description: "Error sharing",
+                type: "error"
+            })
+        }
 
     }
 
     return (
         <>
-            <Button size={'xs'} colorPalette={'blackAlpha'} variant={'subtle'} w={'168px'} onClick={() => setIsOpen(true)}>
+            <Button size={'xs'} colorPalette={'orange'} variant={'subtle'} w={'168px'} onClick={() => setIsOpen(true)}>
                 <LuShare2 />
                 Share
             </Button>

@@ -15,7 +15,7 @@ import appStore from "../../store"
 import { getFileCategory, getLastRevisionVerificationHash, sumFileContentSize, timeToHumanFriendly } from "../../utils/functions"
 import { getTimestampSafe } from "../../models/PageData"
 import { DeleteAquaChain, DownloadAquaChain, ShareButton, SignAquaChain, WitnessAquaChain } from "../aqua_chain_actions"
-import ChainDetails from "./navigation/CustomDrawer"
+import { ChainDetailsBtn } from "./navigation/CustomDrawer"
 import { Alert } from "./alert"
 import { ApiFileInfo } from "../../models/FileInfo"
 
@@ -36,7 +36,7 @@ const FilesTable = () => {
         // }
     // }
 
-    const rows = filesToDisplay?.map((item: any) => (
+    const rows = files?.map((item: any) => (
         <Table.Row
             key={item.id}
             data-selected={selection.includes(item.fileName) ? "" : undefined}
@@ -67,7 +67,7 @@ const FilesTable = () => {
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <ShareButton id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
-                    <ChainDetails fileInfo={item} />
+                    <ChainDetailsBtn fileInfo={item} />
                     <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <DeleteAquaChain filename={item.name} backend_url={backend_url} />
@@ -77,7 +77,7 @@ const FilesTable = () => {
     ))
 
     const smallScreenView = files?.map((item: any) => (
-        <Box bg={'gray.100'} _dark={{
+        <Box key={`sm_${item.id}`} bg={'gray.100'} _dark={{
             bg: 'blackAlpha.950'
         }} p={2} borderRadius={'10px'}>
             <VStack textAlign={'start'}>
@@ -85,7 +85,7 @@ const FilesTable = () => {
                 <Group alignItems={'start'} flexWrap={'wrap'}>
                     <ShareButton id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
-                    <ChainDetails fileInfo={item} />
+                    <ChainDetailsBtn fileInfo={item} />
                     <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <DeleteAquaChain filename={item.name} backend_url={backend_url} />

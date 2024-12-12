@@ -150,7 +150,7 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                                             <TimelineContent gap="2">
                                                 <TimelineTitle>
                                                     <Span>
-                                                        Revision content is
+                                                        Revision signature is
                                                         {verificationResult?.signature_verification.successful ? ' valid' : ' invalid'}
                                                     </Span>
                                                 </TimelineTitle>
@@ -277,23 +277,13 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
 
 interface IPageDataDetails {
     fileInfo: ApiFileInfo
+    callBack?: (res: boolean) => void
 }
 
-const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
-
-    const { backend_url } = useStore(appStore)
-    const [isOpen, setIsOpen] = useState(false)
+const ChainDetails = ({ fileInfo, callBack }: IPageDataDetails) => {
     const [verificationResult, setVerificationResult] = useState<RevisionAquaChainResult | null>(null)
     const pageData: PageData = JSON.parse(fileInfo.page_data)
 
-    const file: ApiFileInfo = {
-        id: 0,
-        name: pageData.pages[0].title,
-        extension: "",
-        page_data: JSON.stringify(pageData),
-        mode: "",
-        owner: ""
-    }
 
     const verifyAquaChain = () => {
 
@@ -305,6 +295,7 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
 
         verifier.verifyAquaChain(pageData.pages[0]).then((res) => {
             setVerificationResult(res)
+            callBack && callBack(res.successful)
         }).catch((error: any) => {
             console.error("Failed to verify aqua chain: ", error)
         }).finally(() => {
@@ -313,34 +304,61 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
     }
 
     useEffect(() => {
-        if (isOpen && pageData) {
+        if (pageData) {
             verifyAquaChain()
         }
-    }, [open])
-
-    useEffect(() => {
-        if (!pageData) {
-            setIsOpen(false)
-        }
-    }, [pageData])
+    }, [])
 
     return (
         <>
-            {/* <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'} onClick={() => setIsOpen(true)}>
+            <TimelineRoot size="lg" variant="subtle" maxW="xl">
+                <For
+                    each={Object.values(pageData.pages[0].revisions)}
+                >
+                    {(revision, index) => (
+                        <RevisionDisplay key={`revision_${index}`} revision={revision} verificationResult={verificationResult?.revisionResults[index]} />
+                    )}
+                </For>
+            </TimelineRoot>
+        </>
+    )
+}
+
+export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
+    const { backend_url } = useStore(appStore)
+    const [isOpen, setIsOpen] = useState(false)
+    const pageData: PageData = JSON.parse(fileInfo.page_data)
+    const [isVerificationSuccessful, setIsVerificationSuccessful] = useState<boolean>(false)
+    const [lastVerificationHash, setLastVerificationHash] = useState<string | null>(null)
+
+
+    const updateVerificationStatus = (result: boolean) => {
+        setIsVerificationSuccessful(result)
+    }
+
+    useEffect(() => {
+        const hash = getLastRevisionVerificationHash(pageData)
+        setLastVerificationHash(hash)
+    }, [fileInfo])
+
+
+    return (
+        <>
+            <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'} onClick={() => setIsOpen(true)}>
                 <LuEye />
                 Details
-            </Button> */}
+            </Button>
 
             <DrawerRoot open={isOpen} size={{ base: 'full', md: 'lg' }} onOpenChange={(e) => setIsOpen(e.open)}>
                 <DrawerBackdrop />
-                <DrawerTrigger asChild>
+                {/* <DrawerTrigger asChild>
                     <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'}>
                         <LuEye />
                         Details
                     </Button>
-                </DrawerTrigger>
+                </DrawerTrigger> */}
                 <DrawerContent borderLeftRadius={'xl'} overflow={'hidden'}>
-                    <DrawerHeader bg={{ base: verificationResult ? verificationResult?.successful ? 'green.100' : 'red.100' : 'rgb(188 220 255 / 22%)', _dark: verificationResult ? verificationResult?.successful ? 'green.900' : 'red.900' : 'rgba(0, 0, 0, 0.3)' }}>
+                    <DrawerHeader bg={{ base: isVerificationSuccessful ? 'green.100' : 'red.100', _dark: isVerificationSuccessful ? 'green.900' : 'red.900' }}>
                         <DrawerTitle>{pageData?.pages[0]?.title}</DrawerTitle>
                     </DrawerHeader>
                     <DrawerBody py={'lg'} px={1}>
@@ -350,38 +368,20 @@ const ChainDetails = ({ fileInfo }: IPageDataDetails) => {
                             </Card.Body>
                         </Card.Root>
                         <Spacer height={'20px'} />
-                        {/* <Text color={'gray.800'} _dark={{ color: 'white' }}>
-                        Aqua Chain Details
-                    </Text> */}
-                        {/* <For
-                        each={pageData.pages}
-                    >
-                        {(hashChain, hashChainIndex) => ( */}
-                        <TimelineRoot size="lg" variant="subtle" maxW="xl">
-                            <For
-                                each={Object.values(pageData.pages[0].revisions)}
-                            >
-                                {(revision, index) => (
-                                    <RevisionDisplay key={`revision_${index}`} revision={revision} verificationResult={verificationResult?.revisionResults[index]} />
-                                )}
-                            </For>
-                        </TimelineRoot>
-                        {/* )}
-                    </For> */}
+                        <ChainDetails fileInfo={fileInfo} callBack={updateVerificationStatus} />
                     </DrawerBody>
                     <DrawerFooter flexWrap={'wrap'}>
                         <DrawerActionTrigger asChild>
                             <Button variant="outline" size={'sm'}>Close</Button>
                         </DrawerActionTrigger>
-                        <DownloadAquaChain file={file} />
-                        <WitnessAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
-                        <SignAquaChain backend_url={backend_url} filename={file.name} lastRevisionVerificationHash={getLastRevisionVerificationHash(pageData)} />
-                        <DeleteAquaChain backend_url={backend_url} filename={file.name} />
+                        <DownloadAquaChain file={fileInfo} />
+                        <WitnessAquaChain backend_url={backend_url} filename={fileInfo.name} lastRevisionVerificationHash={lastVerificationHash ?? ""} />
+                        <SignAquaChain backend_url={backend_url} filename={fileInfo.name} lastRevisionVerificationHash={lastVerificationHash ?? ""} />
+                        <DeleteAquaChain backend_url={backend_url} filename={fileInfo.name} />
                     </DrawerFooter>
                     <DrawerCloseTrigger />
                 </DrawerContent>
             </DrawerRoot>
-
 
         </>
     )

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "../button";
 import { DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../dialog";
 import { Center, Dialog, Text, VStack } from "@chakra-ui/react";
-import { LuCheckCircle2, LuLogOut, LuWallet2, LuXCircle } from "react-icons/lu";
+import { LuCircleCheck, LuCircleX, LuLogOut, LuWallet } from "react-icons/lu";
 import ReactLoading from "react-loading";
 import { fetchFiles, formatCryptoAddress, generateAvatar, getCookie, remove0xPrefix, setCookie } from "../../../utils/functions";
 import { SiweMessage, generateNonce } from "siwe";
@@ -190,7 +190,7 @@ export default function ConnectWallet() {
             !metamaskAddress && signAndConnect();
           }}
         >
-          <LuWallet2 />
+          <LuWallet />
           {metamaskAddress ? formatCryptoAddress(metamaskAddress, 3, 3) : "Sign In"}
         </Button>
       </DialogTrigger>
@@ -222,7 +222,7 @@ export default function ConnectWallet() {
               )}
               {connectionState === "success" && (
                 <>
-                  <LuCheckCircle2 strokeWidth="1px" color="green" size={iconSize} />
+                  <LuCircleCheck strokeWidth="1px" color="green" size={iconSize} />
                   <Text fontSize={"md"} color={"green.700"}>
                     Successfully connected!
                   </Text>
@@ -230,7 +230,7 @@ export default function ConnectWallet() {
               )}
               {connectionState === "error" && (
                 <>
-                  <LuXCircle color="red" strokeWidth="1px" size={iconSize} />
+                  <LuCircleX color="red" strokeWidth="1px" size={iconSize} />
                   <VStack gap={0}>
                     <Text fontSize={"md"} color={"red.700"}>
                       Error connecting to wallet
