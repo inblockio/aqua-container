@@ -11,49 +11,51 @@ const LoadConfiguration = () => {
     const { setMetamaskAddress, setUserProfile, setFiles, setAvatar, backend_url } = useStore(appStore)
 
     const fetchAddressGivenANonce = async (nonce: string) => {
-        try {
-            const formData = new URLSearchParams();
-            formData.append('nonce', nonce);
+        if (!backend_url.includes('0.0.0.0')) {
+            try {
+                const formData = new URLSearchParams();
+                formData.append('nonce', nonce);
 
-            const url = `${backend_url}/fetch_nonce_session`;
-            console.log("url is ", url)
-            const response = await axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            });
+                const url = `${backend_url}/fetch_nonce_session`;
+                console.log("url is ", url)
+                const response = await axios.post(url, formData, {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                });
 
-            if (response.status === 200) {
-                const url2 = `${backend_url}/explorer_files`;
-                const _address = response.data?.address
-                if (_address) {
-                    const address = ethers.getAddress(_address)
-                    setMetamaskAddress(address)
-                    const avatar = generateAvatar(address)
-                    setAvatar(avatar)
-                    const files = await fetchFiles(address, url2);
-                    setFiles(files)
-                    fetchUserProfile(_address)
+                if (response.status === 200) {
+                    const url2 = `${backend_url}/explorer_files`;
+                    const _address = response.data?.address
+                    if (_address) {
+                        const address = ethers.getAddress(_address)
+                        setMetamaskAddress(address)
+                        const avatar = generateAvatar(address)
+                        setAvatar(avatar)
+                        const files = await fetchFiles(address, url2);
+                        setFiles(files)
+                        fetchUserProfile(_address)
+                    }
+                } else {
+                    setMetamaskAddress(null)
+                    setAvatar(undefined)
+                    setFiles([])
+                    setUserProfile({
+                        network: '',
+                        domain: '',
+                        fileMode: '',
+                        contractAddress: '',
+                    })
                 }
-            } else {
-                setMetamaskAddress(null)
-                setAvatar(undefined)
-                setFiles([])
-                setUserProfile({
-                    network: '',
-                    domain: '',
-                    fileMode: '',
-                    contractAddress: '',
-                })
             }
-        }
-        catch (error: any) {
-            if (error?.response?.status === 404) {
-                setMetamaskAddress(null)
-                setAvatar(undefined)
-                setFiles([])
-            } else {
-                console.log("An error from the api ", error);
+            catch (error: any) {
+                if (error?.response?.status === 404) {
+                    setMetamaskAddress(null)
+                    setAvatar(undefined)
+                    setFiles([])
+                } else {
+                    console.log("An error from the api ", error);
+                }
             }
         }
     }

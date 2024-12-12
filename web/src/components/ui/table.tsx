@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Card, CardBody, FormatByte, Group, Kbd,  Table, Text, VStack } from "@chakra-ui/react"
+import { Box, Card, CardBody, FormatByte, Group, Kbd, Table, Text, VStack } from "@chakra-ui/react"
 import {
     ActionBarContent,
     ActionBarRoot,
@@ -9,17 +9,19 @@ import {
 } from "./action-bar"
 import { Button } from "./button"
 import { Checkbox } from "./checkbox"
-import { useState } from "react"
+import { SetStateAction, useEffect, useState } from "react"
 import { useStore } from "zustand"
 import appStore from "../../store"
 import { getFileCategory, getLastRevisionVerificationHash, sumFileContentSize, timeToHumanFriendly } from "../../utils/functions"
 import { getTimestampSafe } from "../../models/PageData"
-import { DeleteAquaChain, DownloadAquaChain, SignAquaChain, WitnessAquaChain } from "../aqua_chain_actions"
-import ChainDetails from "./navigation/CustomDrawer"
+import { DeleteAquaChain, DownloadAquaChain, ShareButton, SignAquaChain, WitnessAquaChain } from "../aqua_chain_actions"
+import { ChainDetailsBtn } from "./navigation/CustomDrawer"
 import { Alert } from "./alert"
+import { ApiFileInfo } from "../../models/FileInfo"
 
 
 const FilesTable = () => {
+    const [filesToDisplay, setFilesToDisplay] = useState<ApiFileInfo[]>([])
     const { files, backend_url } = useStore(appStore)
     const [selection, setSelection] = useState<string[]>([])
 
@@ -63,9 +65,9 @@ const FilesTable = () => {
             </Table.Cell>
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
-                    {/* <Button onClick={handleShare}>Share</Button> */}
+                    <ShareButton id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
-                    <ChainDetails fileInfo={item} />
+                    <ChainDetailsBtn fileInfo={item} />
                     <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
                     <DeleteAquaChain filename={item.name} backend_url={backend_url} />
@@ -75,22 +77,54 @@ const FilesTable = () => {
     ))
 
     const smallScreenView = files?.map((item: any) => (
-        <Box bg={'gray.100'} _dark={{
+        <Box key={`sm_${item.id}`} bg={'gray.100'} _dark={{
             bg: 'blackAlpha.950'
         }} p={2} borderRadius={'10px'}>
-        <VStack textAlign={'start'}>
-            <Text textAlign={'start'} w={'100%'}>{item.name}</Text>
-            <Group alignItems={'start'} flexWrap={'wrap'}>
-                {/* <Button onClick={handleShare}>Share</Button> */}
-                <DownloadAquaChain file={item} />
-                <ChainDetails fileInfo={item} />
-                <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                <DeleteAquaChain filename={item.name} backend_url={backend_url} />
-            </Group>
-        </VStack>
+            <VStack textAlign={'start'}>
+                <Text textAlign={'start'} w={'100%'}>{item.name}</Text>
+                <Group alignItems={'start'} flexWrap={'wrap'}>
+                    <ShareButton id={item.id} filename={item.name} />
+                    <DownloadAquaChain file={item} />
+                    <ChainDetailsBtn fileInfo={item} />
+                    <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <DeleteAquaChain filename={item.name} backend_url={backend_url} />
+                </Group>
+            </VStack>
         </Box>
     ))
+
+    useEffect(() => {
+        if (files) {
+            setFilesToDisplay(files)
+        }
+    }, [files])
+
+    useEffect(() => {
+        if (files) {
+            const processFiles = (chunkSize = 1) => {
+                let currentIndex = 0;
+                const chunkedFiles: SetStateAction<ApiFileInfo[]> = [];
+    
+                const processChunk = () => {
+                    const chunk = files.slice(currentIndex, currentIndex + chunkSize);
+                    chunkedFiles.push(...chunk);
+                    currentIndex += chunkSize;
+    
+                    if (currentIndex < files.length) {
+                        setTimeout(processChunk, 0); // Process the next chunk
+                    } else {
+                        setFilesToDisplay(chunkedFiles); // Update state after all chunks are processed
+                    }
+                };
+    
+                processChunk();
+            };
+    
+            processFiles();
+        }
+    }, [files]);
+    
 
     return (
         <Card.Root px={1} borderRadius={'2xl'}>
@@ -128,7 +162,7 @@ const FilesTable = () => {
                         </Table.Header>
                         <Table.Body>
                             {rows}
-                            {rows.length === 0 ?
+                            {filesToDisplay.length === 0 ?
                                 <Table.Row>
                                     <Table.Cell colSpan={6}>
                                         <Alert title="No Data">
@@ -136,7 +170,9 @@ const FilesTable = () => {
                                         </Alert>
                                     </Table.Cell>
                                 </Table.Row>
-                                : null}
+                                :
+                                null
+                            }
                         </Table.Body>
                     </Table.Root>
                 </Table.ScrollArea>
