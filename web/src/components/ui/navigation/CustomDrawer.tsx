@@ -9,7 +9,7 @@ import {
     DrawerHeader,
     DrawerRoot,
     DrawerTitle,
-    DrawerTrigger,
+    
 } from "../drawer"
 import { Button } from "../button"
 import { LuCheck, LuExternalLink, LuEye, LuX } from "react-icons/lu"
@@ -287,7 +287,7 @@ const ChainDetails = ({ fileInfo, callBack }: IPageDataDetails) => {
 
     const verifyAquaChain = () => {
 
-        let verifier = new AquaVerifier({
+        const verifier = new AquaVerifier({
             alchemyKey: 'ZaQtnup49WhU7fxrujVpkFdRz4JaFRtZ',
             doAlchemyKeyLookUp: true,
             version: 1.2
