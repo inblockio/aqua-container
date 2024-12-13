@@ -10,6 +10,7 @@ import { readJsonFile } from "../utils/functions";
 import { ChainDetailsBtn } from "./ui/navigation/CustomDrawer";
 import { Container, Group, Text } from "@chakra-ui/react";
 import { Alert } from "./ui/alert";
+import { useNavigate } from "react-router-dom";
 
 
 interface IDropzoneAction {
@@ -248,6 +249,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
 
     const { metamaskAddress, setFiles, files, user_profile, backend_url } = useStore(appStore)
 
+    let navigate =  useNavigate();
     const importAquaChain = async () => {
 
         const existingChainFile = dbFiles.find(file => file.name === fileInfo.name)
@@ -281,7 +283,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
         setUploading(true)
 
         try {
-            const url = `${backend_url}/explorer_file_upload`
+            const url = `${backend_url}/explorer_aqua_file_upload`
             console.log("importAquaChain url ", url)
             const response = await axios.post(url, formData, {
                 headers: {
@@ -316,6 +318,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
             })
             setUploading(false)
             setUploaded(true)
+            navigate("/")
             return;
         } catch (error) {
             setUploading(false)
