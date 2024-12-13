@@ -8,4 +8,5 @@ fi
 
 sed -i -e "s|BACKEND_URL_PLACEHOLDER|$BACKEND_URL|g" /app/frontend/config.json
 
-serve frontend & ./backend/aqua-container
+# serve frontend & ./backend/aqua-container
+serve -s frontend --single & ./backend/aqua-container
