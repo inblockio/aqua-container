@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Debug)]
 #[allow(dead_code)]
 pub struct RevisionInput {
-    pub filename: String,
+    pub file_id: i32,
     pub signature: String,
     pub publickey: String,
     pub wallet_address: String,
@@ -12,7 +12,7 @@ pub struct RevisionInput {
 #[derive(Deserialize, Serialize, Debug)]
 #[allow(dead_code)]
 pub struct WitnessInput {
-    pub filename: String,
+    pub file_id: i32,
     pub tx_hash: String,
     pub wallet_address: String,
     pub network: String,
@@ -21,7 +21,7 @@ pub struct WitnessInput {
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[allow(dead_code)]
 pub struct DeleteInput {
-    pub filename: String,
+    pub file_id: i32,
    
 }
 

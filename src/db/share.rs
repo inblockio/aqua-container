@@ -20,7 +20,6 @@ pub fn insert_share_data(
 }
 
 pub fn fetch_all_share_data(
-   
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
 ) -> Result<Vec<ShareDataTable>, String> {
     use crate::schema::share_data::dsl::*;

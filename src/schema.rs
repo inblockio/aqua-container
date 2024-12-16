@@ -16,7 +16,7 @@ diesel::table! {
 diesel::table! {
     share_data (id) {
         id -> Nullable<Integer>,
-        file_name -> Text,
+        file_id -> Integer,
         identifier -> Text,
         created_time -> Text,
     }

@@ -68,9 +68,9 @@ const FilesTable = () => {
                     <ShareButton id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
                     <ChainDetailsBtn fileInfo={item} />
-                    <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <DeleteAquaChain filename={item.name} backend_url={backend_url} />
+                    <WitnessAquaChain filename={item.name} file_id={item.id}  backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <SignAquaChain filename={item.name} file_id={item.id}  backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <DeleteAquaChain filename={item.name}  file_id={item.id}  backend_url={backend_url} />
                 </Group>
             </Table.Cell>
         </Table.Row>
@@ -86,9 +86,9 @@ const FilesTable = () => {
                     <ShareButton id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
                     <ChainDetailsBtn fileInfo={item} />
-                    <WitnessAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <SignAquaChain filename={item.name} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
-                    <DeleteAquaChain filename={item.name} backend_url={backend_url} />
+                    <WitnessAquaChain filename={item.name} file_id={item.id} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <SignAquaChain filename={item.name}  file_id={item.id}  backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
+                    <DeleteAquaChain filename={item.name}  file_id={item.id}  backend_url={backend_url} />
                 </Group>
             </VStack>
         </Box>

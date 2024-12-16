@@ -1,4 +1,4 @@
-use crate::models::{PagesTable, DB_POOL};
+use crate::models::{PagesDataTable, PagesTable, DB_POOL};
 use chrono::{NaiveDateTime, Utc};
 use diesel::r2d2::{self, ConnectionManager, PooledConnection};
 use diesel::SqliteConnection;
@@ -8,19 +8,10 @@ use diesel::prelude::*;
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct db_data {
-    pub id: i64,
-    pub name: String,
-    pub extension: String,
-    pub page_data: String,
-    pub mode: String,
-    pub owner: String,
-    pub is_shared:  bool
-}
+
 
 pub fn insert_page_data(
-    data: db_data,
+    data: PagesDataTable,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<i64, String> {
     // Use Utc to get the current time as a NaiveDateTime
@@ -48,23 +39,23 @@ pub fn insert_page_data(
     Ok(inserted_id as i64)
 }
 
-// The existing db_data and PagesTable structs remain the same
+// The existing PagesDataTable and PagesTable structs remain the same
 
 pub fn fetch_page_data(
-    filename: String,
+    id_par: i32,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
-) -> Result<db_data, String> {
+) -> Result<PagesDataTable, String> {
     use crate::schema::pages::dsl::*;
 
     let result = pages
-        .filter(name.eq(&filename))
+        .filter(id.eq(&id_par))
         .first::<PagesTable>(db_connection)
         .map_err(|e| match e {
-            DieselError::NotFound => format!("No page found with filename: {:#?}", filename),
+            DieselError::NotFound => format!("No page found with id: {:#?}", id_par),
             _ => format!("Error fetching page data: {}", e),
         })?;
    
-    Ok(db_data {
+    Ok(PagesDataTable {
         id: result.id.unwrap_or(0) as i64,
         name: result.name,
         extension: result.extension,
@@ -83,10 +74,10 @@ pub fn fetch_all_pages_data_per_user(
 
     let results = pages
         .filter(owner.eq(&user))
-        .load::<PagesTable>(db_connection) // Replace `db_data` with the correct Diesel model type
+        .load::<PagesTable>(db_connection) // Replace `PagesDataTable` with the correct Diesel model type
         .map_err(|e| format!("Error fetching pages for user {}: {}", user, e))?;
 
-    // Ok(db_data {
+    // Ok(PagesDataTable {
     //     id: result.id.unwrap_or(0) as i64,
     //     name: result.name,
     //     extension: result.extension,
@@ -98,7 +89,7 @@ pub fn fetch_all_pages_data_per_user(
 }
 
 pub fn update_page_data(
-    data: db_data,
+    data: PagesDataTable,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<(), String> {
     use crate::schema::pages::dsl::*;
@@ -109,6 +100,7 @@ pub fn update_page_data(
             page_data.eq(&data.page_data),
             mode.eq(&data.mode),
             owner.eq(&data.owner),
+            name.eq(&data.name),
             is_shared.eq(&data.is_shared)
         ))
         .execute(db_connection)
@@ -118,12 +110,12 @@ pub fn update_page_data(
 }
 
 pub fn delete_page_data(
-    page_name: String,
+    file_id: i32,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<i8, String> {
     use crate::schema::pages::dsl::*;
 
-    let deleted_count = diesel::delete(pages.filter(name.eq(&page_name)))
+    let deleted_count = diesel::delete(pages.filter(id.eq(&file_id)))
         .execute(db_connection)
         .map_err(|e| format!("Error deleting page data: {}", e))?;
 

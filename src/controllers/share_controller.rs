@@ -3,7 +3,7 @@ use crate::models::page_data::ApiResponse;
 use crate::{db::share::fetch_share_data_by_address, models::ShareDataTable};
 
 use crate::db::pages_db::{
-    db_data, delete_all_data, delete_all_user_files, delete_page_data,
+     delete_all_data, delete_all_user_files, delete_page_data,
     fetch_all_pages_data_per_user, fetch_page_data, insert_page_data, update_page_data,
 };
 use crate::models::share_data::{CreateShareData, ShareDataResponse};
@@ -70,7 +70,13 @@ pub async fn get_share_data(
 
     let firs_share_payload_data = share_payload_data.first().unwrap();
 
-    let page_data_result = fetch_page_data(firs_share_payload_data.file_name.clone(), &mut conn);
+
+    if firs_share_payload_data.id.is_none(){
+        log_data.push("Error  id not found in system".to_string());
+        return (StatusCode::NOT_FOUND, Json(res));  
+    }
+
+    let page_data_result = fetch_page_data(firs_share_payload_data.id.unwrap(), &mut conn);
 
     if page_data_result.is_err() {
         tracing::error!("Failed not found ",);
@@ -102,7 +108,7 @@ pub async fn save_share_data(
     };
 
     // Get the name parameter from the input
-    if input.filename.is_empty() {
+    if input.file_id == 0  {
         res.logs.push("Error : file name is empty".to_string());
 
         return (StatusCode::BAD_REQUEST, Json(res));
@@ -132,7 +138,7 @@ pub async fn save_share_data(
 
     // confirm if page data exist
 
-    let page_data_result = fetch_page_data(input.filename.clone(), &mut conn);
+    let page_data_result = fetch_page_data(input.file_id.clone(), &mut conn);
 
     if page_data_result.is_err() {
         tracing::error!("Failed not found ",);
@@ -148,10 +154,11 @@ pub async fn save_share_data(
     let time_data = current_utc.format("%Y-%m-%d %H:%M:%S UTC");
     let time_data_str = format!("{:?}", time_data);
     println!("Custom format 1: {} str {}", time_data, time_data_str);
+  
     // insert share data to db
     let share_payload = ShareDataTable {
         id: None,
-        file_name: input.filename.clone(),
+        file_id: input.file_id.clone(),
         identifier: input.identifier.clone(),
         created_time: time_data_str,
     };
