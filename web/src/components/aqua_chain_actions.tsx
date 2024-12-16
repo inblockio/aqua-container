@@ -409,10 +409,11 @@ export const DownloadAquaChain = ({ file }: { file: ApiFileInfo }) => {
 
 interface IShareButton {
     id: number | null
+    file_id: number 
     filename: string | null
 }
 
-export const ShareButton = ({ filename }: IShareButton) => {
+export const ShareButton = ({ filename, file_id }: IShareButton) => {
     const {backend_url}  = useStore(appStore)
     const [isOpen, setIsOpen] = useState(false)
     const [sharing, setSharing] = useState(false)
@@ -425,6 +426,7 @@ export const ShareButton = ({ filename }: IShareButton) => {
 
         const url = `${backend_url}/share_data`;
         const formData = new URLSearchParams();
+        formData.append('file_id', file_id.toString());
         formData.append('filename', filename ?? "");
         formData.append('identifier', unique_identifier);
 

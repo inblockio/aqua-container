@@ -15,6 +15,6 @@ pub struct ShareDataResponse{
 #[derive(Deserialize, Serialize, Debug, Clone)]
 #[allow(dead_code)]
 pub struct CreateShareData {
-    pub file_id : i32,
+    pub file_id: i32,
     pub identifier : String
 }

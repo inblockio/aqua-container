@@ -65,7 +65,7 @@ const FilesTable = () => {
             </Table.Cell>
             <Table.Cell minW={'220px'} maxW={'220px'} textWrap={'wrap'}>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
-                    <ShareButton id={item.id} filename={item.name} />
+                    <ShareButton id={item.id} file_id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
                     <ChainDetailsBtn fileInfo={item} />
                     <WitnessAquaChain filename={item.name} file_id={item.id}  backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
@@ -83,7 +83,7 @@ const FilesTable = () => {
             <VStack textAlign={'start'}>
                 <Text textAlign={'start'} w={'100%'}>{item.name}</Text>
                 <Group alignItems={'start'} flexWrap={'wrap'}>
-                    <ShareButton id={item.id} filename={item.name} />
+                    <ShareButton id={item.id} file_id={item.id} filename={item.name} />
                     <DownloadAquaChain file={item} />
                     <ChainDetailsBtn fileInfo={item} />
                     <WitnessAquaChain filename={item.name} file_id={item.id} backend_url={backend_url} lastRevisionVerificationHash={getLastRevisionVerificationHash(JSON.parse(item.page_data))} />
