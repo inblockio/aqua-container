@@ -250,11 +250,19 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
     const { metamaskAddress, setFiles, files, user_profile, backend_url } = useStore(appStore)
 
     let navigate =  useNavigate();
+
     const importAquaChain = async () => {
 
-        const existingChainFile = dbFiles.find(file => file.name === fileInfo.name)
-
+        // const existingChainFile = dbFiles.find(file => file.name === fileInfo.name)
+        const chainToImport = JSON.parse(fileInfo.page_data).pages[0]
+        const existingChainFile = dbFiles.find(file => JSON.parse(file.page_data).pages[0].genesis_hash === chainToImport.genesis_hash)
+        
         if (existingChainFile) {
+            const fileToImportRevisions = Object.keys(chainToImport.revisions)
+            const existingFileRevisions = Object.keys(JSON.parse(existingChainFile.page_data).pages[0].revisions)
+
+            console.log(fileToImportRevisions, existingFileRevisions)
+
             toaster.create({
                 description: `You already have the file called "${fileInfo.name}". Delete before importing this `,
                 type: "error"

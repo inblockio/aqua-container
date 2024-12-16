@@ -52,7 +52,7 @@ pub async fn get_share_data(
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
-    };
+    }; 
 
     let share_payload = fetch_share_data_by_address(&share_identifier.as_str(), &mut conn);
 
@@ -76,7 +76,7 @@ pub async fn get_share_data(
         return (StatusCode::NOT_FOUND, Json(res));  
     }
 
-    let page_data_result = fetch_page_data(firs_share_payload_data.id.unwrap(), &mut conn);
+    let page_data_result = fetch_page_data(firs_share_payload_data.file_id, &mut conn);
 
     if page_data_result.is_err() {
         tracing::error!("Failed not found ",);

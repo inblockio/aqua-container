@@ -1,6 +1,6 @@
 use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
 use crate::models::page_data::{ApiResponse, PageDataContainer};
-use crate::models::PagesDataTable;
+use crate::models::NewPagesTable;
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
@@ -149,7 +149,7 @@ pub async fn fetch_explorer_files(
 
         for row in page_data {
             pages.push(FileInfo {
-                id: row.id.unwrap().try_into().unwrap(),
+                id: row.id.try_into().unwrap(),
                 name: row.name,
                 extension: row.extension,
                 page_data: row.page_data,
@@ -561,14 +561,17 @@ pub async fn explorer_import_aqua_chain(
         }
     };
 
-    let db_data_model = PagesDataTable {
-        id: 0,
+    let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
+    let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let db_data_model = NewPagesTable {
         name: file_name,
         extension: content_type,
         page_data: json_string,
-        mode: mode,
+        mode,
         owner: metamask_address.to_string(),
         is_shared: false,
+        created_at: datetime_string,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -846,14 +849,17 @@ pub async fn explorer_aqua_file_upload(
         }
     };
 
-    let db_data_model = PagesDataTable {
-        id: 0,
+    let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
+    let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let db_data_model = NewPagesTable {
         name: file_name,
         extension: content_type,
         page_data: json_string,
-        mode: mode,
+        mode,
         owner: metamask_address.to_string(),
         is_shared: false,
+        created_at: datetime_string
     };
 
     let mut conn = match server_database.pool.get() {
@@ -1122,14 +1128,17 @@ pub async fn explorer_file_upload(
         mode = file_mode;
     }
 
-    let db_data_model = PagesDataTable {
-        id: 0,
+    let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
+    let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let db_data_model = NewPagesTable {
         name: file_name,
         extension: content_type,
         page_data: json_string,
-        mode: mode,
+        mode,
         owner: metamask_address.to_string(),
         is_shared: false,
+        created_at: datetime_string
     };
 
     let mut conn = match server_database.pool.get() {
@@ -1364,22 +1373,22 @@ pub async fn explorer_sign_revision(
     let mut new_data = page_data.clone();
     new_data.page_data = page_data_new.clone();
 
-    let mut conn = match server_database.pool.get() {
-        Ok(connection) => connection,
-        Err(e) => {
-            log_data.push("Failed data not found in database".to_string());
+    // let mut conn = match server_database.pool.get() {
+    //     Ok(connection) => connection,
+    //     Err(e) => {
+    //         log_data.push("Failed data not found in database".to_string());
 
-            log_data.push("Failed to get database connection".to_string());
-            let res: ApiResponse = ApiResponse {
-                logs: log_data,
-                file: None,
-                files: Vec::new(),
-            };
+    //         log_data.push("Failed to get database connection".to_string());
+    //         let res: ApiResponse = ApiResponse {
+    //             logs: log_data,
+    //             file: None,
+    //             files: Vec::new(),
+    //         };
 
-            println!("Error Fetching connection {:#?}", res);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-        }
-    };
+    //         println!("Error Fetching connection {:#?}", res);
+    //         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    //     }
+    // };
 
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
     // let page_data_result = fetch_page_data(input.filename, & mut conn);
@@ -1399,13 +1408,14 @@ pub async fn explorer_sign_revision(
     }
 
     let file_info = FileInfo {
-        id: new_data.id,
+        id: new_data.id as i64,
         name: new_data.name,
         extension: new_data.extension,
         page_data: page_data_new.clone(),
         owner: new_data.owner,
         mode: new_data.mode,
     };
+
     let res: ApiResponse = ApiResponse {
         logs: log_data,
         file: Some(file_info),
@@ -1853,13 +1863,14 @@ pub async fn explorer_witness_file(
     }
 
     let file_info = FileInfo {
-        id: new_data.id,
+        id: new_data.id as i64,
         name: new_data.name,
         extension: new_data.extension,
         page_data: page_data_new,
         owner: new_data.owner,
         mode: new_data.mode,
     };
+    
     let res: ApiResponse = ApiResponse {
         logs: log_data,
         file: Some(file_info),

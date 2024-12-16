@@ -14,6 +14,7 @@ export default function VersionAndDisclaimer() {
     //   const {  es, avatar, setAvatar, setUserProfile, backend_url } = useStore(appStore);
 
     const { backend_url } = useStore(appStore)
+
     const [isOpen, setIsOpen] = useState(false);
     const [versionDetails, setVersionDetails] = useState<VersionDetails>({
         backend: "1.2.X",
@@ -47,9 +48,11 @@ export default function VersionAndDisclaimer() {
     }
 
     useEffect(() => {
-        fetchVersionDetails()
+        if(!backend_url.includes("0.0.0.0")){
+            fetchVersionDetails()
+        }
 
-    },[])
+    },[backend_url])
 
     return (
         <Dialog.Root placement={"center"} size={"sm"} open={isOpen} onOpenChange={(details) => setIsOpen(details.open)}>

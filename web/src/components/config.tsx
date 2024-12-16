@@ -83,16 +83,18 @@ const LoadConfiguration = () => {
     }
 
     useEffect(() => {
-        const nonce = getCookie("pkc_nonce");
-        if (nonce) {
-            fetchAddressGivenANonce(nonce)
-        } else {
-            setMetamaskAddress(null)
-            setAvatar(undefined)
-            toaster.create({
-                description: "You are not logged in! Please login",
-                type: "info",
-            })
+        if (!backend_url.includes("0.0.0.0")) {
+            const nonce = getCookie("pkc_nonce");
+            if (nonce) {
+                fetchAddressGivenANonce(nonce)
+            } else {
+                setMetamaskAddress(null)
+                setAvatar(undefined)
+                toaster.create({
+                    description: "You are not logged in! Please login",
+                    type: "info",
+                })
+            }
         }
     }, [backend_url]);
 

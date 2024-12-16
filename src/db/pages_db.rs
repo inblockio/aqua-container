@@ -1,4 +1,4 @@
-use crate::models::{PagesDataTable, PagesTable, DB_POOL};
+use crate::models::{NewPagesTable, PagesTable};
 use chrono::{NaiveDateTime, Utc};
 use diesel::r2d2::{self, ConnectionManager, PooledConnection};
 use diesel::SqliteConnection;
@@ -11,15 +11,15 @@ use diesel::result::Error as DieselError;
 
 
 pub fn insert_page_data(
-    data: PagesDataTable,
+    data: NewPagesTable,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<i64, String> {
     // Use Utc to get the current time as a NaiveDateTime
     let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
 
     let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
-    let record = PagesTable {
-        id: None,
+    let record = NewPagesTable {
+        // id: None,
         name: data.name,
         extension: data.extension,
         mode: data.mode,
@@ -30,11 +30,11 @@ pub fn insert_page_data(
     };
 
     let inserted_id: i32 = diesel::insert_into(crate::schema::pages::table)
-        .values(&record)
+        .values(record)
         .returning(crate::schema::pages::dsl::id)
-        .get_result::<Option<i32>>(db_connection)
-        .map_err(|e| format!("Error saving new siwe data: {}", e))?
-        .unwrap_or(-1); // Provide a default value if None
+        .get_result::<i32>(db_connection)
+        .map_err(|e| format!("Error saving new siwe data: {}", e))?;
+        // .unwrap(); // Provide a default value if None
 
     Ok(inserted_id as i64)
 }
@@ -44,7 +44,7 @@ pub fn insert_page_data(
 pub fn fetch_page_data(
     id_par: i32,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
-) -> Result<PagesDataTable, String> {
+) -> Result<PagesTable, String> {
     use crate::schema::pages::dsl::*;
 
     let result = pages
@@ -55,15 +55,16 @@ pub fn fetch_page_data(
             _ => format!("Error fetching page data: {}", e),
         })?;
    
-    Ok(PagesDataTable {
-        id: result.id.unwrap_or(0) as i64,
-        name: result.name,
-        extension: result.extension,
-        page_data: result.page_data,
-        mode: result.mode,
-        owner: result.owner,
-        is_shared:  result.is_shared
-    })
+    // Ok(PagesTable {
+    //     id: result.id,
+    //     name: result.name,
+    //     extension: result.extension,
+    //     page_data: result.page_data,
+    //     mode: result.mode,
+    //     owner: result.owner,
+    //     is_shared:  result.is_shared
+    // })
+    Ok(result)
 }
 
 pub fn fetch_all_pages_data_per_user(
@@ -89,12 +90,12 @@ pub fn fetch_all_pages_data_per_user(
 }
 
 pub fn update_page_data(
-    data: PagesDataTable,
+    data: PagesTable,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<(), String> {
     use crate::schema::pages::dsl::*;
     println!("Updating");
-    let res = diesel::update(pages.filter(name.eq(&data.name)))
+    let res = diesel::update(pages.find(data.id))
         .set((
             extension.eq(&data.extension),
             page_data.eq(&data.page_data),

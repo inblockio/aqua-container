@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 
 
-use super::{file::FileInfo, PagesDataTable, ShareDataTable};
+use super::{file::FileInfo, PagesTable, ShareDataTable};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ShareDataResponse{
 
     pub logs :  Vec<String>,
     pub share_data : Option<ShareDataTable>,
-    pub file_data : Option<PagesDataTable>,
+    pub file_data : Option<PagesTable>,
 
 }
 
