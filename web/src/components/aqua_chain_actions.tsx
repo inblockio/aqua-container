@@ -135,7 +135,7 @@ export const WitnessAquaChain = ({ file_id, filename, lastRevisionVerificationHa
                         setWitnessing(false)
                     })
 
-            } catch (error : AxiosError ) {
+            } catch (error : any ) {
                 console.log("Error  ", error)
                 setWitnessing(false)
                 toaster.create({
@@ -213,6 +213,7 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
                             messageHash,
                             signature,
                         )
+                        console.log("File id not none ==> ",file_id  )
 
                         const formData = new URLSearchParams();
                         formData.append('file_id', file_id.toString() );
@@ -258,7 +259,8 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
                             })
                         }
 
-                    } catch (error : AxiosError) {
+                    } catch (error : any) {
+                        console.error("Network Error" , error)
                         toaster.create({
                             description: `Error during signature submission`,
                             type: "error"
@@ -267,6 +269,7 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
                 }
                 setSigning(false)
             } catch (error) {
+                console.error("An Error" , error)
                 setSigning(false)
                 toaster.create({
                     description: `Error during signing`,

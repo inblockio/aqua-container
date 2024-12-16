@@ -339,6 +339,7 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
     useEffect(() => {
         const hash = getLastRevisionVerificationHash(pageData)
         setLastVerificationHash(hash)
+        console.log("ChainDetailsBtn == > "+ JSON.stringify(fileInfo))
     }, [fileInfo])
 
 
