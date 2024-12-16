@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { Button } from "../button";
 import { DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../dialog";
 import { Center, Dialog, Spacer, Text, VStack } from "@chakra-ui/react";
-import { LuMessageCircleWarning, LuWorm } from "react-icons/lu";
+import { LuMessageCircleWarning } from "react-icons/lu";
 import { useStore } from 'zustand'
 import appStore from '../../../store'
 import { Alert } from "../alert";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import { toaster } from "../toaster";
 import VersionDetails from "../../../models/VersionDetails";
 
@@ -15,22 +15,11 @@ export default function VersionAndDisclaimer() {
 
     const { backend_url } = useStore(appStore)
     const [isOpen, setIsOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [versionDetails, setVersionDetails] = useState<VersionDetails>({
         backend: "1.2.X",
         frontend: "1.2.X"
     });
-    //   const [connectionState, setConnectionState] = useState<"idle" | "connecting" | "success" | "error">("idle");
-    //   const [message, setMessage] = useState<string | null>(null);
-    //   // const [avatar, setAvatar] = useState("")
-    //   const [_progress, setProgress] = useState(0);
-
-    //   const iconSize = "120px";
-
-    //   const resetState = () => {
-    //     setConnectionState("idle");
-    //     setProgress(0);
-    //   };
+    
 
 
 
@@ -97,7 +86,7 @@ export default function VersionAndDisclaimer() {
                         <Alert status="info" title="" variant="solid"   >
                             This is prototype software,use it with caution.
                         </Alert>
-                        <Button borderRadius={"md"} loading={loading} onClick={() => {
+                        <Button borderRadius={"md"}  onClick={() => {
                             setIsOpen(!isOpen);
                         }}>
                             close
