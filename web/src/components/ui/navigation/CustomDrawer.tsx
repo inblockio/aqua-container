@@ -375,9 +375,9 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
                             <Button variant="outline" size={'sm'}>Close</Button>
                         </DrawerActionTrigger>
                         <DownloadAquaChain file={fileInfo} />
-                        <WitnessAquaChain backend_url={backend_url} filename={fileInfo.name} lastRevisionVerificationHash={lastVerificationHash ?? ""} />
-                        <SignAquaChain backend_url={backend_url} filename={fileInfo.name} lastRevisionVerificationHash={lastVerificationHash ?? ""} />
-                        <DeleteAquaChain backend_url={backend_url} filename={fileInfo.name} />
+                        <WitnessAquaChain backend_url={backend_url} file_id={fileInfo.id} filename={fileInfo.name} lastRevisionVerificationHash={lastVerificationHash ?? ""} />
+                        <SignAquaChain backend_url={backend_url} file_id={fileInfo.id} filename={fileInfo.name} lastRevisionVerificationHash={lastVerificationHash ?? ""} />
+                        <DeleteAquaChain backend_url={backend_url} file_id={fileInfo.id} filename={fileInfo.name} />
                     </DrawerFooter>
                     <DrawerCloseTrigger />
                 </DrawerContent>

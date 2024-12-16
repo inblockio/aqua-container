@@ -5,7 +5,7 @@ import { getCurrentNetwork, switchNetwork } from "../utils/functions"
 import { ETH_CHAIN_ADDRESSES_MAP, ETH_CHAINID_MAP } from "../utils/constants"
 import { useStore } from "zustand"
 import appStore from "../store"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 import { ApiFileInfo } from "../models/FileInfo"
 import { toaster } from "./ui/toaster"
 import { useState } from "react"
@@ -18,10 +18,11 @@ import { Box, Center, Text, VStack } from "@chakra-ui/react"
 import { ClipboardButton, ClipboardIconButton, ClipboardInput, ClipboardLabel, ClipboardRoot } from "./ui/clipboard"
 import { InputGroup } from "./ui/input-group"
 
-async function storeWitnessTx(filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url: string) {
+async function storeWitnessTx(file_id :  number,filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url: string) {
 
     const formData = new URLSearchParams();
 
+    formData.append('file_id', file_id.toString());
     formData.append('filename', filename);
     formData.append('tx_hash', txhash);
     formData.append('wallet_address', ownerAddress);
@@ -29,13 +30,13 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
 
     const url = `${backend_url}/explorer_witness_file`
 
-    let response = await axios.post(url, formData, {
+    const response = await axios.post(url, formData, {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
         }
     })
 
-    let res = await response.data;
+    const res = await response.data;
     // let logs: Array<string> = res.logs
     // // logs.forEach((item) => {
     // //     console.log("**>" + item + "\n.")
@@ -43,8 +44,8 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
 
     if (response.status === 200) {
         console.log(res)
-        let resp: ApiFileInfo = res.file
-        let array: ApiFileInfo[] = [];
+        const resp: ApiFileInfo = res.file
+        const array: ApiFileInfo[] = [];
         for (let index = 0; index < files.length; index++) {
             const element = files[index];
             if (element.name === resp.name) {
@@ -64,12 +65,13 @@ async function storeWitnessTx(filename: string, txhash: string, ownerAddress: st
 
 
 interface ISigningAndWitnessing {
-    filename: string
-    lastRevisionVerificationHash?: string
+    file_id : number,
+    filename: string,
+    lastRevisionVerificationHash?: string,
     backend_url: string
 }
 
-export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
+export const WitnessAquaChain = ({ file_id, filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
     const { user_profile, files, setFiles, metamaskAddress, backend_url } = useStore(appStore)
     const [witnessing, setWitnessing] = useState(false)
 
@@ -116,13 +118,13 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
                         params: params,
                     })
                     .then(txhash => {
-                        storeWitnessTx(filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles, backend_url).then(() => {
+                        storeWitnessTx( file_id,filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles, backend_url).then(() => {
 
                         }).catch(() => {
 
                         })
                     })
-                    .catch((error: any) => {
+                    .catch((error: AxiosError) => {
                         if (error?.message) {
                             toaster.create({
                                 description: error.message,
@@ -133,7 +135,8 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
                         setWitnessing(false)
                     })
 
-            } catch (error) {
+            } catch (error : AxiosError ) {
+                console.log("Error  ", error)
                 setWitnessing(false)
                 toaster.create({
                     description: `Error during witnessing`,
@@ -161,7 +164,7 @@ export const WitnessAquaChain = ({ filename, lastRevisionVerificationHash }: ISi
     )
 }
 
-export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
+export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash }: ISigningAndWitnessing) => {
     const { user_profile, files, setFiles, metamaskAddress, backend_url } = useStore(appStore)
     const [signing, setSigning] = useState(false)
 
@@ -212,6 +215,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                         )
 
                         const formData = new URLSearchParams();
+                        formData.append('file_id', file_id.toString() );
                         formData.append('filename', filename);
                         formData.append('signature', signature);
                         /* Recovered public key if needed */
@@ -221,14 +225,14 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                         formData.append('publickey', publicKey)
                         formData.append('wallet_address', signerAddress);
 
-                        let url = `${backend_url}/explorer_sign_revision`;
+                        const url = `${backend_url}/explorer_sign_revision`;
                         const response = await axios.post(url, formData, {
                             headers: {
                                 'Content-Type': 'application/x-www-form-urlencoded'
                             }
                         });
 
-                        let res = await response.data;
+                        const res = await response.data;
                         // Logs from api backend
                         // let logs: Array<string> = res.logs
                         // logs.forEach((item) => {
@@ -236,9 +240,9 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                         // })
 
                         if (response.status === 200) {
-                            let resp: ApiFileInfo = res.file
+                            const resp: ApiFileInfo = res.file
 
-                            let array: ApiFileInfo[] = [];
+                            const array: ApiFileInfo[] = [];
                             for (let index = 0; index < files.length; index++) {
                                 const element = files[index];
                                 if (element.name === resp.name) {
@@ -254,7 +258,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
                             })
                         }
 
-                    } catch (error) {
+                    } catch (error : AxiosError) {
                         toaster.create({
                             description: `Error during signature submission`,
                             type: "error"
@@ -287,7 +291,7 @@ export const SignAquaChain = ({ filename, lastRevisionVerificationHash }: ISigni
 }
 
 
-export const DeleteAquaChain = ({ filename, backend_url }: ISigningAndWitnessing) => {
+export const DeleteAquaChain = ({ file_id, filename, backend_url }: ISigningAndWitnessing) => {
     const { files, setFiles } = useStore(appStore)
     const [deleting, setDeleting] = useState(false)
 
@@ -295,6 +299,7 @@ export const DeleteAquaChain = ({ filename, backend_url }: ISigningAndWitnessing
         setDeleting(true)
         const formData = new URLSearchParams();
         formData.append('filename', filename);
+        formData.append('file_id', file_id.toString());
 
         const url = `${backend_url}/explorer_delete_file`
         const response = await axios.post(url, formData, {
@@ -413,7 +418,7 @@ export const ShareButton = ({ filename }: IShareButton) => {
     const handleShare = async () => {
         setSharing(true)
         // let id_to_share = id;
-        let unique_identifier = `${Date.now()}_${generateNonce()}`
+        const unique_identifier = `${Date.now()}_${generateNonce()}`
 
         const url = `${backend_url}/share_data`;
         const formData = new URLSearchParams();
