@@ -11,11 +11,13 @@ import ChainDetails from '../components/ui/navigation/CustomDrawer'
 import FilePreview from '../components/FilePreview'
 import ConnectWallet from '../components/ui/navigation/ConnectWallet'
 import { ImportAquaChainFromChain } from '../components/dropzone_file_actions'
+import { Alert } from '../components/ui/alert'
 
 const SharePage = () => {
     const { backend_url, metamaskAddress } = useStore(appStore)
     const [fileInfo, setFileInfo] = useState<ApiFileInfo | null>(null)
     const [loading, setLoading] = useState(false)
+    const [hasError, setHasError] = useState<string | null>(null);
     const [isVerificationSuccesful, setIsVerificationSuccessful] = useState(false)
 
     const params = useParams()
@@ -40,11 +42,19 @@ const SharePage = () => {
                 setLoading(false)
             }
             catch (error: any) {
-                console.error(error)
+                if (error.response.status == 404){
+                    setHasError(`File could not be found (probably it was deleted)`);
+                }else{
+                    setHasError(`Error : ${error}`);
+                }
+                console.error(error) ;
+
+                
+               
                 toaster.create({
                     description: `Error fetching data`,
                     type: 'error'
-                })
+                });
             }
         }
     }
@@ -64,12 +74,25 @@ const SharePage = () => {
         // }
     }, [])
 
+   const  showProperWidget = () => {
+        if (hasError) {
+            return <Center>
+                <Alert status="error" title="An error occured">
+                    {hasError}
+                </Alert>
+            </Center>
+        }
+        if (loading) {
+            return <Center>
+                <Loading type='spin' width={'80px'} />
+            </Center>
+        }
+        return <div />
+    }
     return (
         <div>
             {
-                loading ? <Center>
-                    <Loading type='spin' width={'80px'} />
-                </Center> : null
+                showProperWidget()
             }
             {
                 fileInfo ? (
