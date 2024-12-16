@@ -49,7 +49,7 @@ export default function VersionAndDisclaimer() {
     useEffect(() => {
         fetchVersionDetails()
 
-    })
+    },[])
 
     return (
         <Dialog.Root placement={"center"} size={"sm"} open={isOpen} onOpenChange={(details) => setIsOpen(details.open)}>
