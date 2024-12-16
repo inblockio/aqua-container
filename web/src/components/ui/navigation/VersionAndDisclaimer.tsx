@@ -37,7 +37,7 @@ export default function VersionAndDisclaimer() {
             if (response.status === 200) {
                 setVersionDetails(res)
             }
-        } catch (e: AxiosError | unknown) {
+        } catch (e:  unknown) {
             console.log("Error fetching version ", e)
             toaster.create({
                 description: "Error fetching version details",
