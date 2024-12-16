@@ -32,6 +32,17 @@ pub struct PagesTable {
     pub is_shared : bool
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PagesDataTable {
+    pub id: i64,
+    pub name: String,
+    pub extension: String,
+    pub page_data: String,
+    pub mode: String,
+    pub owner: String,
+    pub is_shared:  bool
+}
+
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::siwe_sessions)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
@@ -49,7 +60,7 @@ pub struct SiweSessionsTable {
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct ShareDataTable {
     pub id: Option<i32>,
-    pub file_name: String,
+    pub file_id: i32,
     pub identifier: String,
     pub created_time: String,
 }

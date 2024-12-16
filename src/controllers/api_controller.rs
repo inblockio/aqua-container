@@ -1,5 +1,6 @@
 use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
 use crate::models::page_data::{ApiResponse, PageDataContainer};
+use crate::models::PagesDataTable;
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
@@ -39,7 +40,7 @@ use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
 extern crate serde_json_path_to_error as serde_json;
 use crate::db::pages_db::{
-    db_data, delete_all_data, delete_all_user_files, delete_page_data,
+    delete_all_data, delete_all_user_files, delete_page_data,
     fetch_all_pages_data_per_user, fetch_page_data, insert_page_data, update_page_data,
 };
 use dotenv::{dotenv, vars};
@@ -560,7 +561,7 @@ pub async fn explorer_aqua_file_upload(
         }
     };
 
-    let db_data_model = db_data {
+    let db_data_model = PagesDataTable {
         id: 0,
         name: file_name,
         extension: content_type,
@@ -836,7 +837,7 @@ pub async fn explorer_file_upload(
         mode = file_mode;
     }
 
-    let db_data_model = db_data {
+    let db_data_model = PagesDataTable {
         id: 0,
         name: file_name,
         extension: content_type,
@@ -888,7 +889,7 @@ pub async fn explorer_sign_revision(
     tracing::debug!("explorer_sign_revision");
 
     // Get the name parameter from the input
-    if input.filename.is_empty() {
+    if input.file_id ==  0 {
         log_data.push("Error : file name is empty".to_string());
         let res: ApiResponse = ApiResponse {
             logs: log_data,
@@ -916,7 +917,7 @@ pub async fn explorer_sign_revision(
     };
 
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
-    let page_data_result = fetch_page_data(input.filename, &mut conn);
+    let page_data_result = fetch_page_data(input.file_id, &mut conn);
 
     if page_data_result.is_err() {
         tracing::error!("Failed not found ",);
@@ -1219,7 +1220,7 @@ pub async fn explorer_delete_file(
     let mut log_data: Vec<String> = Vec::new();
 
     // Get the name parameter from the input
-    if input.filename.is_empty() {
+    if input.file_id == 0 {
         log_data.push("Error : file name is empty".to_string());
         let res: ApiResponse = ApiResponse {
             logs: log_data,
@@ -1250,13 +1251,13 @@ pub async fn explorer_delete_file(
         }
     };
 
-    let result = delete_page_data(input.filename.clone(), &mut conn);
+    let result = delete_page_data(input.file_id, &mut conn);
 
     match result {
         Ok(result_data) => {
             // Check the number of affected rows
             if result_data > 0 {
-                tracing::error!("Successfully deleted the row with name: {}", input.filename);
+                tracing::error!("Successfully deleted the row with name: {}", input.file_id);
                 log_data.push("Error : file data is deleted ".to_string());
                 let res: ApiResponse = ApiResponse {
                     logs: log_data,
@@ -1265,9 +1266,9 @@ pub async fn explorer_delete_file(
                 };
                 return (StatusCode::OK, Json(res));
             } else {
-                tracing::error!("No row found with ID: {}", input.filename);
+                tracing::error!("No row found with ID: {}", input.file_id);
 
-                log_data.push(format!("Error : No row found with name {}", input.filename));
+                log_data.push(format!("Error : No row found with name {}", input.file_id));
                 let res: ApiResponse = ApiResponse {
                     logs: log_data,
                     file: None,
@@ -1297,7 +1298,7 @@ pub async fn explorer_witness_file(
     let mut log_data: Vec<String> = Vec::new();
 
     // Get the name parameter from the input
-    if input.filename.is_empty() {
+    if input.file_id == 0 {
         log_data.push("Error : file name is empty".to_string());
         let res: ApiResponse = ApiResponse {
             logs: log_data,
@@ -1336,7 +1337,7 @@ pub async fn explorer_witness_file(
         }
     };
 
-    let page_data_result = fetch_page_data(input.filename.clone(), &mut conn);
+    let page_data_result = fetch_page_data(input.file_id, &mut conn);
 
     if page_data_result.is_err() {
         tracing::error!("Failed not found  {}", page_data_result.err().unwrap());
@@ -1355,7 +1356,7 @@ pub async fn explorer_witness_file(
 
     log_data.push(format!(
         "Success :  Page data for {} not found in database",
-        input.filename
+        input.file_id
     ));
 
     // Deserialize page data

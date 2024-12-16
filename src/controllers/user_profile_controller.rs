@@ -42,7 +42,7 @@ use aqua_verifier::util::{
 };
 extern crate serde_json_path_to_error as serde_json;
 use crate::db::pages_db::{
-    db_data, delete_all_data, delete_page_data, fetch_page_data, insert_page_data, update_page_data,
+    delete_all_data, delete_page_data, fetch_page_data, insert_page_data, update_page_data,
 };
 use dotenv::{dotenv, vars};
 use sha3::{Digest, Sha3_512};
