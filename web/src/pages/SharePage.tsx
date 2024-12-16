@@ -101,7 +101,8 @@ const SharePage = () => {
                             <Group justifyContent={'center'} w={'100%'}>
                                 {
                                     !metamaskAddress ? (
-                                        <ConnectWallet />
+                                        // <ConnectWallet />
+                                        <Box />
                                     ) : (
                                         <ImportAquaChainFromChain fileInfo={fileInfo} isVerificationSuccessful={isVerificationSuccesful} />
                                     )

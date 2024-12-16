@@ -4,6 +4,7 @@ import ConnectWallet from "./ConnectWallet"
 import { useColorMode } from "../color-mode"
 import appStore from "../../../store"
 import { useStore } from "zustand"
+import VersionAndDisclaimer from "./VersionAndDisclaimer"
 
 
 const Navbar = () => {
@@ -16,6 +17,7 @@ const Navbar = () => {
                 <HStack h={'100%'} px={"4"} justifyContent={'space-between'}>
                     <Image src={colorMode === 'light' ? "/images/logo.png" : "/images/logo-dark.png"} maxH={'60%'}/>
                     <HStack h={'100%'} justifyContent={'space-between'}>
+                        <VersionAndDisclaimer/>
                         <ConnectWallet />
                         {
                             metamaskAddress ? (
