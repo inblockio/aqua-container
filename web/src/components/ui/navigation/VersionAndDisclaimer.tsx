@@ -6,8 +6,9 @@ import { LuMessageCircleWarning, LuWorm } from "react-icons/lu";
 import { useStore } from 'zustand'
 import appStore from '../../../store'
 import { Alert } from "../alert";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { toaster } from "../toaster";
+import VersionDetails from "../../../models/VersionDetails";
 
 export default function VersionAndDisclaimer() {
     //   const {  es, avatar, setAvatar, setUserProfile, backend_url } = useStore(appStore);
@@ -15,6 +16,10 @@ export default function VersionAndDisclaimer() {
     const { backend_url } = useStore(appStore)
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [versionDetails, setVersionDetails] = useState<VersionDetails>({
+        backend: "1.2.X",
+        frontend: "1.2.X"
+    });
     //   const [connectionState, setConnectionState] = useState<"idle" | "connecting" | "success" | "error">("idle");
     //   const [message, setMessage] = useState<string | null>(null);
     //   // const [avatar, setAvatar] = useState("")
@@ -28,38 +33,34 @@ export default function VersionAndDisclaimer() {
     //   };
 
 
-    useEffect(()=>{
-
-     
-    })
 
 
-    const fetchVersionDetails=async ()=>{
-        try{
-            const url = `${backend_url}/explorer_witness_file`
-    
-            const response = await axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                }
-            })
-        
-            const res = await response.data;
-            // let logs: Array<string> = res.logs
-            // // logs.forEach((item) => {
-            // //     console.log("**>" + item + "\n.")
-            // // })
-        
+
+    const fetchVersionDetails = async () => {
+        try {
+            const url = `${backend_url}/version`
+
+            const response = await axios.get(url)
+
+            const res: VersionDetails = await response.data;
+
+
             if (response.status === 200) {
-    
+                setVersionDetails(res)
             }
-          }catch (e){
+        } catch (e: AxiosError | unknown) {
+            console.log("Error fetching version ", e)
             toaster.create({
                 description: "Error fetching version details",
                 type: "error"
             })
-          }
+        }
     }
+
+    useEffect(() => {
+        fetchVersionDetails()
+
+    })
 
     return (
         <Dialog.Root placement={"center"} size={"sm"} open={isOpen} onOpenChange={(details) => setIsOpen(details.open)}>
@@ -89,15 +90,15 @@ export default function VersionAndDisclaimer() {
                         <Center>
                             Product Verion Details
                         </Center>
-                        <Text fontFamily={"monospace"}>Container Api Version : </Text>
-                        <Text fontFamily={"monospace"}>Container Web Version : {packageJson.version} </Text>
+                        <Text fontFamily={"monospace"}>Container Api Version : {versionDetails.backend}  </Text>
+                        <Text fontFamily={"monospace"}>Container Web Version : {versionDetails.frontend} </Text>
                         <Spacer height={30} />
 
                         <Alert status="info" title="" variant="solid"   >
                             This is prototype software,use it with caution.
                         </Alert>
                         <Button borderRadius={"md"} loading={loading} onClick={() => {
-
+                            setIsOpen(!isOpen);
                         }}>
                             close
                             {/* <LuClose /> */}
