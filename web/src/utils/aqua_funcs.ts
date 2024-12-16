@@ -9,15 +9,18 @@ export function analyzeAndMergeRevisions(existingRevisions: string[], upcomingRe
     const divergences: Divergence[] = [];
     const maxLength = Math.max(sortedExistingRevisions.length, sortedUpcomingRevisions.length);
 
+    let lastIdenticalRevision: string | null = null;
+
     for (let i = 0; i < maxLength; i++) {
         const existingRevisionHash = sortedExistingRevisions[i] || null;
         const upcomingRevisionHash = sortedUpcomingRevisions[i] || null;
 
         if (existingRevisionHash !== upcomingRevisionHash) {
             divergences.push({ index: i, existingRevisionHash, upcomingRevisionHash });
+        } else if (existingRevisionHash && upcomingRevisionHash) {
+            lastIdenticalRevision = existingRevisionHash; // Update if they match
         }
     }
-
     // Merge arrays without duplicates
     const mergedArray = Array.from(new Set([...sortedExistingRevisions, ...sortedUpcomingRevisions]));
 
@@ -33,5 +36,6 @@ export function analyzeAndMergeRevisions(existingRevisions: string[], upcomingRe
         sameLength,
         existingRevisionsLength: sortedExistingRevisions.length,
         upcomingRevisionsLength: sortedUpcomingRevisions.length,
+        lastIdenticalRevisionHash: lastIdenticalRevision,
     };
 }

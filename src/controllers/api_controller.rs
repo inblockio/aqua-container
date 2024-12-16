@@ -1,4 +1,6 @@
-use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
+use crate::models::input::{
+    DeleteInput, MergeInput, RevisionInput, UpdateConfigurationInput, WitnessInput,
+};
 use crate::models::page_data::{ApiResponse, PageDataContainer};
 use crate::models::NewPagesTable;
 use crate::models::{file::FileInfo, page_data};
@@ -859,7 +861,7 @@ pub async fn explorer_aqua_file_upload(
         mode,
         owner: metamask_address.to_string(),
         is_shared: false,
-        created_at: datetime_string
+        created_at: datetime_string,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -1138,7 +1140,7 @@ pub async fn explorer_file_upload(
         mode,
         owner: metamask_address.to_string(),
         is_shared: false,
-        created_at: datetime_string
+        created_at: datetime_string,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -1392,6 +1394,160 @@ pub async fn explorer_sign_revision(
 
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
     // let page_data_result = fetch_page_data(input.filename, & mut conn);
+
+    let update_result = update_page_data(new_data.clone(), &mut conn);
+    if update_result.is_err() {
+        let e = update_result.err().unwrap();
+        tracing::error!("Failed to update page data: {:?}", e);
+        log_data.push(format!("Failed to update page data : {:?}", e));
+
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
+    let file_info = FileInfo {
+        id: new_data.id as i64,
+        name: new_data.name,
+        extension: new_data.extension,
+        page_data: page_data_new.clone(),
+        owner: new_data.owner,
+        mode: new_data.mode,
+    };
+
+    let res: ApiResponse = ApiResponse {
+        logs: log_data,
+        file: Some(file_info),
+        files: Vec::new(),
+    };
+    return (StatusCode::OK, Json(res));
+}
+
+pub async fn explorer_merge_chain(
+    State(server_database): State<Db>,
+    Json(input): Json<MergeInput>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let mut log_data: Vec<String> = Vec::new();
+
+    tracing::debug!("explorer_merge_chain");
+
+    let file_id = input.file_id;
+    let last_identical_revision_hash = input.last_identical_revision_hash;
+    let revisions_to_import = input.revisions_to_import;
+
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+    let page_data_result = fetch_page_data(file_id, &mut conn);
+
+    if page_data_result.is_err() {
+        tracing::error!("Failed not found ",);
+
+        log_data.push("Failed data not found in database".to_string());
+
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::NOT_FOUND, Json(res));
+    }
+    let page_data = page_data_result.unwrap();
+
+    let deserialized: PageDataContainer<HashChain> =
+        match serde_json::from_str(&page_data.page_data) {
+            Ok(data) => {
+                log_data.push("Success  : parse page data".to_string());
+                data
+            }
+            Err(e) => {
+                tracing::error!("Failed to parse page data record: {:?}", e);
+                log_data.push(format!("error : Failed to parse page data record: {:?}", e));
+                if let Some(source) = e.source() {
+                    tracing::info!("Source: {}", source);
+                } else {
+                    tracing::info!("Source NOT FOUND ");
+                }
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+            }
+        };
+
+    let mut doc = deserialized;
+    let len = doc.pages[0].revisions.len();
+
+    let page_revisions = &doc.pages[0].revisions;
+
+    // Find the index of the last identical revision hash
+    let last_index = page_revisions
+        .iter()
+        .position(|(hash, _)| format!("{:?}", hash) == last_identical_revision_hash)
+        .ok_or_else(|| {
+            format!(
+                "Hash {} not found in existing revisions",
+                last_identical_revision_hash
+            )
+        }).unwrap();
+
+    // Create a new vector with revisions up to the last identical hash
+    let mut new_revisions = page_revisions[..=last_index].to_vec();
+
+    // Append the new revisions, mapping them to (verification_hash, revision) tuples
+    new_revisions.extend(revisions_to_import.into_iter().map(|revision| {
+        let hash = revision.metadata.verification_hash.clone();
+        (hash, revision)
+    }));
+
+    // Replace the original revisions with the new combined vector
+    doc.pages[0].revisions = new_revisions;
+
+    // Serialize the updated document
+    let page_data_new = match serde_json::to_string(&doc) {
+        Ok(data) => {
+            log_data.push("revision  serialized  successfully".to_string());
+
+            data
+        }
+        Err(e) => {
+            tracing::error!("Failed to serialize updated page data: {:?}", e);
+
+            log_data.push(format!("Failed to serialize updated page data : {:?}", e));
+
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let mut new_data = page_data.clone();
+    new_data.page_data = page_data_new.clone();
+
 
     let update_result = update_page_data(new_data.clone(), &mut conn);
     if update_result.is_err() {
@@ -1870,7 +2026,7 @@ pub async fn explorer_witness_file(
         owner: new_data.owner,
         mode: new_data.mode,
     };
-    
+
     let res: ApiResponse = ApiResponse {
         logs: log_data,
         file: Some(file_info),

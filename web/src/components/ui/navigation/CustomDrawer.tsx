@@ -380,7 +380,7 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
                                     <Box w={'100%'}>
                                         <Collapsible.Root open={showMoreDetails}>
                                             <Collapsible.Trigger w="100%" py={'md'} onClick={() => setShowMoreDetails(open => !open)} cursor={'pointer'}>
-                                                <Alert w={'100%'} status={"info"} textAlign={'start'} title={`Show more Details`} icon={showMoreDetails ? <LuChevronUp /> : <LuChevronDown />} />
+                                                <Alert w={'100%'} status={"info"} textAlign={'start'} title={showMoreDetails ? `Show less Details` : `Show more Details`} icon={showMoreDetails ? <LuChevronUp /> : <LuChevronDown />} />
                                             </Collapsible.Trigger>
                                             <Collapsible.Content py={'4'}>
                                                 <ChainDetails fileInfo={fileInfo} callBack={updateVerificationStatus} />

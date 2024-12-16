@@ -1,4 +1,4 @@
-import { LuCheck, LuChevronRight, LuImport, LuPackage, LuScan, LuShip, LuUpload, LuX } from "react-icons/lu";
+import { LuCheck, LuChevronRight, LuImport, LuMinus, LuScan, LuUpload, LuX } from "react-icons/lu";
 import { Button } from "./ui/button";
 import axios from "axios";
 import { useStore } from "zustand";
@@ -12,9 +12,10 @@ import { Container, DialogCloseTrigger, Group, List, Text } from "@chakra-ui/rea
 import { Alert } from "./ui/alert";
 import { useNavigate } from "react-router-dom";
 import { analyzeAndMergeRevisions } from "../utils/aqua_funcs";
-import { DialogActionTrigger, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogRoot, DialogTitle, DialogTrigger } from "./ui/dialog";
+import { DialogActionTrigger, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogRoot, DialogTitle } from "./ui/dialog";
 import { TimelineConnector, TimelineContent, TimelineDescription, TimelineItem, TimelineRoot, TimelineTitle } from "./ui/timeline";
 import { RevisionsComparisonResult } from "../models/revision_merge";
+import { HashChain, Revision } from "aqua-verifier";
 
 
 interface IDropzoneAction {
@@ -245,34 +246,19 @@ export const ImportAquaChainFromFile = ({ file, uploadedIndexes, fileIndex, upda
 
 interface ImportChainFromChainProps { fileInfo: ApiFileInfo, isVerificationSuccessful: boolean }
 
-const comparisonResult: RevisionsComparisonResult = {
-    divergences: [
-        {
-            index: 6,
-            existingRevisionHash: null,
-            upcomingRevisionHash: 'e7719544c0ff396e3edc1dda2b784d44f03ceb73410a471f5b37091f5e43be19d0cb654045906ef6b361b499a771d88f56067acb4afa6c0949c384c421f8e51e'
-        }
-    ],
-    mergedArray: [
-        'e3839fff23f468300b65a9be15a452aa160c1ccbe91d657d2d73767100711bb0e97f29fb7949de6aced5a73d1278e6227b8b20225050025fd6af6b8cb6ebb25f',
-        'd32a796eb95848ffc2efbc83466e94d838218d4733d41b4f15ce134d443cea4b05b7395674a6d9926b60056cf776e34ea292302a5885606fb1064d5ff5014ad1',
-        '2a3d96625db20c3a64b884a41a90af24716e177365647b25163fefd71b85cb285543b0450b1faf8edf93dff69de5d71adc4ee8adf999eb4c4ad3cec7d61973f0',
-        '20a2a9ba0178a4a8d8d4f251440e71ac1d8f958c518b5eb6d7be020d58d04ef9640cb69c2e65d33efc736df976024b3663a3684f0bd4b85674fa80c5944b65c4',
-        '911c4d27936f6641213a6368541662fdb57ef600c09a7e574be3beb00b56449dcf698e5385af80ac6abbf4b2a5ff0f38c75bdf3ceda6556dbadf3fe4a0341cef',
-        '4ebd035c34329a227e4962c4b16ff77db0c380c6e8a1de232df5b1fd956165c826e36180d799039274bac3db8c5be5f583ac04acb38abc29e9f51c2efb4bf8a0',
-        'e7719544c0ff396e3edc1dda2b784d44f03ceb73410a471f5b37091f5e43be19d0cb654045906ef6b361b499a771d88f56067acb4afa6c0949c384c421f8e51e'
-    ],
-    identical: false,
-    sameLength: false,
-    existingRevisionsLength: 6,
-    upcomingRevisionsLength: 7
-};
-
 export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }: ImportChainFromChainProps) => {
 
     const [uploading, setUploading] = useState(false)
     const [_uploaded, setUploaded] = useState(false)
     const [dbFiles, setDbFiles] = useState<ApiFileInfo[]>([])
+    const [comparisonResult, setComparisonResult] = useState<RevisionsComparisonResult | null>(null)
+    const [modalOpen, setModalOpen] = useState(false)
+
+    const [existingFileId, setExistingFileId] = useState<number | null>(null)
+    const [lastIdenticalRevisionHash, setLastIdenticalRevisionHash] = useState<string | null>(null)
+    const [revisionsToImport, setRevisionsToImport] = useState<Revision[]>([])
+
+    console.log(revisionsToImport)
 
     const { metamaskAddress, setFiles, files, user_profile, backend_url } = useStore(appStore)
 
@@ -281,7 +267,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
     const importAquaChain = async () => {
 
         // const existingChainFile = dbFiles.find(file => file.name === fileInfo.name)
-        const chainToImport = JSON.parse(fileInfo.page_data).pages[0]
+        const chainToImport: HashChain = JSON.parse(fileInfo.page_data).pages[0]
         const existingChainFile = dbFiles.find(file => JSON.parse(file.page_data).pages[0].genesis_hash === chainToImport.genesis_hash)
 
         if (existingChainFile) {
@@ -289,15 +275,31 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
             const existingFileRevisions = Object.keys(JSON.parse(existingChainFile.page_data).pages[0].revisions)
             const fileToImportRevisions = Object.keys(chainToImport.revisions)
 
+            // console.log(existingFileRevisions, fileToImportRevisions)
             const mergeResult = analyzeAndMergeRevisions(existingFileRevisions, fileToImportRevisions)
+            let _revisionsToImport: Revision[] = []
 
-            console.log(mergeResult)
+            if (mergeResult.divergences.length > 0) {
+                for (let i = 0; i < mergeResult.divergences.length; i++) {
+                    const div = mergeResult.divergences[i];
+                    if (div.upcomingRevisionHash) {
+                        _revisionsToImport.push(chainToImport.revisions[div.upcomingRevisionHash])
+                    }
+                }
+            }
+
+            // console.log(mergeResult)
+            setComparisonResult(mergeResult)
+            setLastIdenticalRevisionHash(mergeResult.lastIdenticalRevisionHash)
+            setRevisionsToImport(_revisionsToImport)
+            setModalOpen(true)
+            setExistingFileId(existingChainFile.id)
 
 
-            toaster.create({
-                description: `You already have the file called "${fileInfo.name}". Delete before importing this `,
-                type: "error"
-            })
+            // toaster.create({
+            //     description: `You already have the file called "${fileInfo.name}". Delete before importing this `,
+            //     type: "error"
+            // })
             return
         }
 
@@ -368,6 +370,54 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
         }
     };
 
+    const handleMergeRevisions = async () => {
+        try {
+            setUploading(true)
+            const response = await axios.post(`${backend_url}/explorer_merge_chain`, {
+                file_id: existingFileId,
+                last_identical_revision_hash: lastIdenticalRevisionHash,
+                revisions_to_import: revisionsToImport
+            })
+            if (response.status === 200) {
+                toaster.create({
+                    title: "Aqua chain import",
+                    description: "Chain merged successfully",
+                    type: "success"
+                })
+                setUploading(false)
+                setUploaded(true)
+
+                const res: ApiFileInfo = response.data
+                console.log(res)
+                
+                const newFiles: ApiFileInfo[] = [];
+                setFiles(newFiles)
+
+                for (let index = 0; index < files.length; index++) {
+                    const file = files[index];
+                    if (file.id === res.id) {
+                        newFiles.push(res)
+                    } else {
+                        newFiles.push(file)
+                    }
+                }
+                
+                navigate("/")
+            }
+        } catch (e: any) {
+            setUploading(false)
+            if (e.message) {
+                toaster.create({
+                    title: "Error occured",
+                    description: e.message,
+                    type: "error"
+                })
+            }
+        }
+    }
+
+    console.log(comparisonResult)
+
     useEffect(() => {
         setDbFiles(files)
     }, [files])
@@ -393,12 +443,12 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                 </Button>
             </Alert.Root> */}
 
-            <DialogRoot open={true}>
-                <DialogTrigger asChild>
+            <DialogRoot open={modalOpen} onOpenChange={e => setModalOpen(e.open)}>
+                {/* <DialogTrigger asChild>
                     <Button variant="outline" size="sm">
                         Open Dialog
                     </Button>
-                </DialogTrigger>
+                </DialogTrigger> */}
                 <DialogContent borderRadius={'lg'}>
                     <DialogHeader>
                         <DialogTitle>Aqua Chain Import</DialogTitle>
@@ -416,7 +466,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                             </TimelineItem>
 
                             {
-                                true ? (
+                                comparisonResult?.identical ? (
                                     <>
                                         <TimelineItem colorPalette={'green'}>
                                             <TimelineConnector>
@@ -427,22 +477,12 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                 <TimelineDescription>Chains are identical</TimelineDescription>
                                             </TimelineContent>
                                         </TimelineItem>
-
-                                        <TimelineItem colorPalette={'blue'}>
-                                            <TimelineConnector>
-                                                <LuX />
-                                            </TimelineConnector>
-                                            <TimelineContent>
-                                                <TimelineTitle textStyle="sm">Action</TimelineTitle>
-                                                <TimelineDescription>No Action</TimelineDescription>
-                                            </TimelineContent>
-                                        </TimelineItem>
                                     </>
                                 ) : null
                             }
 
                             {
-                                true ? (
+                                (comparisonResult?.existingRevisionsLength ?? 0) > (comparisonResult?.upcomingRevisionsLength ?? 0) ? (
                                     <>
                                         <TimelineItem colorPalette={'green'}>
                                             <TimelineConnector>
@@ -453,22 +493,12 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                 <TimelineDescription>Existing Chain is Longer than Upcoming Chain</TimelineDescription>
                                             </TimelineContent>
                                         </TimelineItem>
-
-                                        <TimelineItem colorPalette={'blue'}>
-                                            <TimelineConnector>
-                                                <LuX />
-                                            </TimelineConnector>
-                                            <TimelineContent>
-                                                <TimelineTitle textStyle="sm">Action</TimelineTitle>
-                                                <TimelineDescription>No Action</TimelineDescription>
-                                            </TimelineContent>
-                                        </TimelineItem>
                                     </>
                                 ) : null
                             }
 
                             {
-                                true ? (
+                                comparisonResult?.sameLength ? (
                                     <>
                                         <TimelineItem colorPalette={'green'}>
                                             <TimelineConnector>
@@ -479,25 +509,19 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                 <TimelineDescription>Chains are of same Length</TimelineDescription>
                                             </TimelineContent>
                                         </TimelineItem>
-
-                                        <TimelineItem colorPalette={'blue'}>
-                                            <TimelineConnector>
-                                                <LuX />
-                                            </TimelineConnector>
-                                            <TimelineContent>
-                                                <TimelineTitle textStyle="sm">Action</TimelineTitle>
-                                                <TimelineDescription>No Action</TimelineDescription>
-                                            </TimelineContent>
-                                        </TimelineItem>
                                     </>
                                 ) : null
                             }
 
 
                             {
-                                comparisonResult.divergences.length > 0 ? (
+                                (
+                                    (comparisonResult?.divergences?.length ?? 0) > 0
+                                    && (comparisonResult?.existingRevisionsLength ?? 0) <= (comparisonResult?.upcomingRevisionsLength ?? 0)
+                                    // && isVerificationSuccessful // We won't reach here since by then the import button will be disabled
+                                ) ? (
                                     <>
-                                        <TimelineItem colorPalette={'red'}>
+                                        <TimelineItem colorPalette={'gray'}>
                                             <TimelineConnector>
                                                 <LuX />
                                             </TimelineConnector>
@@ -506,7 +530,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                 <TimelineDescription>Chains have divergencies</TimelineDescription>
                                                 <List.Root>
                                                     {
-                                                        comparisonResult.divergences.map((diff, i: number) => (
+                                                        comparisonResult?.divergences.map((diff, i: number) => (
                                                             <List.Item key={`diff_${i}`} fontSize={'sm'}>
                                                                 {
                                                                     diff.existingRevisionHash ? (
@@ -537,32 +561,42 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                 <LuCheck />
                                             </TimelineConnector>
                                             <TimelineContent>
-                                                <TimelineTitle textStyle="sm">Action</TimelineTitle>
+                                                <TimelineTitle textStyle="sm">Actions</TimelineTitle>
                                                 <TimelineDescription>Merge Chains</TimelineDescription>
+                                                <Group>
+                                                    <Button size={'xs'} borderRadius={'md'} onClick={handleMergeRevisions} loading={uploading}>Merge Revisions</Button>
+                                                </Group>
                                             </TimelineContent>
                                         </TimelineItem>
                                     </>
                                 ) : null
                             }
 
+                            {
+                                (
+                                    (comparisonResult?.identical && (comparisonResult?.sameLength && comparisonResult?.divergences.length === 0))
+                                    || (comparisonResult?.existingRevisionsLength ?? 0) > (comparisonResult?.upcomingRevisionsLength ?? 0)
+                                    // || !isVerificationSuccessful // Import button will be disabled, no reaching this point
+                                ) ? (
+                                    <TimelineItem colorPalette={'blue'}>
+                                        <TimelineConnector>
+                                            <LuMinus />
+                                        </TimelineConnector>
+                                        <TimelineContent>
+                                            <TimelineTitle textStyle="sm">Action</TimelineTitle>
+                                            <TimelineDescription>No Action</TimelineDescription>
+                                        </TimelineContent>
+                                    </TimelineItem>
+                                ) : null
+                            }
 
-
-                            {/* <TimelineItem>
-                                <TimelineConnector>
-                                    <LuPackage />
-                                </TimelineConnector>
-                                <TimelineContent>
-                                    <TimelineTitle textStyle="sm">Order Delivered</TimelineTitle>
-                                    <TimelineDescription>20th May 2021, 10:30am</TimelineDescription>
-                                </TimelineContent>
-                            </TimelineItem> */}
                         </TimelineRoot>
                     </DialogBody>
                     <DialogFooter>
                         <DialogActionTrigger asChild>
-                            <Button variant="outline">Cancel</Button>
+                            <Button variant="outline" borderRadius={'md'}>Cancel</Button>
                         </DialogActionTrigger>
-                        <Button>Save</Button>
+                        {/* <Button>Save</Button> */}
                     </DialogFooter>
                     <DialogCloseTrigger />
                 </DialogContent>

@@ -1,3 +1,4 @@
+use aqua_verifier_rs_types::models::revision::Revision;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -34,4 +35,12 @@ pub struct UpdateConfigurationInput {
     pub domain: String,
     pub mode: String,   
     pub contract: String,   
+}
+
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct MergeInput {
+    pub file_id: i32,
+    pub last_identical_revision_hash: String,
+    pub revisions_to_import: Vec<Revision>,
 }

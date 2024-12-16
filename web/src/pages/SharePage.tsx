@@ -97,7 +97,7 @@ const SharePage = () => {
             }
             {
                 fileInfo ? (
-                    <Container>
+                    <Container mt={'40px'}>
                         <VStack gap={'10'}>
                             <Group justifyContent={'center'} w={'100%'}>
                                 {
