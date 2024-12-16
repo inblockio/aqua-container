@@ -13,7 +13,7 @@ use axum::{
 use serde_json::json;
 
 // Handler function that returns a JSON response
-pub async fn status_handler() -> Json<serde_json::Value> {
+pub async fn version_details() -> Json<serde_json::Value> {
     let mut frontend = env::var("FRONTEND_VERSION").unwrap_or_default();
     let mut backend = env::var("BACKEND_VERSION").unwrap_or_default();
 
