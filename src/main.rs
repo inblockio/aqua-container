@@ -61,7 +61,7 @@ use controllers::auth_controller::{
     siwe_sign_in, verify_siwe_message, fetch_nonce_session
 
 };
-use controllers::versions_controller::version_details;
+use controllers::versions_controller::status_handler;
 use controllers::user_profile_controller::{explorer_fetch_user_profile, explorer_update_user_profile};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
