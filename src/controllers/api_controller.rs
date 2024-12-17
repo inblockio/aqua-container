@@ -1,6 +1,8 @@
-use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
+use crate::models::input::{
+    DeleteInput, MergeInput, RevisionInput, UpdateConfigurationInput, WitnessInput,
+};
 use crate::models::page_data::{ApiResponse, PageDataContainer};
-use crate::models::PagesDataTable;
+use crate::models::NewPagesTable;
 use crate::models::{file::FileInfo, page_data};
 use crate::util::{
     check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
@@ -40,8 +42,8 @@ use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
 extern crate serde_json_path_to_error as serde_json;
 use crate::db::pages_db::{
-    delete_all_data, delete_all_user_files, delete_page_data,
-    fetch_all_pages_data_per_user, fetch_page_data, insert_page_data, update_page_data,
+    delete_all_data, delete_all_user_files, delete_page_data, fetch_all_pages_data_per_user,
+    fetch_page_data, insert_page_data, update_page_data,
 };
 use dotenv::{dotenv, vars};
 use sha3::{Digest, Sha3_512};
@@ -149,7 +151,7 @@ pub async fn fetch_explorer_files(
 
         for row in page_data {
             pages.push(FileInfo {
-                id: row.id.unwrap().try_into().unwrap(),
+                id: row.id.try_into().unwrap(),
                 name: row.name,
                 extension: row.extension,
                 page_data: row.page_data,
@@ -315,6 +317,294 @@ pub async fn explorer_file_verify_hash_upload(
 
     // Return an error if no file was found
     (StatusCode::BAD_REQUEST, Json(res))
+}
+
+pub async fn explorer_import_aqua_chain(
+    State(server_database): State<Db>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> (StatusCode, Json<ApiResponse>) {
+    tracing::debug!("explorer_import_aqua_chain fn");
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        file: None,
+        files: Vec::new(),
+    };
+
+    // Extract the 'metamask_address' header
+    let metamask_address = match headers.get("metamask_address") {
+        Some(value) => match value.to_str() {
+            Ok(key) => key,
+            Err(err) => {
+                tracing::error!("headers get error {} ", err);
+                // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid metamask_address header"})))
+
+                res.logs
+                    .push(format!("Error: Meta mask public key  error: {:?}", err));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        },
+        None => {
+            tracing::debug!("metamask_address header missing ");
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
+            res.logs
+                .push("Error: Meta mask public key  missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    let mut account: Option<String> = None;
+    let mut aqua_json: Option<PageDataContainer<HashChain>> = None;
+
+    // Process only two fields: account and file
+    for _ in 0..2 {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                tracing::error!("Multipart error: {}", e);
+                res.logs.push(format!("Multipart error: {}", e));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        };
+
+        let name = match field.name() {
+            Some(name) => name.to_string(),
+            None => {
+                tracing::error!("Field name missing");
+                res.logs.push("Field name missing".to_string());
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        };
+
+        tracing::debug!("Processing field: {}", name);
+        match name.as_str() {
+            "account" => {
+                account = match field.text().await {
+                    Ok(text) => Some(text),
+                    Err(e) => {
+                        tracing::error!("Failed to read account field: {}", e);
+                        res.logs
+                            .push(format!("Failed to read account field: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+            }
+            "file" => {
+                // Read the file content
+                let file_content = match field.bytes().await {
+                    Ok(content) => content,
+                    Err(e) => {
+                        tracing::error!("Failed to read file content: {}", e);
+                        res.logs.push(format!("Failed to read file content: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+
+                // Parse JSON content into AquaData struct
+                aqua_json =
+                    match serde_json::from_slice::<PageDataContainer<HashChain>>(&file_content) {
+                        Ok(data) => Some(data),
+                        Err(e) => {
+                            tracing::error!("Failed to parse JSON: {}", e);
+                            res.logs.push(format!("Failed to parse JSON: {}", e));
+                            return (StatusCode::BAD_REQUEST, Json(res));
+                        }
+                    };
+            }
+            _ => {
+                tracing::warn!("Unexpected field: {}", name);
+            }
+        }
+    }
+
+    // Verify we have both account and file
+    let account = match account {
+        Some(acc) => acc,
+        None => {
+            tracing::error!("Account information missing");
+            res.logs.push("Account information missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    // Verify we have both account and file
+    let aqua_json = match aqua_json {
+        Some(acc) => acc,
+        None => {
+            tracing::error!("Aqua JSON data erorr");
+            res.logs.push("Aqua JSON data erorr".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    // tracing::debug!(
+    //     "Processing aqua  upload Account {} - File data {:#?} ",
+    //     account,
+    //     aqua_json,
+    // );
+
+    let mut mode = "private".to_string();
+    let file_mode = env::var("FILE_MODE").unwrap_or_default();
+
+    if !file_mode.is_empty() {
+        mode = file_mode;
+    }
+
+    let start = SystemTime::now();
+    let timestamp = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards")
+        .as_secs();
+    println!("Current Unix timestamp: {}", timestamp);
+
+    let mut file_name = format!("{}", timestamp);
+
+    let chain: Option<&HashChain> = aqua_json.pages.get(0);
+
+    if (chain.is_none()) {
+        // tracing::error!("Aqua JSON data erorr first chain not found");
+        res.logs
+            .push("Aqua data data erorr first chain not found".to_string());
+        return (StatusCode::BAD_REQUEST, Json(res));
+    }
+
+    let genesis_revision = chain
+        .unwrap()
+        .revisions
+        .iter()
+        .find_map(|(hash, revision)| {
+            if hash.to_string() == chain.unwrap().genesis_hash {
+                tracing::info!("Found geneisis revision");
+                Some(revision)
+            } else {
+                tracing::error!("genesis revision not found");
+                None
+            }
+        });
+    if (genesis_revision.is_none()) {
+        // tracing::error!("Aqua JSON data erorr genesis revision not found");
+        res.logs
+            .push("Aqua data data erorr genesis revision not found".to_string());
+        return (StatusCode::BAD_REQUEST, Json(res));
+    }
+    if (genesis_revision.unwrap().content.file.is_none()) {
+        tracing::error!("Aqua JSON data erorr genesis revision does not contain file info");
+        res.logs
+            .push("Aqua data data erorr genesis revision does not contain file info".to_string());
+        return (StatusCode::BAD_REQUEST, Json(res));
+    }
+    let file_name = genesis_revision
+        .unwrap()
+        .content
+        .file
+        .clone()
+        .unwrap()
+        .filename;
+
+    let path = std::path::Path::new(&file_name);
+    let mut content_type: String = String::from("");
+
+    // Check if the file has an extension
+    if (path.extension().is_some()) {
+        tracing::error!("Aqua JSON generating file type from extension");
+        res.logs
+            .push("Aqua JSON generating file type from extension".to_string());
+
+        match get_content_type(&file_name) {
+            Some(data) => {
+                content_type = data;
+            }
+            None => {
+                content_type = "unknown".to_string();
+            }
+        }
+    } else {
+        tracing::error!("Aqua JSON generating file type from content bytes");
+        res.logs
+            .push("Aqua data data erorr genesis type from content bytes".to_string());
+
+        let file_data_info = get_file_info(
+            genesis_revision
+                .unwrap()
+                .content
+                .file
+                .clone()
+                .unwrap()
+                .data
+                .to_string(),
+        );
+
+        content_type = match file_data_info {
+            Ok(data) => {
+                tracing::error!(
+                    "file type found   {} the gerenal result is  {:#?}",
+                    data.file_type,
+                    data
+                );
+                data.file_type
+            }
+            Err(err) => {
+                tracing::error!("Failed infer file type  {}", err);
+                "unknown".to_string()
+            }
+        };
+    }
+
+    // Convert struct to JSON string
+    let json_string = match serde_json::to_string(&aqua_json) {
+        Ok(json) => json,
+        Err(e) => {
+            tracing::error!("Failed to serialize page data: {}", e);
+            res.logs
+                .push(format!("Failed to serialize page data: {}", e));
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
+    let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let db_data_model = NewPagesTable {
+        name: file_name,
+        extension: content_type,
+        page_data: json_string,
+        mode,
+        owner: metamask_address.to_string(),
+        is_shared: false,
+        created_at: datetime_string,
+    };
+
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            res.logs
+                .push("Failed to get database connection".to_string());
+
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let insert_result = insert_page_data(db_data_model.clone(), &mut conn);
+    if insert_result.is_err() {
+        let err = insert_result.err().unwrap();
+        tracing::error!("Failed to insert page: {}", err);
+        res.logs.push(format!("Failed to insert page: {}", err));
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
+    let file_info = FileInfo {
+        id: insert_result.unwrap(), //record.id,
+        name: db_data_model.name,
+        extension: db_data_model.extension,
+        page_data: db_data_model.page_data,
+        mode: db_data_model.mode,
+        owner: db_data_model.owner.to_string(),
+    };
+    res.file = Some(file_info);
+    return (StatusCode::CREATED, Json(res));
 }
 
 pub async fn explorer_aqua_file_upload(
@@ -561,14 +851,17 @@ pub async fn explorer_aqua_file_upload(
         }
     };
 
-    let db_data_model = PagesDataTable {
-        id: 0,
+    let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
+    let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let db_data_model = NewPagesTable {
         name: file_name,
         extension: content_type,
         page_data: json_string,
-        mode: mode,
+        mode,
         owner: metamask_address.to_string(),
         is_shared: false,
+        created_at: datetime_string,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -837,14 +1130,17 @@ pub async fn explorer_file_upload(
         mode = file_mode;
     }
 
-    let db_data_model = PagesDataTable {
-        id: 0,
+    let naive_datetime: NaiveDateTime = Utc::now().naive_utc();
+    let datetime_string = naive_datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+
+    let db_data_model = NewPagesTable {
         name: file_name,
         extension: content_type,
         page_data: json_string,
-        mode: mode,
+        mode,
         owner: metamask_address.to_string(),
         is_shared: false,
+        created_at: datetime_string,
     };
 
     let mut conn = match server_database.pool.get() {
@@ -889,7 +1185,7 @@ pub async fn explorer_sign_revision(
     tracing::debug!("explorer_sign_revision");
 
     // Get the name parameter from the input
-    if input.file_id ==  0 {
+    if input.file_id == 0 {
         log_data.push("Error : file name is empty".to_string());
         let res: ApiResponse = ApiResponse {
             logs: log_data,
@@ -1079,22 +1375,22 @@ pub async fn explorer_sign_revision(
     let mut new_data = page_data.clone();
     new_data.page_data = page_data_new.clone();
 
-    let mut conn = match server_database.pool.get() {
-        Ok(connection) => connection,
-        Err(e) => {
-            log_data.push("Failed data not found in database".to_string());
+    // let mut conn = match server_database.pool.get() {
+    //     Ok(connection) => connection,
+    //     Err(e) => {
+    //         log_data.push("Failed data not found in database".to_string());
 
-            log_data.push("Failed to get database connection".to_string());
-            let res: ApiResponse = ApiResponse {
-                logs: log_data,
-                file: None,
-                files: Vec::new(),
-            };
+    //         log_data.push("Failed to get database connection".to_string());
+    //         let res: ApiResponse = ApiResponse {
+    //             logs: log_data,
+    //             file: None,
+    //             files: Vec::new(),
+    //         };
 
-            println!("Error Fetching connection {:#?}", res);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-        }
-    };
+    //         println!("Error Fetching connection {:#?}", res);
+    //         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    //     }
+    // };
 
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
     // let page_data_result = fetch_page_data(input.filename, & mut conn);
@@ -1114,14 +1410,168 @@ pub async fn explorer_sign_revision(
     }
 
     let file_info = FileInfo {
-        id: new_data.id,
+        id: new_data.id as i64,
         name: new_data.name,
         extension: new_data.extension,
         page_data: page_data_new.clone(),
         owner: new_data.owner,
         mode: new_data.mode,
-        
     };
+
+    let res: ApiResponse = ApiResponse {
+        logs: log_data,
+        file: Some(file_info),
+        files: Vec::new(),
+    };
+    return (StatusCode::OK, Json(res));
+}
+
+pub async fn explorer_merge_chain(
+    State(server_database): State<Db>,
+    Json(input): Json<MergeInput>,
+) -> (StatusCode, Json<ApiResponse>) {
+    let mut log_data: Vec<String> = Vec::new();
+
+    tracing::debug!("explorer_merge_chain");
+
+    let file_id = input.file_id;
+    let last_identical_revision_hash = input.last_identical_revision_hash;
+    let revisions_to_import = input.revisions_to_import;
+
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
+    let page_data_result = fetch_page_data(file_id, &mut conn);
+
+    if page_data_result.is_err() {
+        tracing::error!("Failed not found ",);
+
+        log_data.push("Failed data not found in database".to_string());
+
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::NOT_FOUND, Json(res));
+    }
+    let page_data = page_data_result.unwrap();
+
+    let deserialized: PageDataContainer<HashChain> =
+        match serde_json::from_str(&page_data.page_data) {
+            Ok(data) => {
+                log_data.push("Success  : parse page data".to_string());
+                data
+            }
+            Err(e) => {
+                tracing::error!("Failed to parse page data record: {:?}", e);
+                log_data.push(format!("error : Failed to parse page data record: {:?}", e));
+                if let Some(source) = e.source() {
+                    tracing::info!("Source: {}", source);
+                } else {
+                    tracing::info!("Source NOT FOUND ");
+                }
+                let res: ApiResponse = ApiResponse {
+                    logs: log_data,
+                    file: None,
+                    files: Vec::new(),
+                };
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+            }
+        };
+
+    let mut doc = deserialized;
+    let len = doc.pages[0].revisions.len();
+
+    let page_revisions = &doc.pages[0].revisions;
+
+    // Find the index of the last identical revision hash
+    let last_index = page_revisions
+        .iter()
+        .position(|(hash, _)| format!("{:?}", hash) == last_identical_revision_hash)
+        .ok_or_else(|| {
+            format!(
+                "Hash {} not found in existing revisions",
+                last_identical_revision_hash
+            )
+        }).unwrap();
+
+    // Create a new vector with revisions up to the last identical hash
+    let mut new_revisions = page_revisions[..=last_index].to_vec();
+
+    // Append the new revisions, mapping them to (verification_hash, revision) tuples
+    new_revisions.extend(revisions_to_import.into_iter().map(|revision| {
+        let hash = revision.metadata.verification_hash.clone();
+        (hash, revision)
+    }));
+
+    // Replace the original revisions with the new combined vector
+    doc.pages[0].revisions = new_revisions;
+
+    // Serialize the updated document
+    let page_data_new = match serde_json::to_string(&doc) {
+        Ok(data) => {
+            log_data.push("revision  serialized  successfully".to_string());
+
+            data
+        }
+        Err(e) => {
+            tracing::error!("Failed to serialize updated page data: {:?}", e);
+
+            log_data.push(format!("Failed to serialize updated page data : {:?}", e));
+
+            let res: ApiResponse = ApiResponse {
+                logs: log_data,
+                file: None,
+                files: Vec::new(),
+            };
+
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let mut new_data = page_data.clone();
+    new_data.page_data = page_data_new.clone();
+
+
+    let update_result = update_page_data(new_data.clone(), &mut conn);
+    if update_result.is_err() {
+        let e = update_result.err().unwrap();
+        tracing::error!("Failed to update page data: {:?}", e);
+        log_data.push(format!("Failed to update page data : {:?}", e));
+
+        let res: ApiResponse = ApiResponse {
+            logs: log_data,
+            file: None,
+            files: Vec::new(),
+        };
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
+    let file_info = FileInfo {
+        id: new_data.id as i64,
+        name: new_data.name,
+        extension: new_data.extension,
+        page_data: page_data_new.clone(),
+        owner: new_data.owner,
+        mode: new_data.mode,
+    };
+
     let res: ApiResponse = ApiResponse {
         logs: log_data,
         file: Some(file_info),
@@ -1569,13 +2019,14 @@ pub async fn explorer_witness_file(
     }
 
     let file_info = FileInfo {
-        id: new_data.id,
+        id: new_data.id as i64,
         name: new_data.name,
         extension: new_data.extension,
         page_data: page_data_new,
         owner: new_data.owner,
         mode: new_data.mode,
     };
+
     let res: ApiResponse = ApiResponse {
         logs: log_data,
         file: Some(file_info),

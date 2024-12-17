@@ -55,14 +55,13 @@ use std::sync::{mpsc, Mutex, MutexGuard};
 use crate::controllers::api_controller::explorer_file_verify_hash_upload;
 use crate::util::{check_or_generate_domain, establish_connection};
 use controllers::{api_controller::{
-    explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file,
-     explorer_file_upload, explorer_sign_revision,
-     explorer_witness_file, fetch_explorer_files,
+    explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
 }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
 use controllers::auth_controller::{
     siwe_sign_in, verify_siwe_message, fetch_nonce_session
 
 };
+use controllers::versions_controller::version_details;
 use controllers::user_profile_controller::{explorer_fetch_user_profile, explorer_update_user_profile};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
@@ -116,6 +115,10 @@ async fn main() {
         .route("/explorer_files", get(fetch_explorer_files))
         .route("/explorer_file_upload", post(explorer_file_upload))
         .route(
+            "/explorer_aqua_chain_import",
+            post(explorer_import_aqua_chain),
+        )
+         .route(
             "/explorer_aqua_file_upload",
             post(explorer_aqua_file_upload),
         )
@@ -125,6 +128,7 @@ async fn main() {
         )
         .route("/explorer_sign_revision", post(explorer_sign_revision))
         .route("/explorer_witness_file", post(explorer_witness_file))
+        .route("/explorer_merge_chain", post(explorer_merge_chain))
         .route("/explorer_delete_file", post(explorer_delete_file))
         .route("/explorer_delete_all_files", get(explorer_delete_all_files))
         .route(
@@ -144,6 +148,7 @@ async fn main() {
         .route("/siwe_logout", post(session_logout_by_nonce))
         .route("/share_data/{share_identifier}", get(get_share_data))
         .route("/share_data", post(save_share_data))
+        .route("/version", get(version_details))
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)
         .layer(CorsLayer::permissive())

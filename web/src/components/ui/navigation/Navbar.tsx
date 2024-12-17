@@ -4,6 +4,8 @@ import ConnectWallet from "./ConnectWallet"
 import { useColorMode } from "../color-mode"
 import appStore from "../../../store"
 import { useStore } from "zustand"
+import VersionAndDisclaimer from "./VersionAndDisclaimer"
+import { Link } from "react-router-dom"
 
 
 const Navbar = () => {
@@ -14,8 +16,11 @@ const Navbar = () => {
         <div>
             <Box bg={{ base: 'rgb(188 220 255 / 22%)', _dark: 'rgba(0, 0, 0, 0.3)' }} h={'70px'}>
                 <HStack h={'100%'} px={"4"} justifyContent={'space-between'}>
-                    <Image src={colorMode === 'light' ? "/images/logo.png" : "/images/logo-dark.png"} maxH={'60%'}/>
+                    <Link to={'/'} style={{ height: "100%", display: "flex", alignItems: "center" }}>
+                        <Image src={colorMode === 'light' ? "/images/logo.png" : "/images/logo-dark.png"} maxH={'60%'} />
+                    </Link>
                     <HStack h={'100%'} justifyContent={'space-between'}>
+                        <VersionAndDisclaimer />
                         <ConnectWallet />
                         {
                             metamaskAddress ? (

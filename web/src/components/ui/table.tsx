@@ -58,7 +58,7 @@ const FilesTable = () => {
             <Table.Cell minW={'180px'} maxW={'180px'} textWrap={'wrap'}>{item.name}</Table.Cell>
             <Table.Cell minW={'120px'} maxW={'120px'} textWrap={'wrap'}>{getFileCategory(item.extension)}</Table.Cell>
             <Table.Cell minW={'140px'} maxW={'140px'} textWrap={'wrap'}>
-                {timeToHumanFriendly(getTimestampSafe(JSON.parse(item.page_data)))}
+                {timeToHumanFriendly(getTimestampSafe(JSON.parse(item.page_data)), true)}
             </Table.Cell>
             <Table.Cell minW={'100px'} maxW={'100px'} textWrap={'wrap'}>
                 <FormatByte value={sumFileContentSize(JSON.parse(item.page_data))} />

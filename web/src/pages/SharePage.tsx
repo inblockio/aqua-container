@@ -6,12 +6,12 @@ import axios from 'axios'
 import { ApiFileInfo } from '../models/FileInfo'
 import { toaster } from '../components/ui/toaster'
 import Loading from 'react-loading'
-import { Box, Card, Center, Container, Group, VStack } from '@chakra-ui/react'
+import { Box, Card, Center, Collapsible, Container, Group, VStack } from '@chakra-ui/react'
 import ChainDetails from '../components/ui/navigation/CustomDrawer'
 import FilePreview from '../components/FilePreview'
-import ConnectWallet from '../components/ui/navigation/ConnectWallet'
 import { ImportAquaChainFromChain } from '../components/dropzone_file_actions'
 import { Alert } from '../components/ui/alert'
+import { LuChevronUp, LuChevronDown } from 'react-icons/lu'
 
 const SharePage = () => {
     const { backend_url, metamaskAddress } = useStore(appStore)
@@ -19,6 +19,7 @@ const SharePage = () => {
     const [loading, setLoading] = useState(false)
     const [hasError, setHasError] = useState<string | null>(null);
     const [isVerificationSuccesful, setIsVerificationSuccessful] = useState(false)
+    const [showMoreDetails, setShowMoreDetails] = useState(false)
 
     const params = useParams()
 
@@ -42,15 +43,15 @@ const SharePage = () => {
                 setLoading(false)
             }
             catch (error: any) {
-                if (error.response.status == 404){
+                if (error.response.status == 404) {
                     setHasError(`File could not be found (probably it was deleted)`);
-                }else{
+                } else {
                     setHasError(`Error : ${error}`);
                 }
-                console.error(error) ;
+                console.error(error);
 
-                
-               
+
+
                 toaster.create({
                     description: `Error fetching data`,
                     type: 'error'
@@ -71,10 +72,10 @@ const SharePage = () => {
         //         description: "Sign In is required",
         //         type: "info"
         //     })
-        // }
+        // } 
     }, [])
 
-   const  showProperWidget = () => {
+    const showProperWidget = () => {
         if (hasError) {
             return <Center>
                 <Alert status="error" title="An error occured">
@@ -96,12 +97,13 @@ const SharePage = () => {
             }
             {
                 fileInfo ? (
-                    <Container>
+                    <Container mt={'40px'}>
                         <VStack gap={'10'}>
                             <Group justifyContent={'center'} w={'100%'}>
                                 {
                                     !metamaskAddress ? (
-                                        <ConnectWallet />
+                                        // <ConnectWallet />
+                                        <Box />
                                     ) : (
                                         <ImportAquaChainFromChain fileInfo={fileInfo} isVerificationSuccessful={isVerificationSuccesful} />
                                     )
@@ -115,7 +117,25 @@ const SharePage = () => {
                                 </Card.Root>
                             </Box>
                             <Box w={'100%'}>
-                                <ChainDetails fileInfo={fileInfo} callBack={(res) => setIsVerificationSuccessful(res)} />
+                                {/* <ChainDetails fileInfo={fileInfo} callBack={(res) => setIsVerificationSuccessful(res)} /> */}
+                                <Card.Root borderRadius={'lg'}>
+                                    <Card.Body>
+                                        <VStack gap={'4'}>
+                                            <Alert status={isVerificationSuccesful ? 'success' : 'error'} title={isVerificationSuccesful ? "This chain is valid" : "This chain is invalid"} />
+                                            <Box w={'100%'}>
+                                                <Collapsible.Root open={showMoreDetails}>
+                                                    <Collapsible.Trigger w="100%" py={'md'} onClick={() => setShowMoreDetails(open => !open)} cursor={'pointer'}>
+                                                        <Alert w={'100%'} status={"info"} textAlign={'start'} title={`Show more Details`} icon={showMoreDetails ? <LuChevronUp /> : <LuChevronDown />} />
+                                                    </Collapsible.Trigger>
+                                                    <Collapsible.Content py={'4'}>
+                                                        <ChainDetails fileInfo={fileInfo} callBack={(res) => setIsVerificationSuccessful(res)} />
+                                                    </Collapsible.Content>
+                                                </Collapsible.Root>
+                                            </Box>
+                                            <Box minH={'400px'} />
+                                        </VStack>
+                                    </Card.Body>
+                                </Card.Root>
                             </Box>
                         </VStack>
                     </Container>

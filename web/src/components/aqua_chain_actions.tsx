@@ -18,7 +18,7 @@ import { Box, Center, Text, VStack } from "@chakra-ui/react"
 import { ClipboardButton, ClipboardIconButton, ClipboardInput, ClipboardLabel, ClipboardRoot } from "./ui/clipboard"
 import { InputGroup } from "./ui/input-group"
 
-async function storeWitnessTx(file_id :  number,filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url: string) {
+async function storeWitnessTx(file_id: number, filename: string, txhash: string, ownerAddress: string, network: string, files: ApiFileInfo[], setFiles: any, backend_url: string) {
 
     const formData = new URLSearchParams();
 
@@ -48,7 +48,7 @@ async function storeWitnessTx(file_id :  number,filename: string, txhash: string
         const array: ApiFileInfo[] = [];
         for (let index = 0; index < files.length; index++) {
             const element = files[index];
-            if (element.name === resp.name) {
+            if (element.id === file_id) {
                 array.push(resp)
             } else {
                 array.push(element)
@@ -65,7 +65,7 @@ async function storeWitnessTx(file_id :  number,filename: string, txhash: string
 
 
 interface ISigningAndWitnessing {
-    file_id : number,
+    file_id: number,
     filename: string,
     lastRevisionVerificationHash?: string,
     backend_url: string
@@ -118,7 +118,7 @@ export const WitnessAquaChain = ({ file_id, filename, lastRevisionVerificationHa
                         params: params,
                     })
                     .then(txhash => {
-                        storeWitnessTx( file_id,filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles, backend_url).then(() => {
+                        storeWitnessTx(file_id, filename, txhash, ethers.getAddress(walletAddress), network, files, setFiles, backend_url).then(() => {
 
                         }).catch(() => {
 
@@ -135,7 +135,7 @@ export const WitnessAquaChain = ({ file_id, filename, lastRevisionVerificationHa
                         setWitnessing(false)
                     })
 
-            } catch (error : any ) {
+            } catch (error: any) {
                 console.log("Error  ", error)
                 setWitnessing(false)
                 toaster.create({
@@ -213,10 +213,10 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
                             messageHash,
                             signature,
                         )
-                        console.log("File id not none ==> ",file_id  )
+                        console.log("File id not none ==> ", file_id)
 
                         const formData = new URLSearchParams();
-                        formData.append('file_id', file_id.toString() );
+                        formData.append('file_id', file_id.toString());
                         formData.append('filename', filename);
                         formData.append('signature', signature);
                         /* Recovered public key if needed */
@@ -245,11 +245,11 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
 
                             const array: ApiFileInfo[] = [];
                             for (let index = 0; index < files.length; index++) {
-                                const element = files[index];
-                                if (element.name === resp.name) {
+                                const file = files[index];
+                                if (file.id === file_id) {
                                     array.push(resp)
                                 } else {
-                                    array.push(element)
+                                    array.push(file)
                                 }
                             }
                             setFiles(array)
@@ -259,8 +259,8 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
                             })
                         }
 
-                    } catch (error : any) {
-                        console.error("Network Error" , error)
+                    } catch (error: any) {
+                        console.error("Network Error", error)
                         toaster.create({
                             description: `Error during signature submission`,
                             type: "error"
@@ -269,7 +269,7 @@ export const SignAquaChain = ({ file_id, filename, lastRevisionVerificationHash 
                 }
                 setSigning(false)
             } catch (error) {
-                console.error("An Error" , error)
+                console.error("An Error", error)
                 setSigning(false)
                 toaster.create({
                     description: `Error during signing`,
@@ -314,9 +314,9 @@ export const DeleteAquaChain = ({ file_id, filename, backend_url }: ISigningAndW
         if (response.status === 200) {
             let filesNew: Array<ApiFileInfo> = [];
             for (let index = 0; index < files.length; index++) {
-                const element = files[index];
-                if (element.name != filename) {
-                    filesNew.push(element)
+                const file = files[index];
+                if (file.id != file_id) {
+                    filesNew.push(file)
                 }
             }
             setFiles(filesNew);
@@ -409,12 +409,12 @@ export const DownloadAquaChain = ({ file }: { file: ApiFileInfo }) => {
 
 interface IShareButton {
     id: number | null
-    file_id: number 
+    file_id: number
     filename: string | null
 }
 
 export const ShareButton = ({ filename, file_id }: IShareButton) => {
-    const {backend_url}  = useStore(appStore)
+    const { backend_url } = useStore(appStore)
     const [isOpen, setIsOpen] = useState(false)
     const [sharing, setSharing] = useState(false)
     const [shared, setShared] = useState<string | null>(null)
@@ -438,12 +438,12 @@ export const ShareButton = ({ filename, file_id }: IShareButton) => {
 
         console.log(response)
 
-        if(response.status === 200){   
+        if (response.status === 200) {
             setSharing(false)
             const domain = window.location.origin;
             setShared(`${domain}/share/${unique_identifier}`)
         }
-        else{
+        else {
             toaster.create({
                 description: "Error sharing",
                 type: "error"

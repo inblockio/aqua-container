@@ -9,11 +9,11 @@ import {
     DrawerHeader,
     DrawerRoot,
     DrawerTitle,
-    
+
 } from "../drawer"
 import { Button } from "../button"
-import { LuCheck, LuExternalLink, LuEye, LuX } from "react-icons/lu"
-import { Card, For, Group, Icon, Link, Spacer, Span, Text } from "@chakra-ui/react"
+import { LuCheck, LuChevronDown, LuChevronUp, LuExternalLink, LuEye, LuX } from "react-icons/lu"
+import { Box, Card, Collapsible, For, Group, Icon, Link, Spacer, Span, Text, VStack } from "@chakra-ui/react"
 import { TimelineConnector, TimelineContent, TimelineDescription, TimelineItem, TimelineRoot, TimelineTitle } from "../timeline"
 import { PageData, Revision } from "../../../models/PageData"
 import { formatCryptoAddress, getLastRevisionVerificationHash, timeToHumanFriendly } from "../../../utils/functions"
@@ -126,7 +126,7 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                                                 {verificationResult?.metadata_verification.successful ? ' valid' : ' invalid'}
                                             </Span>
                                         </TimelineTitle>
-                                        <TimelineDescription>{timeToHumanFriendly(revision.metadata.time_stamp)}</TimelineDescription>
+                                        <TimelineDescription>{timeToHumanFriendly(revision.metadata.time_stamp, true)}</TimelineDescription>
                                         <ItemDetail label="Metadata Hash:"
                                             displayValue={formatCryptoAddress(revision.metadata.metadata_hash, 4, 6)}
                                             value={revision.metadata.metadata_hash} showCopyIcon={true}
@@ -325,6 +325,9 @@ const ChainDetails = ({ fileInfo, callBack }: IPageDataDetails) => {
 }
 
 export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
+
+    const [showMoreDetails, setShowMoreDetails] = useState(false)
+
     const { backend_url } = useStore(appStore)
     const [isOpen, setIsOpen] = useState(false)
     const pageData: PageData = JSON.parse(fileInfo.page_data)
@@ -339,7 +342,7 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
     useEffect(() => {
         const hash = getLastRevisionVerificationHash(pageData)
         setLastVerificationHash(hash)
-        console.log("ChainDetailsBtn == > "+ JSON.stringify(fileInfo))
+        console.log("ChainDetailsBtn == > " + JSON.stringify(fileInfo))
     }, [fileInfo])
 
 
@@ -369,7 +372,26 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
                             </Card.Body>
                         </Card.Root>
                         <Spacer height={'20px'} />
-                        <ChainDetails fileInfo={fileInfo} callBack={updateVerificationStatus} />
+
+                        <Card.Root borderRadius={'lg'}>
+                            <Card.Body>
+                                <VStack gap={'4'}>
+                                    <Alert status={isVerificationSuccessful ? 'success' : 'error'} title={isVerificationSuccessful ? "This chain is valid" : "This chain is invalid"} />
+                                    <Box w={'100%'}>
+                                        <Collapsible.Root open={showMoreDetails}>
+                                            <Collapsible.Trigger w="100%" py={'md'} onClick={() => setShowMoreDetails(open => !open)} cursor={'pointer'}>
+                                                <Alert w={'100%'} status={"info"} textAlign={'start'} title={showMoreDetails ? `Show less Details` : `Show more Details`} icon={showMoreDetails ? <LuChevronUp /> : <LuChevronDown />} />
+                                            </Collapsible.Trigger>
+                                            <Collapsible.Content py={'4'}>
+                                                <ChainDetails fileInfo={fileInfo} callBack={updateVerificationStatus} />
+                                            </Collapsible.Content>
+                                        </Collapsible.Root>
+                                    </Box>
+                                    <Box minH={'400px'} />
+                                </VStack>
+                            </Card.Body>
+                        </Card.Root>
+
                     </DrawerBody>
                     <DrawerFooter flexWrap={'wrap'}>
                         <DrawerActionTrigger asChild>

@@ -70,7 +70,7 @@ const FilePreview = ({ fileInfo }: IFilePreview) => {
                             borderRadius: '12px',
                             width: '100%',
                             border: 'none',
-                            height: '500px'
+                            height: '800px'
                         }}
                     >
                         <param name="view" value="FitH" />

@@ -207,10 +207,11 @@ export function getTimestampSafe(pageData: PageData): string | null {
     return pageData.pages[0]?.revisions[Object.keys(pageData.pages[0]?.revisions || {})[0]]?.metadata.time_stamp;
 }
 
-export function timeToHumanFriendly(timestamp: string | undefined): string {
+export function timeToHumanFriendly(timestamp: string | undefined, showFull: boolean = false): string {
     if (!timestamp) {
-        return '-'
+        return '-';
     }
+
     // Extract the date components
     const year = timestamp.substring(0, 4);
     const month = Number(timestamp.substring(4, 6)) - 1; // Months are zero-indexed in JS
@@ -222,10 +223,21 @@ export function timeToHumanFriendly(timestamp: string | undefined): string {
     // Create a new Date object
     const date = new Date(Date.UTC(Number(year), month, Number(day), Number(hours), Number(minutes), Number(seconds)));
 
-    // Format the date in a human-friendly way
-    const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
-    return date.toLocaleDateString('en-US', options)
+    // Format options
+    const dateOptions: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+    const fullOptions: Intl.DateTimeFormatOptions = {
+        ...dateOptions,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+        timeZone: 'UTC',
+    };
+
+    // Return formatted string based on showFull
+    return date.toLocaleDateString('en-US', showFull ? fullOptions : dateOptions);
 }
+
 
 
 export const getLastRevisionVerificationHash = (pageData: PageData) => {
