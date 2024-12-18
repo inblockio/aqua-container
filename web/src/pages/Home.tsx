@@ -19,6 +19,7 @@ const Home = () => {
                                 outlineOffset: '4px'
                             }}
                         />
+
                         {/* 
                             I have set clearable to false since when selecting new files. 
                             If the index is already in uploaed files array, then it marks it as uploaded. 
@@ -26,6 +27,7 @@ const Home = () => {
                         */}
                         <FileUploadList clearable={false} showSize />
                     </FileUploadRoot>
+                
                     <Box w={'100%'}>
                         <Statistics />
                     </Box>
