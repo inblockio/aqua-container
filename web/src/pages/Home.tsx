@@ -29,9 +29,6 @@ const Home = () => {
                     <Box w={'100%'}>
                         <Statistics />
                     </Box>
-                    <Text>
-                        0x254B0D7b63342Fcb8955DB82e95C21d72EFdB6f7
-                    </Text>
                     <Box w={'100%'}>
                         <FilesTable />
                     </Box>
