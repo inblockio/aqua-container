@@ -389,7 +389,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
 
                 const res: ApiFileInfo = response.data
                 console.log(res)
-                
+
                 const newFiles: ApiFileInfo[] = [];
                 setFiles(newFiles)
 
@@ -401,7 +401,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                         newFiles.push(file)
                     }
                 }
-                
+
                 navigate("/")
             }
         } catch (e: any) {
@@ -527,7 +527,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                             </TimelineConnector>
                                             <TimelineContent>
                                                 <TimelineTitle textStyle="sm">Chains are Different</TimelineTitle>
-                                                <TimelineDescription>Chains have divergencies</TimelineDescription>
+                                                {/* <TimelineDescription>Chains have divergencies</TimelineDescription> */}
                                                 <List.Root>
                                                     {
                                                         comparisonResult?.divergences.map((diff, i: number) => (
@@ -561,8 +561,11 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                 <LuCheck />
                                             </TimelineConnector>
                                             <TimelineContent>
-                                                <TimelineTitle textStyle="sm">Actions</TimelineTitle>
-                                                <TimelineDescription>Merge Chains</TimelineDescription>
+                                                <TimelineTitle textStyle="sm">Action</TimelineTitle>
+                                                <TimelineDescription>Merge Chain</TimelineDescription>
+                                                <Alert title="Action Not reversible!" status={'warning'}>
+                                                    This action will delete some revision(s) in your local Aqua Chain
+                                                </Alert>
                                                 <Group>
                                                     <Button size={'xs'} borderRadius={'md'} onClick={handleMergeRevisions} loading={uploading}>Merge Revisions</Button>
                                                 </Group>

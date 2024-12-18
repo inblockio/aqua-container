@@ -1,4 +1,4 @@
-import { Box, Container, VStack } from "@chakra-ui/react"
+import { Box, Container,  VStack } from "@chakra-ui/react"
 import { FileUploadDropzone, FileUploadList, FileUploadRoot } from "../components/ui/file-button"
 import Statistics from "../components/Stats"
 import FilesTable from "../components/ui/table"
@@ -7,7 +7,7 @@ import FilesTable from "../components/ui/table"
 const Home = () => {
     return (
         <>
-            <Container fluid maxWidth={{ base: 'vw', md: '10/12' }} py={'14'} px={{base: 1, md: 10}}>
+            <Container fluid maxWidth={{ base: 'vw', md: '10/12' }} py={'14'} px={{ base: 1, md: 10 }}>
                 <VStack alignItems={'start'} gap={'10'}>
                     <FileUploadRoot borderRadius={'2xl'} alignItems="stretch" maxFiles={10} cursor={'pointer'} >
                         <FileUploadDropzone
@@ -19,6 +19,7 @@ const Home = () => {
                                 outlineOffset: '4px'
                             }}
                         />
+
                         {/* 
                             I have set clearable to false since when selecting new files. 
                             If the index is already in uploaed files array, then it marks it as uploaded. 
@@ -26,6 +27,7 @@ const Home = () => {
                         */}
                         <FileUploadList clearable={false} showSize />
                     </FileUploadRoot>
+                
                     <Box w={'100%'}>
                         <Statistics />
                     </Box>

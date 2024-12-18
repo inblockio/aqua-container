@@ -13,7 +13,7 @@ import {
 } from "../drawer"
 import { Button } from "../button"
 import { LuCheck, LuChevronDown, LuChevronUp, LuExternalLink, LuEye, LuX } from "react-icons/lu"
-import { Box, Card, Collapsible, For, Group, Icon, Link, Spacer, Span, Text, VStack } from "@chakra-ui/react"
+import { Box, Card, Collapsible, For, Group, Icon, IconButton, Link, Spacer, Span, Text, VStack } from "@chakra-ui/react"
 import { TimelineConnector, TimelineContent, TimelineDescription, TimelineItem, TimelineRoot, TimelineTitle } from "../timeline"
 import { PageData, Revision } from "../../../models/PageData"
 import { formatCryptoAddress, getLastRevisionVerificationHash, timeToHumanFriendly } from "../../../utils/functions"
@@ -39,12 +39,12 @@ interface IItemDetail {
 const ItemDetail = ({ label, value, displayValue, showCopyIcon }: IItemDetail) => {
 
     return (
-        <Group>
+        <Group textAlign={'start'} w={'100%'}>
             <Text>{label}</Text>
             <Group>
                 <Text fontFamily={"monospace"} textWrap={'wrap'} wordBreak={'break-word'}>{displayValue}</Text>
                 <ClipboardRoot value={value} hidden={!showCopyIcon}>
-                    <ClipboardIconButton size={'xs'} />
+                    <ClipboardIconButton size={'2xs'} />
                 </ClipboardRoot>
             </Group>
         </Group>
@@ -274,6 +274,123 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
         </div>
     )
 }
+interface IRevisionDetailsSummary {
+    fileInfo: ApiFileInfo
+}
+
+export const RevisionDetailsSummary = ({ fileInfo }: IRevisionDetailsSummary) => {
+
+
+    const pageData: PageData = JSON.parse(fileInfo.page_data);
+    const revisionHashes = Object.keys(pageData.pages[0].revisions)
+
+    // 
+    const revisionsWithSignatures: Array<Revision> = [];
+    const revisionsWithWitness: Array<Revision> = [];
+
+    for (let i = 0; i < revisionHashes.length; i++) {
+        const currentRevision: string = revisionHashes[i];
+        const revision: Revision = pageData.pages[0].revisions[currentRevision];
+
+        if (revision.signature) {
+            revisionsWithSignatures.push(revision)
+        }
+
+        if (revision.witness) {
+            revisionsWithWitness.push(revision)
+        }
+    }
+
+
+    return (<VStack textAlign="start">
+        <Text>Revisions count : {revisionHashes.length}</Text>
+
+        <Box w={'100%'} bg={'gray.100'} _dark={{
+            bg: "blackAlpha.900"
+        }} borderRadius={'lg'} p={{ base: '4', md: 'lg' }}>
+            <Text mb={'2'} fontWeight={600} fontSize={'lg'}>Signatures ({revisionsWithSignatures.length})</Text>
+            <For
+                each={revisionsWithSignatures}
+            >
+                {(revision, index) => (
+                    <Group key={`hash_${index}`} pb={'2'} mb={'4'} borderBottom={'1px solid'} borderColor={'gray.200'} _dark={{
+                        borderColor: "gray.50"
+                    }}>
+                        <IconButton size={'xs'}>
+                            {index + 1}
+                        </IconButton>
+                        <Box>
+                            {/* <Text>{index}. {revision.signature?.signature} </Text> */}
+                            <ItemDetail label="Signature Hash:"
+                                displayValue={formatCryptoAddress(revision.signature?.signature_hash, 4, 6)}
+                                value={revision.signature?.signature_hash ?? ""} showCopyIcon={true}
+                            />
+                            <ItemDetail label="Wallet Address:"
+                                // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                                displayValue={revision.signature?.wallet_address ?? ""}
+                                value={revision.signature?.wallet_address ?? ""} showCopyIcon={true}
+                            />
+                            <ItemDetail label="Timestamp:"
+                                // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                                displayValue={timeToHumanFriendly(revision.metadata.time_stamp, true)}
+                                value={revision.signature?.wallet_address ?? ""} showCopyIcon={false}
+                            />
+                        </Box>
+                    </Group>
+                )}
+            </For>
+        </Box>
+
+        <Box w={'100%'} bg={'gray.100'} _dark={{
+            bg: "blackAlpha.900"
+        }} borderRadius={'lg'} p={{ base: '4', md: 'lg' }}>
+            <Text mb={'2'} fontWeight={600} fontSize={'lg'}>Witnesses ({revisionsWithWitness.length})</Text>
+            <For
+                each={revisionsWithWitness}
+            >
+                {(revision, index) => (
+                    <Group key={`witness_${index}`} pb={'2'} mb={'4'} borderBottom={'1px solid'} borderColor={'gray.200'} _dark={{
+                        borderColor: "gray.50"
+                    }}>
+                        <IconButton size={'xs'}>
+                            {index + 1}
+                        </IconButton>
+                        {/* <Text>{index}. {revision.signature?.signature} </Text> */}
+                        <Box>
+                            <ItemDetail label="Network:"
+                                displayValue={formatCryptoAddress(revision.witness?.witness_network ?? "", 4, 6)}
+                                value={revision.witness?.witness_network ?? " "} showCopyIcon={false}
+                            />
+                            <br />
+                            <ItemDetail label="Timestamp:"
+                                displayValue={timeToHumanFriendly(revision.metadata.time_stamp, true)}
+                                value={revision.signature?.wallet_address ?? ""} showCopyIcon={false}
+                            />
+                            <br />
+                            <ItemDetail label="Witness Hash:"
+                                displayValue={formatCryptoAddress(revision.witness?.witness_hash ?? "", 4, 6)}
+                                value={revision.witness?.witness_hash ?? ""} showCopyIcon={true}
+                            />
+                            <br />
+                            <Group>
+                                <ItemDetail label="Transaction Hash:"
+                                    displayValue={formatCryptoAddress(revision.witness?.witness_event_transaction_hash.startsWith('0x') ? revision.witness?.witness_event_transaction_hash ?? "" : `0x${revision.witness?.witness_event_transaction_hash ?? ""}`, 4, 6)}
+                                    value={`0x${revision.witness?.witness_event_transaction_hash ?? ""}`} showCopyIcon={true}
+                                />
+                                <Link outline={'none'} href={`${WITNESS_NETWORK_MAP[revision.witness?.witness_network ?? ""]}/${revision.witness?.witness_event_transaction_hash}`} target="_blank">
+                                    <Icon size={'sm'} color={'blue.500'}>
+                                        <LuExternalLink />
+                                    </Icon>
+                                </Link>
+                            </Group>
+                        </Box>
+                    </Group>
+                )}
+            </For>
+        </Box>
+    </VStack>
+    )
+}
 
 interface IPageDataDetails {
     fileInfo: ApiFileInfo
@@ -345,6 +462,17 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
         console.log("ChainDetailsBtn == > " + JSON.stringify(fileInfo))
     }, [fileInfo])
 
+    useEffect(() => {
+        if (isOpen) {
+            const modalElement = document.getElementById('aqua-chain-details-modal');
+            const customEvent = new CustomEvent('REPLACE_ADDRESSES', {
+                detail: {
+                    element: modalElement,
+                },
+            });
+            window.dispatchEvent(customEvent);
+        }
+    }, [isOpen])
 
     return (
         <>
@@ -353,7 +481,7 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
                 Details
             </Button>
 
-            <DrawerRoot open={isOpen} size={{ base: 'full', md: 'lg' }} onOpenChange={(e) => setIsOpen(e.open)}>
+            <DrawerRoot open={isOpen} size={{ base: 'full', md: 'lg' }} id="aqua-chain-details-modal" onOpenChange={(e) => setIsOpen(e.open)}>
                 <DrawerBackdrop />
                 {/* <DrawerTrigger asChild>
                     <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'}>
@@ -377,6 +505,8 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
                             <Card.Body>
                                 <VStack gap={'4'}>
                                     <Alert status={isVerificationSuccessful ? 'success' : 'error'} title={isVerificationSuccessful ? "This chain is valid" : "This chain is invalid"} />
+
+                                    <RevisionDetailsSummary fileInfo={fileInfo} />
                                     <Box w={'100%'}>
                                         <Collapsible.Root open={showMoreDetails}>
                                             <Collapsible.Trigger w="100%" py={'md'} onClick={() => setShowMoreDetails(open => !open)} cursor={'pointer'}>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "../button";
 import { DialogBody, DialogCloseTrigger, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../dialog";
-import { Center, Dialog, Spacer, Text, VStack } from "@chakra-ui/react";
+import { Center, Dialog, Link, Spacer, Text, VStack } from "@chakra-ui/react";
 import { LuMessageCircleWarning } from "react-icons/lu";
 import { useStore } from 'zustand'
 import appStore from '../../../store'
@@ -18,9 +18,11 @@ export default function VersionAndDisclaimer() {
     const [isOpen, setIsOpen] = useState(false);
     const [versionDetails, setVersionDetails] = useState<VersionDetails>({
         backend: "1.2.X",
-        frontend: "1.2.X"
+        frontend: "1.2.X",
+        aquifier: "1.2.X",
+        protocol: "1.2.X"
     });
-    
+
 
 
 
@@ -38,7 +40,7 @@ export default function VersionAndDisclaimer() {
             if (response.status === 200) {
                 setVersionDetails(res)
             }
-        } catch (e:  unknown) {
+        } catch (e: unknown) {
             console.log("Error fetching version ", e)
             toaster.create({
                 description: "Error fetching version details",
@@ -48,11 +50,10 @@ export default function VersionAndDisclaimer() {
     }
 
     useEffect(() => {
-        if(!backend_url.includes("0.0.0.0")){
+        if (!backend_url.includes("0.0.0.0")) {
             fetchVersionDetails()
         }
-
-    },[backend_url])
+    }, [backend_url])
 
     return (
         <Dialog.Root placement={"center"} size={"sm"} open={isOpen} onOpenChange={(details) => setIsOpen(details.open)}>
@@ -82,14 +83,21 @@ export default function VersionAndDisclaimer() {
                         <Center>
                             Product Verion Details
                         </Center>
-                        <Text fontFamily={"monospace"}>Container Api Version : {versionDetails.backend}  </Text>
-                        <Text fontFamily={"monospace"}>Container Web Version : {versionDetails.frontend} </Text>
+                        <Text fontFamily={"monospace"}>aquafier Version : {versionDetails.aquifier}  </Text>
+                        <Text fontFamily={"monospace"}>protocol Version : {versionDetails.protocol} </Text>
                         <Spacer height={30} />
 
-                        <Alert status="info" title="" variant="solid"   >
+                        <Alert status="error" title="" variant="solid"   >
                             This is prototype software,use it with caution.
                         </Alert>
-                        <Button borderRadius={"md"}  onClick={() => {
+
+                       <Text>
+                       This software is developed by <Link href="https://inblock.io/" target="_blank"  style={{"color":"blue"}}>inblock.io</Link> assets GmbH <br/> </Text>
+                        <Text>
+                        The source code can be found:  <Link href="https://github.com/inblockio" target="_blank" style={{"color":"blue"}}>Inblock</Link>
+
+                       </Text>
+                        <Button borderRadius={"md"} onClick={() => {
                             setIsOpen(!isOpen);
                         }}>
                             close

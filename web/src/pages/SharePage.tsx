@@ -7,7 +7,7 @@ import { ApiFileInfo } from '../models/FileInfo'
 import { toaster } from '../components/ui/toaster'
 import Loading from 'react-loading'
 import { Box, Card, Center, Collapsible, Container, Group, VStack } from '@chakra-ui/react'
-import ChainDetails from '../components/ui/navigation/CustomDrawer'
+import ChainDetails, { RevisionDetailsSummary } from '../components/ui/navigation/CustomDrawer'
 import FilePreview from '../components/FilePreview'
 import { ImportAquaChainFromChain } from '../components/dropzone_file_actions'
 import { Alert } from '../components/ui/alert'
@@ -90,8 +90,21 @@ const SharePage = () => {
         }
         return <div />
     }
+
+    useEffect(() => {
+        if (fileInfo) {
+            const elementToReplace = document.getElementById('replace-here');
+            const customEvent = new CustomEvent('REPLACE_ADDRESSES', {
+                detail: {
+                    element: elementToReplace,
+                },
+            });
+            window.dispatchEvent(customEvent);
+        }
+    }, [fileInfo])
+
     return (
-        <div>
+        <div id='replace-here'>
             {
                 showProperWidget()
             }
@@ -117,6 +130,7 @@ const SharePage = () => {
                                 </Card.Root>
                             </Box>
                             <Box w={'100%'}>
+                                <RevisionDetailsSummary fileInfo={fileInfo} />
                                 {/* <ChainDetails fileInfo={fileInfo} callBack={(res) => setIsVerificationSuccessful(res)} /> */}
                                 <Card.Root borderRadius={'lg'}>
                                     <Card.Body>
