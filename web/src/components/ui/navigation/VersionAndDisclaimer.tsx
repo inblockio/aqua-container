@@ -53,7 +53,6 @@ export default function VersionAndDisclaimer() {
         if (!backend_url.includes("0.0.0.0")) {
             fetchVersionDetails()
         }
-
     }, [backend_url])
 
     return (

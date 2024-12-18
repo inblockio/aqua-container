@@ -449,3 +449,22 @@ export function fileType(file: ApiFileInfo): string {
         return "unknown";
     }
 }
+
+// function detectExtension(extensionId: string) {
+//     return new Promise((resolve) => {
+//       // Try to access the extension's global object
+//       if (window[`chrome_${extensionId}`] || 
+//           (window.chrome && window.chrome.runtime && window.chrome.runtime.id === extensionId)) {
+//         resolve(true);
+//       }
+      
+//       // Alternative method using runtime messaging
+//       try {
+//         chrome.runtime.sendMessage(extensionId, { type: 'ping' }, (response: any) => {
+//           resolve(!!response);
+//         });
+//       } catch (error) {
+//         resolve(false);
+//       }
+//     });
+//   }
