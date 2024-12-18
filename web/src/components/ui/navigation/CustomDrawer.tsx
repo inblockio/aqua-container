@@ -13,7 +13,7 @@ import {
 } from "../drawer"
 import { Button } from "../button"
 import { LuCheck, LuChevronDown, LuChevronUp, LuExternalLink, LuEye, LuX } from "react-icons/lu"
-import { Box, Card, Collapsible, For, Group, Icon, Link, Spacer, Span, Text, VStack } from "@chakra-ui/react"
+import { Box, Card, Collapsible, For, Group, Icon, IconButton, Link, Spacer, Span, Text, VStack } from "@chakra-ui/react"
 import { TimelineConnector, TimelineContent, TimelineDescription, TimelineItem, TimelineRoot, TimelineTitle } from "../timeline"
 import { PageData, Revision } from "../../../models/PageData"
 import { formatCryptoAddress, getLastRevisionVerificationHash, timeToHumanFriendly } from "../../../utils/functions"
@@ -39,12 +39,12 @@ interface IItemDetail {
 const ItemDetail = ({ label, value, displayValue, showCopyIcon }: IItemDetail) => {
 
     return (
-        <Group>
+        <Group textAlign={'start'}>
             <Text>{label}</Text>
             <Group>
                 <Text fontFamily={"monospace"} textWrap={'wrap'} wordBreak={'break-word'}>{displayValue}</Text>
                 <ClipboardRoot value={value} hidden={!showCopyIcon}>
-                    <ClipboardIconButton size={'xs'} />
+                    <ClipboardIconButton size={'2xs'} />
                 </ClipboardRoot>
             </Group>
         </Group>
@@ -371,55 +371,89 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
         return <VStack textAlign="start">
             <Text>Revisions count : {revisionHashes.length}</Text>
 
-            <For
-                each={revisionsWithSignatures}
-            >
-                {(revision, index) => (
-                    <Box>
-                        <Text>{index}. {revision.signature?.signature} </Text>
-                        <ItemDetail label="Signature Hash:"
-                            displayValue={formatCryptoAddress(revision.signature?.signature_hash, 4, 6)}
-                            value={revision.signature?.signature_hash ?? ""} showCopyIcon={true}
-                        />
-                        <ItemDetail label="Wallet Address:"
-                            // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
-                            displayValue={revision.signature?.wallet_address ?? ""}
-                            value={revision.signature?.wallet_address ?? ""} showCopyIcon={true}
-                        />
-
-                    </Box>
-                )}
-            </For>
-
-            <For
-                each={revisionsWithWitness}
-            >
-                {(revision, index) => (
-                    <Box>
-                        <Text>{index}. {revision.signature?.signature} </Text>
-                        <ItemDetail label="Network:"
-                            displayValue={formatCryptoAddress(revision.witness?.witness_network ?? "", 4, 6)}
-                            value={revision.witness?.witness_network ?? " "} showCopyIcon={false}
-                        />
-                        <ItemDetail label="Witness Hash:"
-                            displayValue={formatCryptoAddress(revision.witness?.witness_hash ?? "", 4, 6)}
-                            value={revision.witness?.witness_hash ?? ""} showCopyIcon={true}
-                        />
-                        <Group>
-                            <ItemDetail label="Transaction Hash:"
-                                displayValue={formatCryptoAddress(revision.witness?.witness_event_transaction_hash.startsWith('0x') ? revision.witness?.witness_event_transaction_hash ?? "" : `0x${revision.witness?.witness_event_transaction_hash ?? ""}`, 4, 6)}
-                                value={`0x${revision.witness?.witness_event_transaction_hash ?? ""}`} showCopyIcon={true}
-                            />
-                            <Link outline={'none'} href={`${WITNESS_NETWORK_MAP[revision.witness?.witness_network ?? ""]}/${revision.witness?.witness_event_transaction_hash}`} target="_blank">
-                                <Icon size={'lg'} color={'blue.500'}>
-                                    <LuExternalLink />
-                                </Icon>
-                            </Link>
+            <Box bg={'gray.100'} _dark={{
+                bg: "blackAlpha.900"
+            }} borderRadius={'lg'} p={{ base: '4', md: 'lg' }}>
+                <Text mb={'2'} fontWeight={600} fontSize={'lg'}>Signatures ({revisionsWithSignatures.length})</Text>
+                <For
+                    each={revisionsWithSignatures}
+                >
+                    {(revision, index) => (
+                        <Group key={`hash_${index}`} pb={'2'} mb={'4'} borderBottom={'1px solid'} borderColor={'gray.200'} _dark={{
+                            borderColor: "gray.50"
+                        }}>
+                            <IconButton size={'xs'}>
+                                {index + 1}
+                            </IconButton>
+                            <Box>
+                                {/* <Text>{index}. {revision.signature?.signature} </Text> */}
+                                <ItemDetail label="Signature Hash:"
+                                    displayValue={formatCryptoAddress(revision.signature?.signature_hash, 4, 6)}
+                                    value={revision.signature?.signature_hash ?? ""} showCopyIcon={true}
+                                />
+                                <ItemDetail label="Wallet Address:"
+                                    // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                                    displayValue={revision.signature?.wallet_address ?? ""}
+                                    value={revision.signature?.wallet_address ?? ""} showCopyIcon={true}
+                                />
+                                <ItemDetail label="Timestamp:"
+                                    // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                                    displayValue={timeToHumanFriendly(revision.metadata.time_stamp, true)}
+                                    value={revision.signature?.wallet_address ?? ""} showCopyIcon={false}
+                                />
+                            </Box>
                         </Group>
+                    )}
+                </For>
+            </Box>
 
-                    </Box>
-                )}
-            </For>
+            <Box bg={'gray.100'} _dark={{
+                bg: "blackAlpha.900"
+            }} borderRadius={'lg'} p={{ base: '4', md: 'lg' }}>
+                <Text mb={'2'} fontWeight={600} fontSize={'lg'}>Witnesses ({revisionsWithWitness.length})</Text>
+                <For
+                    each={revisionsWithWitness}
+                >
+                    {(revision, index) => (
+                        <Group key={`witness_${index}`} pb={'2'} mb={'4'} borderBottom={'1px solid'} borderColor={'gray.200'} _dark={{
+                            borderColor: "gray.50"
+                        }}>
+                            <IconButton size={'xs'}>
+                                {index + 1}
+                            </IconButton>
+                            {/* <Text>{index}. {revision.signature?.signature} </Text> */}
+                            <Box>
+                                <ItemDetail label="Network:"
+                                    displayValue={formatCryptoAddress(revision.witness?.witness_network ?? "", 4, 6)}
+                                    value={revision.witness?.witness_network ?? " "} showCopyIcon={false}
+                                />
+                                <br />
+                                <ItemDetail label="Timestamp:"
+                                    displayValue={timeToHumanFriendly(revision.metadata.time_stamp, true)}
+                                    value={revision.signature?.wallet_address ?? ""} showCopyIcon={false}
+                                />
+                                <br />
+                                <ItemDetail label="Witness Hash:"
+                                    displayValue={formatCryptoAddress(revision.witness?.witness_hash ?? "", 4, 6)}
+                                    value={revision.witness?.witness_hash ?? ""} showCopyIcon={true}
+                                />
+                                <br />
+                                <Group>
+                                    <ItemDetail label="Transaction Hash:"
+                                        displayValue={formatCryptoAddress(revision.witness?.witness_event_transaction_hash.startsWith('0x') ? revision.witness?.witness_event_transaction_hash ?? "" : `0x${revision.witness?.witness_event_transaction_hash ?? ""}`, 4, 6)}
+                                        value={`0x${revision.witness?.witness_event_transaction_hash ?? ""}`} showCopyIcon={true}
+                                    />
+                                    <Link outline={'none'} href={`${WITNESS_NETWORK_MAP[revision.witness?.witness_network ?? ""]}/${revision.witness?.witness_event_transaction_hash}`} target="_blank">
+                                        <Icon size={'sm'} color={'blue.500'}>
+                                            <LuExternalLink />
+                                        </Icon>
+                                    </Link>
+                                </Group>
+                            </Box>
+                        </Group>
+                    )}
+                </For>
+            </Box>
         </VStack>
     }
     return (
