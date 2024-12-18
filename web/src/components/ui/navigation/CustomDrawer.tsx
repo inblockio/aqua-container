@@ -346,6 +346,82 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
     }, [fileInfo])
 
 
+    const revisionSummaryDetails = (fileInfo: ApiFileInfo) => {
+        const pageData: PageData = JSON.parse(fileInfo.page_data);
+        const revisionHashes = Object.keys(pageData.pages[0].revisions)
+
+        // 
+        const revisionsWithSignatures: Array<Revision> = [];
+        const revisionsWithWitness: Array<Revision> = [];
+
+        for (let i = 0; i < revisionHashes.length; i++) {
+            const currentRevision: string = revisionHashes[i];
+            const revision: Revision = pageData.pages[0].revisions[currentRevision];
+
+            if (revision.signature) {
+                revisionsWithSignatures.push(revision)
+            }
+
+            if (revision.witness) {
+                revisionsWithWitness.push(revision)
+            }
+        }
+
+
+        return <VStack textAlign="start">
+            <Text>Revisions count : {revisionHashes.length}</Text>
+
+            <For
+                each={revisionsWithSignatures}
+            >
+                {(revision, index) => (
+                    <Box>
+                        <Text>{index}. {revision.signature?.signature} </Text>
+                        <ItemDetail label="Signature Hash:"
+                            displayValue={formatCryptoAddress(revision.signature?.signature_hash, 4, 6)}
+                            value={revision.signature?.signature_hash ?? ""} showCopyIcon={true}
+                        />
+                        <ItemDetail label="Wallet Address:"
+                            // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
+                            displayValue={revision.signature?.wallet_address ?? ""}
+                            value={revision.signature?.wallet_address ?? ""} showCopyIcon={true}
+                        />
+
+                    </Box>
+                )}
+            </For>
+
+            <For
+                each={revisionsWithWitness}
+            >
+                {(revision, index) => (
+                    <Box>
+                        <Text>{index}. {revision.signature?.signature} </Text>
+                        <ItemDetail label="Network:"
+                            displayValue={formatCryptoAddress(revision.witness?.witness_network ?? "", 4, 6)}
+                            value={revision.witness?.witness_network ?? " "} showCopyIcon={false}
+                        />
+                        <ItemDetail label="Witness Hash:"
+                            displayValue={formatCryptoAddress(revision.witness?.witness_hash ?? "", 4, 6)}
+                            value={revision.witness?.witness_hash ?? ""} showCopyIcon={true}
+                        />
+                        <Group>
+                            <ItemDetail label="Transaction Hash:"
+                                displayValue={formatCryptoAddress(revision.witness?.witness_event_transaction_hash.startsWith('0x') ? revision.witness?.witness_event_transaction_hash ?? "" : `0x${revision.witness?.witness_event_transaction_hash ?? ""}`, 4, 6)}
+                                value={`0x${revision.witness?.witness_event_transaction_hash ?? ""}`} showCopyIcon={true}
+                            />
+                            <Link outline={'none'} href={`${WITNESS_NETWORK_MAP[revision.witness?.witness_network ?? ""]}/${revision.witness?.witness_event_transaction_hash}`} target="_blank">
+                                <Icon size={'lg'} color={'blue.500'}>
+                                    <LuExternalLink />
+                                </Icon>
+                            </Link>
+                        </Group>
+
+                    </Box>
+                )}
+            </For>
+        </VStack>
+    }
     return (
         <>
             <Button size={'xs'} colorPalette={'green'} variant={'subtle'} w={'80px'} onClick={() => setIsOpen(true)}>
@@ -377,6 +453,8 @@ export const ChainDetailsBtn = ({ fileInfo }: IPageDataDetails) => {
                             <Card.Body>
                                 <VStack gap={'4'}>
                                     <Alert status={isVerificationSuccessful ? 'success' : 'error'} title={isVerificationSuccessful ? "This chain is valid" : "This chain is invalid"} />
+
+                                    {revisionSummaryDetails(fileInfo)}
                                     <Box w={'100%'}>
                                         <Collapsible.Root open={showMoreDetails}>
                                             <Collapsible.Trigger w="100%" py={'md'} onClick={() => setShowMoreDetails(open => !open)} cursor={'pointer'}>
