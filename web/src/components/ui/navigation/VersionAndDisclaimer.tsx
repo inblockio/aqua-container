@@ -92,7 +92,8 @@ export default function VersionAndDisclaimer() {
                         </Alert>
 
                        <Text>
-                       This software is developed by <Link href="https://inblock.io/" target="_blank"  style={{"color":"blue"}}>inblock.io</Link> assets GmbH
+                       This software is developed by <Link href="https://inblock.io/" target="_blank"  style={{"color":"blue"}}>inblock.io</Link> assets GmbH <br/> </Text>
+                        <Text>
                         The source code can be found:  <Link href="https://github.com/inblockio" target="_blank" style={{"color":"blue"}}>Inblock</Link>
 
                        </Text>
