@@ -1,13 +1,13 @@
 // Function to check if a specific Chrome extension is installed
 export function isExtensionInstalled(extensionId: string) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
         if (!chrome || !chrome.runtime) {
             resolve(false);
             return;
         }
 
         try {
-            chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLED' }, (response) => {
+            chrome.runtime.sendMessage(extensionId, { type: 'CHECK_INSTALLED' }, (_response) => {
                 if (chrome.runtime.lastError) {
                     // Extension is not installed or cannot be contacted
                     resolve(false);
@@ -17,6 +17,7 @@ export function isExtensionInstalled(extensionId: string) {
                 }
             });
         } catch (error) {
+            console.error(error)
             // Any error means the extension is not installed
             resolve(false);
         }
@@ -79,7 +80,7 @@ export async function checkAndUseExtension() {
 
 // Companion extension background script (to be added to the extension's background.js)
 export function setupExtensionListener() {
-    chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessageExternal.addListener((message, _sender, sendResponse) => {
         switch (message.type) {
             case 'CHECK_INSTALLED':
                 // Simply respond to confirm the extension is available
