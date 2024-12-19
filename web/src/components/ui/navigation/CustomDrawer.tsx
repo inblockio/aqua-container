@@ -399,7 +399,7 @@ interface IPageDataDetails {
 
 const ChainDetails = ({ fileInfo, callBack }: IPageDataDetails) => {
     const [verificationResult, setVerificationResult] = useState<RevisionAquaChainResult | null>(null)
-    const pageData: PageData = JSON.parse(fileInfo.page_data)
+    const [pageData, setPageData] = useState<PageData | null>()
 
 
     const verifyAquaChain = () => {
@@ -409,34 +409,44 @@ const ChainDetails = ({ fileInfo, callBack }: IPageDataDetails) => {
             doAlchemyKeyLookUp: true,
             version: 1.2
         });
-
-        verifier.verifyAquaChain(pageData.pages[0]).then((res) => {
-            setVerificationResult(res)
-            callBack && callBack(res.successful)
-        }).catch((error: any) => {
-            console.error("Failed to verify aqua chain: ", error)
-        }).finally(() => {
-            console.info("Verification complete")
-        })
+        if (pageData) {
+            verifier.verifyAquaChain(pageData.pages[0]).then((res) => {
+                setVerificationResult(res)
+                callBack && callBack(res.successful)
+            }).catch((error: any) => {
+                console.error("Failed to verify aqua chain: ", error)
+            }).finally(() => {
+                console.info("Verification complete")
+            })
+        }
     }
 
     useEffect(() => {
         if (pageData) {
             verifyAquaChain()
         }
-    }, [])
+    }, [pageData])
+
+    useEffect(() => {
+        const _pageData: PageData = JSON.parse(fileInfo.page_data)
+        setPageData(_pageData)
+    }, [fileInfo])
 
     return (
         <>
-            <TimelineRoot size="lg" variant="subtle" maxW="xl">
-                <For
-                    each={Object.values(pageData.pages[0].revisions)}
-                >
-                    {(revision, index) => (
-                        <RevisionDisplay key={`revision_${index}`} revision={revision} verificationResult={verificationResult?.revisionResults[index]} />
-                    )}
-                </For>
-            </TimelineRoot>
+            {
+                pageData ? (
+                    <TimelineRoot size="lg" variant="subtle" maxW="xl">
+                        <For
+                            each={Object.values(pageData.pages[0].revisions)}
+                        >
+                            {(revision, index) => (
+                                <RevisionDisplay key={`revision_${index}`} revision={revision} verificationResult={verificationResult?.revisionResults[index]} />
+                            )}
+                        </For>
+                    </TimelineRoot>
+                ) : null
+            }
         </>
     )
 }
