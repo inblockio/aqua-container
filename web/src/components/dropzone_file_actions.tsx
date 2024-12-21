@@ -246,6 +246,11 @@ export const ImportAquaChainFromFile = ({ file, uploadedIndexes, fileIndex, upda
 
 interface ImportChainFromChainProps { fileInfo: ApiFileInfo, isVerificationSuccessful: boolean }
 
+interface BtnContent {
+    text: string
+    color: string
+}
+
 export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }: ImportChainFromChainProps) => {
 
     const [uploading, setUploading] = useState(false)
@@ -257,6 +262,11 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
     const [existingFileId, setExistingFileId] = useState<number | null>(null)
     const [lastIdenticalRevisionHash, setLastIdenticalRevisionHash] = useState<string | null>(null)
     const [revisionsToImport, setRevisionsToImport] = useState<Revision[]>([])
+    const [updateMessage, setUpdateMessage] = useState<string | null>(null)
+    const [btnText, setBtnText] = useState<BtnContent>({
+        text: "Submit chain",
+        color: "blue"
+    })
 
     console.log(revisionsToImport)
 
@@ -270,6 +280,10 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
         const chainToImport: HashChain = JSON.parse(fileInfo.page_data).pages[0]
         const existingChainFile = dbFiles.find(file => JSON.parse(file.page_data).pages[0].genesis_hash === chainToImport.genesis_hash)
 
+        // 1. update local chain with new revisions. (importing chain is bigger)
+        // 2. delete revsiion in local chain if the locl one has more revision than the importing one (ie remote has less and theyare the same revision)
+        // 3. if the  importing chain has  same length or bigger/smmal but divergent revision
+
         if (existingChainFile) {
 
             const existingFileRevisions = Object.keys(JSON.parse(existingChainFile.page_data).pages[0].revisions)
@@ -278,6 +292,30 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
             // console.log(existingFileRevisions, fileToImportRevisions)
             const mergeResult = analyzeAndMergeRevisions(existingFileRevisions, fileToImportRevisions)
             let _revisionsToImport: Revision[] = []
+
+            if (mergeResult.existingRevisionsLength < mergeResult.upcomingRevisionsLength) {
+                setUpdateMessage("Importing chain is longer than existing chain, this will add new revisions to your local chain")
+                setBtnText({
+                    text: "Update Local Chain",
+                    color: "green",
+                })
+            }
+
+            if (mergeResult.existingRevisionsLength > mergeResult.upcomingRevisionsLength) {
+                setUpdateMessage("Existing chain is longer than importing chain, this will delete some revisions in your local chain")
+                setBtnText({
+                    text: "Rebase Local Chain",
+                    color: "yellow"
+                })
+            }
+
+            if (mergeResult.existingRevisionsLength === mergeResult.upcomingRevisionsLength && mergeResult.divergences.length > 0) {
+                setUpdateMessage("Chains are different, this will merge the chains, your local revisions will be deleted up to where the chains diverge")
+                setBtnText({
+                    text: "Merge Chains",
+                    color: "red"
+                })
+            }
 
             if (mergeResult.divergences.length > 0) {
                 for (let i = 0; i < mergeResult.divergences.length; i++) {
@@ -359,7 +397,9 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
             })
             setUploading(false)
             setUploaded(true)
-            navigate("/")
+            // This navigate doesn't go to fsa page why?
+            navigate("/loading?reload=true");
+            // window.location.reload()
             return;
         } catch (error) {
             setUploading(false)
@@ -402,7 +442,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                     }
                 }
 
-                navigate("/")
+                navigate("/loading?reload=true");
             }
         } catch (e: any) {
             setUploading(false)
@@ -535,7 +575,7 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                                                 {
                                                                     diff.existingRevisionHash ? (
                                                                         <Group>
-                                                                            <Text textDecoration={'line-through'}>
+                                                                            <Text textDecoration={'line-through'} style={{ textDecorationColor: 'red', color: "red" }}>
                                                                                 {formatCryptoAddress(diff.existingRevisionHash ?? "", 15, 4)}
                                                                             </Text>
                                                                             <LuChevronRight />
@@ -562,12 +602,75 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                                             </TimelineConnector>
                                             <TimelineContent>
                                                 <TimelineTitle textStyle="sm">Action</TimelineTitle>
-                                                <TimelineDescription>Merge Chain</TimelineDescription>
+                                                <TimelineDescription>{btnText.text}</TimelineDescription>
                                                 <Alert title="Action Not reversible!" status={'warning'}>
-                                                    This action will delete some revision(s) in your local Aqua Chain
+                                                    {/* This action will delete some revision(s) in your local Aqua Chain */}
+                                                    {updateMessage}
                                                 </Alert>
                                                 <Group>
-                                                    <Button size={'xs'} borderRadius={'md'} onClick={handleMergeRevisions} loading={uploading}>Merge Revisions</Button>
+                                                    <Button size={'xs'} borderRadius={'md'} colorPalette={btnText.color} onClick={handleMergeRevisions} loading={uploading}>{btnText.text}</Button>
+                                                </Group>
+                                            </TimelineContent>
+                                        </TimelineItem>
+                                    </>
+                                ) : null
+                            }
+
+                            {
+                                (
+                                    (comparisonResult?.divergences?.length ?? 0) > 0
+                                    && (comparisonResult?.existingRevisionsLength ?? 0) > (comparisonResult?.upcomingRevisionsLength ?? 0)
+                                    // && isVerificationSuccessful // We won't reach here since by then the import button will be disabled
+                                ) ? (
+                                    <>
+                                        <TimelineItem colorPalette={'gray'}>
+                                            <TimelineConnector>
+                                                <LuX />
+                                            </TimelineConnector>
+                                            <TimelineContent>
+                                                <TimelineTitle textStyle="sm">Chains are Different</TimelineTitle>
+                                                {/* <TimelineDescription>Chains have divergencies</TimelineDescription> */}
+                                                <List.Root>
+                                                    {
+                                                        comparisonResult?.divergences.map((diff, i: number) => (
+                                                            <List.Item key={`diff_${i}`} fontSize={'sm'}>
+                                                                {
+                                                                    diff.existingRevisionHash ? (
+                                                                        <Group>
+                                                                            <Text textDecoration={'line-through'} style={{ textDecorationColor: 'red', color: "red" }}>
+                                                                                {formatCryptoAddress(diff.existingRevisionHash ?? "", 15, 4)}
+                                                                            </Text>
+                                                                            <LuChevronRight />
+                                                                            <Text>
+                                                                                {formatCryptoAddress(diff.upcomingRevisionHash ?? "", 15, 4, "Revision will be deleted")}
+                                                                            </Text>
+                                                                        </Group>
+                                                                    ) : (
+                                                                        <>
+                                                                            {formatCryptoAddress(diff.upcomingRevisionHash ?? "", 20, 4)}
+                                                                        </>
+                                                                    )
+                                                                }
+                                                            </List.Item>
+                                                        ))
+                                                    }
+                                                </List.Root>
+                                            </TimelineContent>
+                                        </TimelineItem>
+
+                                        <TimelineItem colorPalette={'info'}>
+                                            <TimelineConnector>
+                                                <LuCheck />
+                                            </TimelineConnector>
+                                            <TimelineContent>
+                                                <TimelineTitle textStyle="sm">Action</TimelineTitle>
+                                                <TimelineDescription>{btnText.text}</TimelineDescription>
+                                                <Alert title="Action Not reversible!" status={'warning'}>
+                                                    {/* This action will delete some revision(s) in your local Aqua Chain */}
+                                                    {updateMessage}
+                                                </Alert>
+                                                <Group>
+                                                    <Button size={'xs'} borderRadius={'md'} colorPalette={btnText.color} onClick={handleMergeRevisions} loading={uploading}>{btnText.text}</Button>
                                                 </Group>
                                             </TimelineContent>
                                         </TimelineItem>
@@ -578,7 +681,6 @@ export const ImportAquaChainFromChain = ({ fileInfo, isVerificationSuccessful }:
                             {
                                 (
                                     (comparisonResult?.identical && (comparisonResult?.sameLength && comparisonResult?.divergences.length === 0))
-                                    || (comparisonResult?.existingRevisionsLength ?? 0) > (comparisonResult?.upcomingRevisionsLength ?? 0)
                                     // || !isVerificationSuccessful // Import button will be disabled, no reaching this point
                                 ) ? (
                                     <TimelineItem colorPalette={'blue'}>
