@@ -126,7 +126,7 @@ const RevisionDisplay = ({ revision, verificationResult }: IRevisionDisplay) => 
                                                 {verificationResult?.metadata_verification.successful ? ' valid' : ' invalid'}
                                             </Span>
                                         </TimelineTitle>
-                                        <TimelineDescription>{timeToHumanFriendly(revision.metadata.time_stamp, true)}</TimelineDescription>
+                                        <TimelineDescription>{timeToHumanFriendly(revision.metadata.time_stamp, true)}&nbsp;(UTC)</TimelineDescription>
                                         <ItemDetail label="Metadata Hash:"
                                             displayValue={formatCryptoAddress(revision.metadata.metadata_hash, 4, 6)}
                                             value={revision.metadata.metadata_hash} showCopyIcon={true}

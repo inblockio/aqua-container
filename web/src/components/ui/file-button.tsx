@@ -14,9 +14,10 @@ import {
 } from "@chakra-ui/react"
 import { forwardRef, useState } from "react"
 import { LuFile, LuUpload, LuX } from "react-icons/lu"
-import { ImportAquaChainFromFile, UploadFile, VerifyFile } from "../dropzone_file_actions"
+import { UploadFile } from "../dropzone_file_actions"
 import { determineFileType, isJSONFile } from "../../utils/functions"
 import React from "react"
+import ImportByModal from "../ImportByModal"
 
 export interface FileUploadRootProps extends ChakraFileUpload.RootProps {
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>
@@ -78,7 +79,7 @@ const FileUploadItem = (props: FileUploadItemProps) => {
   const isJson = isJSONFile(file.name)
 
   // if file uploaded remove from file upload item
-  if(uploadedIndexes.includes(fileIndex)) {
+  if (uploadedIndexes.includes(fileIndex)) {
     return (<div></div>)
   }
   return (
@@ -100,15 +101,16 @@ const FileUploadItem = (props: FileUploadItemProps) => {
       {
         isJson ? (
           <>
-            <ImportAquaChainFromFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
-            <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            <ImportByModal file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
+            {/* <ImportAquaChainFromFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} /> */}
+            {/* <VerifyFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} /> */}
             {/* <ChainDetails pageData={JSON.parse(item.page_data)} /> */}
           </>
         ) : null
       }
       {
         !isJson ? (
-          
+
           <UploadFile file={file} fileIndex={fileIndex} uploadedIndexes={uploadedIndexes} updateUploadedIndex={updateUploadedIndex} />
         ) : null
       }
@@ -168,7 +170,7 @@ export const FileUploadList = forwardRef<HTMLUListElement, FileUploadListProps>(
 
 
     if (acceptedFiles.length === 0) return null
-    
+
     return (
       <ChakraFileUpload.ItemGroup ref={ref} {...rest}>
         {processedFiles.map((file, index: number) => (
