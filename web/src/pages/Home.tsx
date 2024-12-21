@@ -3,8 +3,9 @@ import { FileUploadDropzone, FileUploadList, FileUploadRoot } from "../component
 import Statistics from "../components/Stats"
 import FilesTable from "../components/ui/table"
 
-
 const Home = () => {
+
+
     return (
         <>
             <Container fluid maxWidth={{ base: 'vw', md: '10/12' }} py={'14'} px={{ base: 1, md: 10 }}>
@@ -19,7 +20,6 @@ const Home = () => {
                                 outlineOffset: '4px'
                             }}
                         />
-
                         {/* 
                             I have set clearable to false since when selecting new files. 
                             If the index is already in uploaed files array, then it marks it as uploaded. 

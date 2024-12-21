@@ -8,6 +8,7 @@ import appStore from './store';
 import { useStore } from "zustand"
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import SharePage from './pages/SharePage';
+import Loading from './pages/Loading';
 declare global {
   interface Window {
     ethereum?: ethers.Eip1193Provider;
@@ -34,6 +35,7 @@ function App() {
       <MainLayout>
         <Routes>
           <Route path="" element={<Home />} />
+          <Route path="/loading" element={<Loading />} />
           <Route path="/share/:identifier" element={<SharePage />} />
         </Routes>
       </MainLayout>

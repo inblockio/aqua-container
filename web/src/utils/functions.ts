@@ -4,8 +4,8 @@ import { PageData } from "../models/PageData";
 import { documentTypes,  imageTypes, musicTypes, videoTypes } from "./constants";
 import { AvatarGenerator } from 'random-avatar-generator';
 
-export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4): string {
-    if (!address) return "NO ADDRESS"
+export function formatCryptoAddress(address?: string, start: number = 10, end: number = 4, message?: string): string {
+    if (!address) return message ?? "NO ADDRESS"
     if (address?.length < (start + end)) {
         // throw new Error(`Address must be at least ${start + end} characters long.`);
         return address
