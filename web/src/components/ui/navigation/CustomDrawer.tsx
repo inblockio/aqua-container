@@ -330,7 +330,7 @@ export const RevisionDetailsSummary = ({ fileInfo }: IRevisionDetailsSummary) =>
                                 displayValue={revision.signature?.wallet_address ?? ""}
                                 value={revision.signature?.wallet_address ?? ""} showCopyIcon={true}
                             />
-                            <ItemDetail label="Timestamp:"
+                            <ItemDetail label="Timestamp (UTC) : "
                                 // displayValue={formatCryptoAddress(revision.signature.wallet_address, 4, 6)}
                                 displayValue={timeToHumanFriendly(revision.metadata.time_stamp, true)}
                                 value={revision.signature?.wallet_address ?? ""} showCopyIcon={false}
@@ -362,7 +362,7 @@ export const RevisionDetailsSummary = ({ fileInfo }: IRevisionDetailsSummary) =>
                                 value={revision.witness?.witness_network ?? " "} showCopyIcon={false}
                             />
                             <br />
-                            <ItemDetail label="Timestamp:"
+                            <ItemDetail label="Timestamp (UTC) : "
                                 displayValue={timeToHumanFriendly(revision.metadata.time_stamp, true)}
                                 value={revision.signature?.wallet_address ?? ""} showCopyIcon={false}
                             />
