@@ -14,8 +14,8 @@ Functionality milestones Fileupload & Hasher:
 5) [DONE] Import Aqua-Chain
 6) [DONE] Extend existing Aqua-Chain with new Signature
 7) [DONE] Witness Aqua-Chain on Chain
-8) [ONGOIN] Allow for choosing witness network from config.
-9) [TODO] Make user profile to handle some information ie config, email, payments
+8) [DONE] Allow for choosing witness network from config.
+9) [DONE] Make user profile to handle some information i.e. config, email, payments
 
 UI-Interface:
 
@@ -33,22 +33,26 @@ Pages:
 
 1) [DONE][v1.2] Hasher
 2) [DONE][v1.2] Verifier
-3) [ONGOIN] Config (configure Witness, see version of Software etc.)
+3) [DONE] Config (configure Witness, see version of Software etc.)
 
 ## Phase 2 - Features:
 
 Multi-User File-Management
 
 1) [DONE] Support multi-user access rights for DB
-2) [ONGOING] IntTODOegrate SIWE-OIDC login functionality
-3) [] File-Sharing between different accounts (Workflow, share file with wallet (see other wallets registered on
-   server))
+2) [Done] Integrate SIWE-OIDC login functionality
+3) [Done] File-Sharing between different accounts (Via Share-Links)
 
 ## Known Limitation.
+ - File double in size when a new revision is added, this is a protocol v1.2 limitation and is resolved in v1.3
+ - File linking is not implemented in this version
+ - Support for the Guardian is not provided in this version (use other prototype implementation https://github.com/inblockio/aqua-PKC)
 
-1. The metamask siwe-oidc session is not persisted as such api restart log you out
-2.
+## Disclaimer
+This is a prototype software in active development. 
+Use at your own risk.
 
+# Running the Rust build locally
 ## Requirements
 
 1. Rust and `sqlx` (` cargo install sqlx-cli`)
@@ -114,6 +118,13 @@ file, make sure that the nginx can reach the aqua container via network. see htt
 
 The configuration template can be found in .env.template. Please copy this file and make your changes.
 ```cp .env.template .env```
+
+Must be configured for the application to run:
+
+configure two domains and your e-mail address for the let's encrypt certificate before starting the container.
+ - BACKEND_URL= sub.domain.com
+ - FRONTEND_URL=sub-api.domain.com
+ - SSL_EMAIL= your-email@mail.com
 
 ## Limit
 
