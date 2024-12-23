@@ -110,6 +110,11 @@ docker compose up --build
 just remove everything from the compose file except the aqua-container section. If the nginx is in a another compose
 file, make sure that the nginx can reach the aqua container via network. see https://stackoverflow.com/a/38089080
 
+## Config
+
+The configuration template can be found in .env.template. Please copy this file and make your changes.
+```cp .env.template .env```
+
 ## Limit
 
 ### upload limit
