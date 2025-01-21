@@ -7,11 +7,6 @@ mod models;
 mod util;
 mod schema;
 
-// pub mod verification;
-// pub mod revision_integrity;
-
-use aqua_verifier_rs_types::models::page_data::HashChain;
-
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -52,13 +47,13 @@ use diesel::r2d2::{self, ConnectionManager};
 use serde::{Deserialize, Serialize};
 extern crate serde_json_path_to_error as serde_json;
 use std::sync::{mpsc, Mutex, MutexGuard};
-use crate::controllers::api_controller::explorer_file_verify_hash_upload;
+// use crate::controllers::api_controller::explorer_file_verify_hash_upload;
 use crate::util::{check_or_generate_domain, establish_connection};
-use controllers::{api_controller::{
-    explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
-}, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
+// use controllers::{api_controller::{
+//     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
+// }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
 use controllers::auth_controller::{
-    siwe_sign_in, verify_siwe_message, fetch_nonce_session
+    fetch_nonce_session, session_logout_by_nonce, siwe_sign_in, verify_siwe_message
 
 };
 use controllers::versions_controller::version_details;
@@ -146,8 +141,8 @@ async fn main() {
         .route("/siwe", post(siwe_sign_in))
         .route("/fetch_nonce_session", post(fetch_nonce_session))
         .route("/siwe_logout", post(session_logout_by_nonce))
-        .route("/share_data/{share_identifier}", get(get_share_data))
-        .route("/share_data", post(save_share_data))
+        // .route("/share_data/{share_identifier}", get(get_share_data))
+        // .route("/share_data", post(save_share_data))
         .route("/version", get(version_details))
         //.route("/list", get(show_files_list).post(show_files))
         .with_state(server_database)

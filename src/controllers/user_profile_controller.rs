@@ -1,26 +1,10 @@
 use crate::db::user_profiles::{fetch_user_profile, update_user_profile};
 use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
-use crate::models::page_data::{ApiResponse, PageDataContainer};
+use crate::models::page_data::{ApiResponse};
 use crate::models::user_profiles::UserProfileApiResponse;
 use crate::models::UserProfilesTable;
-use crate::models::{file::FileInfo, page_data};
-use crate::util::{
-    check_if_page_data_revision_are_okay, check_or_generate_domain, compute_content_hash,
-    get_content_type, get_file_info, make_empty_hash, update_env_file,
-};
+
 use crate::Db;
-use aqua_verifier_rs_types::models::base64::Base64;
-use aqua_verifier_rs_types::models::content::RevisionContentContent;
-use aqua_verifier_rs_types::models::content::{FileContent, RevisionContent};
-use aqua_verifier_rs_types::models::hash::Hash;
-use aqua_verifier_rs_types::models::metadata::RevisionMetadata;
-use aqua_verifier_rs_types::models::page_data::HashChain;
-use aqua_verifier_rs_types::models::public_key::PublicKey;
-use aqua_verifier_rs_types::models::revision::Revision;
-use aqua_verifier_rs_types::models::signature::{RevisionSignature, Signature};
-use aqua_verifier_rs_types::models::timestamp::Timestamp;
-use aqua_verifier_rs_types::models::tx_hash::TxHash;
-use aqua_verifier_rs_types::models::witness::{MerkleNode, RevisionWitness};
 use axum::response::{IntoResponse, Response};
 use axum::{
     body::Bytes,
@@ -37,13 +21,7 @@ use ethaddr::address;
 use ethers::core::k256::sha2::Sha256;
 use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
-use aqua_verifier::util::{
-    content_hash, metadata_hash, signature_hash, verification_hash, witness_hash,
-};
 extern crate serde_json_path_to_error as serde_json;
-use crate::db::pages_db::{
-    delete_all_data, delete_page_data, fetch_page_data, insert_page_data, update_page_data,
-};
 use dotenv::{dotenv, vars};
 use sha3::{Digest, Sha3_512};
 use std::collections::HashMap;
