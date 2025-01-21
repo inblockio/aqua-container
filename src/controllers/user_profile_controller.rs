@@ -1,6 +1,5 @@
 use crate::db::user_profiles::{fetch_user_profile, update_user_profile};
 use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
-use crate::models::page_data::{ApiResponse};
 use crate::models::user_profiles::UserProfileApiResponse;
 use crate::models::UserProfilesTable;
 

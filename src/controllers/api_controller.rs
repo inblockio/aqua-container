@@ -1,11 +1,18 @@
-use crate::models::page_data::ApiResponse;
+use aqua_verifier_rs_types::models::base64::Base64;
+use axum::{
+    body::Bytes,
+    extract::{DefaultBodyLimit, Multipart, Path, Request, State},
+    handler::HandlerWithoutStateExt,
+    http::{HeaderMap, StatusCode},
+    response::{Html, Redirect},
+    routing::{get, post},
+    BoxError, Form, Json, Router,
+};
+use chrono::{DateTime, NaiveDateTime, Utc};
 
+use crate::{models::{api::ApiResponse, input::DeleteInput}, Db};
 
-
-
-
-
-
+const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 
 pub async fn fetch_explorer_files(
@@ -17,13 +24,241 @@ pub async fn fetch_explorer_files(
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
         logs: log_data.clone(),
-        file: None,
-        files: Vec::new(),
+        chain: None,
+        all_chains: Vec::new(),
     };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
 
+pub async fn explorer_import_aqua_chain(
+    State(server_database): State<Db>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> (StatusCode, Json<ApiResponse>) {
+    tracing::debug!("explorer_import_aqua_chain fn");
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        chain: None,
+        all_chains: Vec::new(),
+    };
+
+    (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
+}
+
+pub async fn explorer_aqua_file_upload(
+    State(server_database): State<Db>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> (StatusCode, Json<ApiResponse>) {
+    tracing::debug!("explorer_aqua_file_upload fn");
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        chain: None,
+        all_chains: Vec::new(),
+    };
+
+
+    (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
+}
+
+pub async fn explorer_delete_all_files(
+    State(server_database): State<Db>,
+    headers: HeaderMap,
+) -> (StatusCode, Json<ApiResponse>) {
+    let mut log_data: Vec<String> = Vec::new();
+
+    tracing::debug!("explorer_aqua_file_upload fn");
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        chain: None,
+        all_chains: Vec::new(),
+    };
+
+
+    (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
+
+}
+
+pub async fn explorer_delete_file(
+    State(server_database): State<Db>,
+    Form(input): Form<DeleteInput>,
+) -> (StatusCode, Json<ApiResponse>) {
+    tracing::debug!("explorer_delete_file");
+    let mut log_data: Vec<String> = Vec::new();
+
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        chain: None,
+        all_chains: Vec::new(),
+    };
+
+
+    (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
+
+}
+
+pub async fn explorer_file_upload(
+    State(server_database): State<Db>,
+    headers: HeaderMap,
+    mut multipart: Multipart,
+) -> (StatusCode, Json<ApiResponse>) {
+    tracing::debug!("explorer_file_upload fn");
+
+    let mut log_data: Vec<String> = Vec::new();
+    let mut res: ApiResponse = ApiResponse {
+        logs: log_data,
+        chain: None,
+        all_chains: Vec::new(),
+    };
+
+    // Extract the 'metamask_address' header
+    let metamask_address = match headers.get("metamask_address") {
+        Some(value) => match value.to_str() {
+            Ok(key) => key,
+            Err(err) => {
+                tracing::error!("headers get error {} ", err);
+                // return (StatusCode::BAD_REQUEST,  Json(json!({"error": "Invalid metamask_address header"})))
+
+                res.logs
+                    .push(format!("Error: Meta mask public key  error: {:?}", err));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        },
+        None => {
+            tracing::debug!("metamask_address header missing ");
+            // return (StatusCode::BAD_REQUEST, Json(json!({"error": "metamask_address header missing"})))
+            res.logs
+                .push("Error: Meta mask public key  missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    let mut account = None;
+    let mut file_info = None;
+
+    // Process only two fields: account and file
+    for _ in 0..2 {
+        let field = match multipart.next_field().await {
+            Ok(Some(field)) => field,
+            Ok(None) => break,
+            Err(e) => {
+                tracing::error!("Multipart error: {}", e);
+                res.logs.push(format!("Multipart error: {}", e));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        };
+
+        let name = match field.name() {
+            Some(name) => name.to_string(),
+            None => {
+                tracing::error!("Field name missing");
+                res.logs.push("Field name missing".to_string());
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+        };
+
+        tracing::debug!("Processing field: {}", name);
+        match name.as_str() {
+            "account" => {
+                account = match field.text().await {
+                    Ok(text) => Some(text),
+                    Err(e) => {
+                        tracing::error!("Failed to read account field: {}", e);
+                        res.logs
+                            .push(format!("Failed to read account field: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+            }
+            "file" => {
+                let file_name = match field.file_name() {
+                    Some(name) => name.to_string(),
+                    None => {
+                        tracing::error!("File name missing");
+                        res.logs.push("File name missing".to_string());
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+                let content_type = match field.content_type() {
+                    Some(ct) => ct.to_string(),
+                    None => {
+                        tracing::error!("Content type missing");
+                        res.logs.push("Content type missing".to_string());
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+
+                let body_bytes = match field.bytes().await {
+                    Ok(bytes) => bytes.to_vec(),
+                    Err(e) => {
+                        tracing::error!("Failed to read file bytes: {}", e);
+                        res.logs.push(format!("Failed to read file bytes: {}", e));
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+
+                let file_size: u32 = match body_bytes.len().try_into() {
+                    Ok(size) => size,
+                    Err(_) => {
+                        tracing::error!("File size exceeds u32::MAX");
+                        res.logs.push("File size exceeds u32::MAX".to_string());
+                        return (StatusCode::BAD_REQUEST, Json(res));
+                    }
+                };
+
+                if file_size > MAX_FILE_SIZE {
+                    tracing::error!("File size {} exceeds maximum allowed size", file_size);
+                    res.logs.push(format!(
+                        "File size {} exceeds maximum allowed size",
+                        file_size
+                    ));
+                    return (StatusCode::BAD_REQUEST, Json(res));
+                }
+
+                file_info = Some((file_name, content_type, body_bytes, file_size));
+            }
+            _ => {
+                tracing::warn!("Unexpected field: {}", name);
+            }
+        }
+    }
+
+    // Verify we have both account and file
+    let account = match account {
+        Some(acc) => acc,
+        None => {
+            tracing::error!("Account information missing");
+            res.logs.push("Account information missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+    let (file_name, content_type, body_bytes, file_size) = match file_info {
+        Some(info) => info,
+        None => {
+            tracing::error!("File information missing");
+            res.logs.push("File information missing".to_string());
+            return (StatusCode::BAD_REQUEST, Json(res));
+        }
+    };
+
+    tracing::debug!(
+        "Processing file upload - Account: {}, File: {}, Size: {} bytes",
+        account,
+        file_name,
+        file_size
+    );
+
+    let b64 = Base64::from(body_bytes);
+
+
+
+    (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
+
+}
 
 // use crate::models::input::{
 //     DeleteInput, MergeInput, RevisionInput, UpdateConfigurationInput, WitnessInput,
@@ -52,16 +287,7 @@ pub async fn fetch_explorer_files(
 // use aqua_verifier_rs_types::models::tx_hash::TxHash;
 // use aqua_verifier_rs_types::models::witness::{MerkleNode, RevisionWitness};
 // use axum::response::{IntoResponse, Response};
-// use axum::{
-//     body::Bytes,
-//     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
-//     handler::HandlerWithoutStateExt,
-//     http::{HeaderMap, StatusCode},
-//     response::{Html, Redirect},
-//     routing::{get, post},
-//     BoxError, Form, Json, Router,
-// };
-// use chrono::{DateTime, NaiveDateTime, Utc};
+
 // use dotenv::from_path;
 // use ethaddr::address;
 // use ethers::core::k256::sha2::Sha256;
@@ -87,7 +313,6 @@ pub async fn fetch_explorer_files(
 // use tower::ServiceExt;
 // use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 
-// const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 // #[derive(Debug)]
 // pub enum UploadError {
@@ -335,18 +560,7 @@ pub async fn fetch_explorer_files(
 //     (StatusCode::BAD_REQUEST, Json(res))
 // }
 
-// pub async fn explorer_import_aqua_chain(
-//     State(server_database): State<Db>,
-//     headers: HeaderMap,
-//     mut multipart: Multipart,
-// ) -> (StatusCode, Json<ApiResponse>) {
-//     tracing::debug!("explorer_import_aqua_chain fn");
-//     let mut log_data: Vec<String> = Vec::new();
-//     let mut res: ApiResponse = ApiResponse {
-//         logs: log_data,
-//         file: None,
-//         files: Vec::new(),
-//     };
+
 
 //     // Extract the 'metamask_address' header
 //     let metamask_address = match headers.get("metamask_address") {
@@ -623,18 +837,7 @@ pub async fn fetch_explorer_files(
 //     return (StatusCode::CREATED, Json(res));
 // }
 
-// pub async fn explorer_aqua_file_upload(
-//     State(server_database): State<Db>,
-//     headers: HeaderMap,
-//     mut multipart: Multipart,
-// ) -> (StatusCode, Json<ApiResponse>) {
-//     tracing::debug!("explorer_aqua_file_upload fn");
-//     let mut log_data: Vec<String> = Vec::new();
-//     let mut res: ApiResponse = ApiResponse {
-//         logs: log_data,
-//         file: None,
-//         files: Vec::new(),
-//     };
+
 
 //     // Extract the 'metamask_address' header
 //     let metamask_address = match headers.get("metamask_address") {
@@ -1596,11 +1799,7 @@ pub async fn fetch_explorer_files(
 //     return (StatusCode::OK, Json(res));
 // }
 
-// pub async fn explorer_delete_all_files(
-//     State(server_database): State<Db>,
-//     headers: HeaderMap,
-// ) -> (StatusCode, Json<ApiResponse>) {
-//     let mut log_data: Vec<String> = Vec::new();
+
 
 //     let user_address: Result<String, String> = match headers.get("metamask_address") {
 //         Some(value) => match value.to_str() {
@@ -1678,12 +1877,6 @@ pub async fn fetch_explorer_files(
 //     }
 // }
 
-// pub async fn explorer_delete_file(
-//     State(server_database): State<Db>,
-//     Form(input): Form<DeleteInput>,
-// ) -> (StatusCode, Json<ApiResponse>) {
-//     tracing::debug!("explorer_delete_file");
-//     let mut log_data: Vec<String> = Vec::new();
 
 //     // Get the name parameter from the input
 //     if input.file_id == 0 {
@@ -2128,12 +2321,12 @@ pub async fn fetch_explorer_files(
 //     // }
 // }
 
-// // pub async fn explorer_fetch_configuration(
-// //     State(server_database): State<Db>,
-// // ) -> (StatusCode, Json<HashMap<String, String>>) {
-// //     let mut config_data = HashMap::new();
+// pub async fn explorer_fetch_configuration(
+//     State(server_database): State<Db>,
+// ) -> (StatusCode, Json<HashMap<String, String>>) {
+//     let mut config_data = HashMap::new();
 
-// //     tracing::debug!("explorer_sign_revision");
+//     tracing::debug!("explorer_sign_revision");
 
 // //     dotenv().ok();
 

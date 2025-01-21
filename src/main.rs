@@ -23,7 +23,6 @@ use ethaddr::address;
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use futures::{Stream, TryStreamExt};
-use models::file::FileInfo;
 use serde_json::json;
 use sha3::*;
 use util::run_db_migrations;
@@ -52,10 +51,10 @@ use crate::util::{check_or_generate_domain, establish_connection};
 // use controllers::{api_controller::{
 //     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
 // }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
-use controllers::auth_controller::{
+use controllers::{api_controller::{explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, fetch_explorer_files}, auth_controller::{
     fetch_nonce_session, session_logout_by_nonce, siwe_sign_in, verify_siwe_message
 
-};
+}};
 use controllers::versions_controller::version_details;
 use controllers::user_profile_controller::{explorer_fetch_user_profile, explorer_update_user_profile};
 
@@ -117,13 +116,13 @@ async fn main() {
             "/explorer_aqua_file_upload",
             post(explorer_aqua_file_upload),
         )
-        .route(
-            "/explorer_verify_hash",
-            post(explorer_file_verify_hash_upload),
-        )
-        .route("/explorer_sign_revision", post(explorer_sign_revision))
-        .route("/explorer_witness_file", post(explorer_witness_file))
-        .route("/explorer_merge_chain", post(explorer_merge_chain))
+        // .route(
+        //     "/explorer_verify_hash",
+        //     post(explorer_file_verify_hash_upload),
+        // )
+        // .route("/explorer_sign_revision", post(explorer_sign_revision))
+        // .route("/explorer_witness_file", post(explorer_witness_file))
+        // .route("/explorer_merge_chain", post(explorer_merge_chain))
         .route("/explorer_delete_file", post(explorer_delete_file))
         .route("/explorer_delete_all_files", get(explorer_delete_all_files))
         .route(
