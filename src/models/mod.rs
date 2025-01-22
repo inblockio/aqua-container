@@ -1,3 +1,5 @@
+use aqua_verifier_rs_types::models::chain::AquaChain;
+use aqua_verifier_rs_types::models::revision::Revision;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use diesel::SqliteConnection;
@@ -10,7 +12,7 @@ pub mod user_profiles;
 use chrono::{DateTime, Utc};
 
 pub type DB_POOL = r2d2::Pool<ConnectionManager<SqliteConnection>>;
-
+use crate::util::vec_to_string;
 use chrono::NaiveDateTime;
 use diesel::expression::AsExpression;
 use diesel::prelude::*;
@@ -18,54 +20,6 @@ use diesel::prelude::*;
 use diesel::sql_types::Nullable;
 use siwe::TimeStamp;
 
-// #[derive(
-//     Queryable,
-//     Selectable,
-//     Serialize,
-//     Deserialize,
-//     Debug,
-//     Clone,
-//     Insertable,
-//     Identifiable,
-//     AsChangeset,
-// )]
-// #[diesel(table_name = crate::schema::pages)]
-// pub struct PagesTable {
-//     pub id: i32,
-//     pub name: String,
-//     pub extension: String,
-//     pub page_data: String,
-//     pub owner: String,
-//     pub mode: String,
-//     pub created_at: String,
-//     pub is_shared: bool,
-// }
-
-// #[derive(Debug, Serialize, Deserialize, Clone, Insertable)]
-// #[diesel(table_name = crate::schema::pages)]
-// pub struct NewPagesTable {
-//     pub name: String,
-//     pub extension: String,
-//     pub page_data: String,
-//     pub owner: String,
-//     pub mode: String,
-//     pub created_at: String,
-//     pub is_shared: bool,
-// }
-
-// impl From<PagesTable> for NewPagesTable {
-//     fn from(page: PagesTable) -> Self {
-//         NewPagesTable {
-//             name: page.name,
-//             extension: page.extension,
-//             page_data: page.page_data,
-//             owner: page.owner,
-//             mode: page.mode,
-//             created_at: page.created_at,
-//             is_shared: page.is_shared,
-//         }
-//     }
-// }
 
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::siwe_sessions)]
@@ -109,22 +63,24 @@ pub struct AquaChainDb {
     pub id: Option<i32>,
     pub file_hash: String,
     pub file_name: String,
-    pub revisions: String, // Stored as a JSON string
+    pub revisions: String, // id of revision
     pub file_content: String,
     pub owner: String,
     pub mode: String,
     pub share_code: Option<String>,
     pub is_shared: bool,
+    #[diesel(sql_type = Timestamp)]
     pub updated_at: NaiveDateTime,
+    #[diesel(sql_type = Timestamp)]
     pub created_at: NaiveDateTime,
 }
 
-pub fn aqua_chain_to_aqua_chain_db(aqua_chain : AquaChain, file_hash: String, file_name: String, file_content: String, owner: String, mode: String) -> AquaChainDb {
+pub fn aqua_chain_to_aqua_chain_db( file_hash: String, file_name: String, file_content: String, owner: String, mode: String, revision_id: Vec<i32>) -> AquaChainDb {
     AquaChainDb {
         id: None,
         file_hash,
         file_name,
-        revisions: serde_json::to_string(&self.revisions).unwrap(),
+        revisions: vec_to_string(revision_id) ,//serde_json::to_string(&self.revisions).unwrap(),
         file_content,
         owner,
         mode,
@@ -138,7 +94,7 @@ pub fn aqua_chain_to_aqua_chain_db(aqua_chain : AquaChain, file_hash: String, fi
 
 
 #[derive(Queryable, Insertable, Serialize, Deserialize, Debug, Clone)]
-#[table_name = "revisions"]
+#[diesel(table_name = crate::schema::revisions)]
 pub struct RevisionDb {
     pub id: Option<i32>,
     pub previous_verification_hash: String,
@@ -151,7 +107,7 @@ pub struct RevisionDb {
     pub link_require_indepth_verification: Option<bool>,
     pub link_verification_hash: Option<String>,
     pub link_uri: Option<String>,
-    pub signature: Option<String>,
+    pub signature_data: Option<String>,
     pub signature_public_key: Option<String>,
     pub signature_wallet_address: Option<String>,
     pub signature_type: Option<String>,
@@ -162,6 +118,38 @@ pub struct RevisionDb {
     pub witness_transaction_hash: Option<String>,
     pub witness_sender_account_address: Option<String>,
     pub leaves: Option<String>, // Serialized as JSON string
+    #[diesel(sql_type = Timestamp)]
     pub created_at: NaiveDateTime,
+    #[diesel(sql_type = Timestamp)]
     pub updated_at: NaiveDateTime,
+}
+
+
+pub fn revision_to_revision_db(revision: Revision, created_at: NaiveDateTime, updated_at: NaiveDateTime) -> RevisionDb {
+    RevisionDb {
+        id: None, // Assuming the `id` is managed by the database
+        previous_verification_hash: revision.previous_verification_hash,
+        nonce: revision.nonce,
+        local_timestamp: revision.local_timestamp.naive_utc(),
+        revision_type: revision.revision_type,
+        file_hash: revision.file_hash,
+        content: revision.content,
+        link_type: revision.link_type,
+        link_require_indepth_verification: revision.link_require_indepth_verification,
+        link_verification_hash: revision.link_verification_hash,
+        link_uri: revision.link_uri,
+        signature_data: revision.signature,
+        signature_public_key: revision.signature_public_key,
+        signature_wallet_address: revision.signature_wallet_address,
+        signature_type: revision.signature_type,
+        witness_merkle_root: revision.witness_merkle_root,
+        witness_timestamp: revision.witness_timestamp.map(|t| t.naive_utc()),
+        witness_network: revision.witness_network,
+        witness_smart_contract_address: revision.witness_smart_contract_address,
+        witness_transaction_hash: revision.witness_transaction_hash,
+        witness_sender_account_address: revision.witness_sender_account_address,
+        leaves: revision.leaves.map(|leaves| serde_json::to_string(&leaves).unwrap_or_else(|_| "[]".to_string())),
+        created_at,
+        updated_at,
+    }
 }

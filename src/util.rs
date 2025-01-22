@@ -383,3 +383,17 @@ pub fn get_content_type(file_name: &str) -> Option<String> {
     // Return None if the file has no extension or the extension is not recognized
     None
 }
+
+
+pub fn vec_to_string(vec: Vec<i32>) -> String {
+    vec.iter()
+        .map(|num| num.to_string())
+        .collect::<Vec<String>>()
+        .join(",")
+}
+
+pub fn string_to_vec(s: &str) -> Result<Vec<i32>, String> {
+    s.split(',')
+        .map(|num_str| num_str.trim().parse::<i32>().map_err(|e| e.to_string()))
+        .collect()
+}

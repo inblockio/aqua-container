@@ -1,6 +1,6 @@
 use std::env;
 
-use crate::models::{PagesTable, UserProfilesTable, DB_POOL};
+use crate::models::{UserProfilesTable, DB_POOL};
 use chrono::{NaiveDateTime, Utc};
 use diesel::r2d2::{self, ConnectionManager, PooledConnection};
 use diesel::SqliteConnection;

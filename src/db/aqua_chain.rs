@@ -8,6 +8,7 @@ use diesel::{
 };
 use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
+use crate::{db::aqua_revisions::insert_revision, models::{aqua_chain_to_aqua_chain_db, revision_to_revision_db, AquaChainDb, RevisionDb}};
 
 pub fn insert_aqua_chain(
     aqua_chain: AquaChain,
@@ -20,7 +21,33 @@ pub fn insert_aqua_chain(
 ) -> Result<i32, String> {
     use crate::schema::aqua_chain;
 
-    let db_record = aqua_chain.to_db(file_hash, file_name, file_content, owner, mode);
+
+    let mut rev_id : Vec<i32> = Vec::new();
+
+    for item in aqua_chain.revisions.iter() {
+
+
+        let rev = revision_to_revision_db(item.1.clone());
+        
+
+        let rev = insert_revision(rev, db_connection);
+        if rev.is_err() {
+            return Err(format!("Error inserting revision: {}", rev.err().unwrap()));
+        }
+        let rev_id = rev.unwrap();
+        rev_id.push(rev_id);
+    }
+    let db_record = aqua_chain_to_aqua_chain_db(
+aqua_chain.file_index[0].0.clone(),
+        aqua_chain.file_index[0].1.clone(),
+        file_content,
+        owner,
+        mode,
+        "",
+    
+
+    )
+    //aqua_chain.to_db(file_hash, file_name, file_content, owner, mode);
 
     diesel::insert_into(aqua_chain::table)
         .values(&db_record)
@@ -43,12 +70,9 @@ pub fn update_aqua_chain(
 ) -> Result<(), String> {
     use crate::schema::aqua_chain::dsl::*;
 
-    let updated_record = updated_data.to_db(
-        updated_data.file_index[0].0.clone(),
-        updated_data.file_index[0].1.clone(),
-        updated_data.revisions[0].0.clone(),
-        updated_data.revisions[0].0.clone(),
-        "default_mode".to_string(), // Replace as needed
+    ...
+    let updated_record : AquaChainDb = aqua_chain_to_aqua_chain_db(
+        aqua_chain.fi,
     );
 
     diesel::update(aqua_chain.filter(id.eq(chain_id)))

@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS revisions (
     file_hash TEXT DEFAULT NULL,
     content TEXT DEFAULT NULL,
     link_type TEXT DEFAULT NULL,
-    link_require_indepth_verification TEXT DEFAULT NULL,
+    link_require_indepth_verification BOOLEAN DEFAULT false,
     link_verification_hash TEXT DEFAULT NULL,
     link_uri TEXT DEFAULT NULL,
     signature_data TEXT DEFAULT NULL,
