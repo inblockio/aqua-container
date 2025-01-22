@@ -23,20 +23,16 @@ pub struct WitnessInput {
 #[allow(dead_code)]
 pub struct DeleteInput {
     pub file_id: i32,
-   
 }
-
-
 
 #[derive(Deserialize, Serialize, Debug)]
 #[allow(dead_code)]
 pub struct UpdateConfigurationInput {
     pub chain: String,
     pub domain: String,
-    pub mode: String,   
-    pub contract: String,   
+    pub mode: String,
+    pub contract: String,
 }
-
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct MergeInput {

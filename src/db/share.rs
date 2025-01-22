@@ -5,10 +5,10 @@
 // use serde::{Deserialize, Serialize};
 
 // pub fn insert_share_data(
-//     data: ShareDataTable, 
+//     data: ShareDataTable,
 //     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
 // ) -> Result<i64, String> {
-  
+
 //     let inserted_id: i32 = diesel::insert_into(crate::schema::share_data::table)
 //         .values(data)
 //         .returning(crate::schema::share_data::dsl::id)

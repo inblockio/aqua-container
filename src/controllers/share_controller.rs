@@ -52,7 +52,7 @@
 //             println!("Error Fetching connection {:#?}", res);
 //             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
 //         }
-//     }; 
+//     };
 
 //     let share_payload = fetch_share_data_by_address(&share_identifier.as_str(), &mut conn);
 
@@ -70,10 +70,9 @@
 
 //     let firs_share_payload_data = share_payload_data.first().unwrap();
 
-
 //     if firs_share_payload_data.id.is_none(){
 //         log_data.push("Error  id not found in system".to_string());
-//         return (StatusCode::NOT_FOUND, Json(res));  
+//         return (StatusCode::NOT_FOUND, Json(res));
 //     }
 
 //     let page_data_result = fetch_page_data(firs_share_payload_data.file_id, &mut conn);
@@ -148,13 +147,13 @@
 
 //         return (StatusCode::NOT_FOUND, Json(res));
 //     }
-    
+
 //     // 1. Get current UTC time as a DateTime<Utc>
 //     let current_utc = Utc::now();
 //     let time_data = current_utc.format("%Y-%m-%d %H:%M:%S UTC");
 //     let time_data_str = format!("{:?}", time_data);
 //     println!("Custom format 1: {} str {}", time_data, time_data_str);
-  
+
 //     // insert share data to db
 //     let share_payload = ShareDataTable {
 //         id: None,
@@ -166,7 +165,7 @@
 //     let insert_result =  insert_share_data(share_payload,&mut conn);
 
 //     if insert_result.is_err(){
-        
+
 //         res.logs
 //             .push(format!("insert error  {:#?}",insert_result.err() ));
 
@@ -176,11 +175,11 @@
 //     let mut page_data =  page_data_result.unwrap();
 //     page_data.is_shared = true;
 
-//     // update db file is  shared 
+//     // update db file is  shared
 //     let  update_result =  update_page_data(page_data, & mut conn);
 
 //     if update_result.is_err(){
-        
+
 //         res.logs
 //             .push(format!("error updating system  {:#?}",update_result.err() ));
 

@@ -10,16 +10,17 @@ use axum::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{models::{api::ApiResponse, input::DeleteInput}, Db};
+use crate::{
+    models::{api::ApiResponse, input::DeleteInput},
+    Db,
+};
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
-
 
 pub async fn fetch_explorer_files(
     State(server_database): State<Db>,
     headers: HeaderMap,
 ) -> (StatusCode, Json<ApiResponse>) {
-
     tracing::debug!("fetch_explorer_files");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
@@ -60,7 +61,6 @@ pub async fn explorer_aqua_file_upload(
         all_chains: Vec::new(),
     };
 
-
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
 
@@ -78,9 +78,7 @@ pub async fn explorer_delete_all_files(
         all_chains: Vec::new(),
     };
 
-
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
-
 }
 
 pub async fn explorer_delete_file(
@@ -96,9 +94,7 @@ pub async fn explorer_delete_file(
         all_chains: Vec::new(),
     };
 
-
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
-
 }
 
 pub async fn explorer_file_upload(
@@ -254,10 +250,7 @@ pub async fn explorer_file_upload(
 
     let b64 = Base64::from(body_bytes);
 
-
-
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
-
 }
 
 // use crate::models::input::{
@@ -313,7 +306,6 @@ pub async fn explorer_file_upload(
 // use tower::ServiceExt;
 // use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 
-
 // #[derive(Debug)]
 // pub enum UploadError {
 //     FileTooLarge(u32),
@@ -347,7 +339,6 @@ pub async fn explorer_file_upload(
 //         }
 //     }
 // }
-
 
 //     // Initialize an empty Vec to hold the result
 //     let mut pages: Vec<FileInfo> = Vec::new();
@@ -559,8 +550,6 @@ pub async fn explorer_file_upload(
 //     // Return an error if no file was found
 //     (StatusCode::BAD_REQUEST, Json(res))
 // }
-
-
 
 //     // Extract the 'metamask_address' header
 //     let metamask_address = match headers.get("metamask_address") {
@@ -836,8 +825,6 @@ pub async fn explorer_file_upload(
 //     res.file = Some(file_info);
 //     return (StatusCode::CREATED, Json(res));
 // }
-
-
 
 //     // Extract the 'metamask_address' header
 //     let metamask_address = match headers.get("metamask_address") {
@@ -1767,7 +1754,6 @@ pub async fn explorer_file_upload(
 //     let mut new_data = page_data.clone();
 //     new_data.page_data = page_data_new.clone();
 
-
 //     let update_result = update_page_data(new_data.clone(), &mut conn);
 //     if update_result.is_err() {
 //         let e = update_result.err().unwrap();
@@ -1798,8 +1784,6 @@ pub async fn explorer_file_upload(
 //     };
 //     return (StatusCode::OK, Json(res));
 // }
-
-
 
 //     let user_address: Result<String, String> = match headers.get("metamask_address") {
 //         Some(value) => match value.to_str() {
@@ -1876,7 +1860,6 @@ pub async fn explorer_file_upload(
 //         }
 //     }
 // }
-
 
 //     // Get the name parameter from the input
 //     if input.file_id == 0 {

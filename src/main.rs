@@ -4,8 +4,8 @@ pub mod auth;
 mod controllers;
 mod db;
 mod models;
-mod util;
 mod schema;
+mod util;
 
 use axum::{
     body::Bytes,
@@ -20,12 +20,14 @@ use diesel::SqliteConnection;
 use diesel_migrations::embed_migrations;
 use ethaddr::address;
 
+use crate::models::DB_POOL;
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, NaiveDateTime, Utc};
+use diesel::r2d2::{self, ConnectionManager};
 use futures::{Stream, TryStreamExt};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sha3::*;
-use util::run_db_migrations;
 use std::collections::BTreeMap;
 use std::fs;
 use std::io;
@@ -41,9 +43,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use crate::models::DB_POOL;
-use diesel::r2d2::{self, ConnectionManager};
-use serde::{Deserialize, Serialize};
+use util::run_db_migrations;
 extern crate serde_json_path_to_error as serde_json;
 use std::sync::{mpsc, Mutex, MutexGuard};
 // use crate::controllers::api_controller::explorer_file_verify_hash_upload;
@@ -51,20 +51,25 @@ use crate::util::{check_or_generate_domain, establish_connection};
 // use controllers::{api_controller::{
 //     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
 // }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
-use controllers::{api_controller::{explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, fetch_explorer_files}, auth_controller::{
-    fetch_nonce_session, session_logout_by_nonce, siwe_sign_in, verify_siwe_message
-
-}};
+use controllers::user_profile_controller::{
+    explorer_fetch_user_profile, explorer_update_user_profile,
+};
 use controllers::versions_controller::version_details;
-use controllers::user_profile_controller::{explorer_fetch_user_profile, explorer_update_user_profile};
+use controllers::{
+    api_controller::{
+        explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file,
+        explorer_file_upload, explorer_import_aqua_chain, fetch_explorer_files,
+    },
+    auth_controller::{
+        fetch_nonce_session, session_logout_by_nonce, siwe_sign_in, verify_siwe_message,
+    },
+};
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
-
-
 #[derive(Clone)]
 pub struct Db {
-    pub pool:DB_POOL,
+    pub pool: DB_POOL,
 }
 
 // Handler function that returns a JSON response
@@ -88,9 +93,8 @@ async fn main() {
 
     check_or_generate_domain();
 
-    
     // Establish database connection pool
-    let pool:  r2d2::Pool<ConnectionManager<SqliteConnection>> = crate::util::establish_connection();
+    let pool: r2d2::Pool<ConnectionManager<SqliteConnection>> = crate::util::establish_connection();
 
     // Run migrations
     // Get a connection from the pool to pass to run_db_migrations
@@ -102,7 +106,7 @@ async fn main() {
     // save files to a separate directory to not override files in the current directory
     tokio::fs::create_dir(UPLOADS_DIRECTORY).await;
 
-    let server_database = Db { pool  };
+    let server_database = Db { pool };
 
     let app = Router::new()
         .route("/", get(status_handler).post(status_handler))
@@ -112,7 +116,7 @@ async fn main() {
             "/explorer_aqua_chain_import",
             post(explorer_import_aqua_chain),
         )
-         .route(
+        .route(
             "/explorer_aqua_file_upload",
             post(explorer_aqua_file_upload),
         )
@@ -149,9 +153,7 @@ async fn main() {
         .layer(TraceLayer::new_for_http())
         .layer(DefaultBodyLimit::max(50 * 1024 * 1024));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3600")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3600").await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }

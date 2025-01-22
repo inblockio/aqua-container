@@ -2,7 +2,7 @@
 
 diesel::table! {
     aqua_chain (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         file_hash -> Text,
         file_name -> Text,
         revisions -> Text,
@@ -11,14 +11,14 @@ diesel::table! {
         mode -> Text,
         share_code -> Nullable<Text>,
         is_shared -> Bool,
-        updated_at -> Nullable<Timestamp>,
-        created_at -> Nullable<Timestamp>,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 
 diesel::table! {
     revisions (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         revision_hash -> Text,
         previous_verification_hash -> Text,
         nonce -> Text,
@@ -41,8 +41,8 @@ diesel::table! {
         witness_transaction_hash -> Nullable<Text>,
         witness_sender_account_address -> Nullable<Text>,
         leaves -> Nullable<Text>,
-        created_at -> Text,
-        updated_at -> Text,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }
 
@@ -58,7 +58,7 @@ diesel::table! {
 
 diesel::table! {
     user_profiles (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         address -> Text,
         chain -> Text,
         theme -> Text,

@@ -10,8 +10,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiResponse {
-    pub logs :  Vec<String>,
-    pub chain :  Option<AquaChain>,
-    pub all_chains : Vec<AquaChain>,
+    pub logs: Vec<String>,
+    pub chain: Option<AquaChain>,
+    pub all_chains: Vec<AquaChain>,
 }
-

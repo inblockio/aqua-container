@@ -1,11 +1,11 @@
 use aqua_verifier_rs_types::models::revision::Revision;
+use chrono::{NaiveDateTime, Utc};
 use diesel::{
     prelude::*,
     r2d2::{ConnectionManager, PooledConnection},
     result::Error as DieselError,
     SqliteConnection,
 };
-use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::models::RevisionDb;
@@ -38,6 +38,7 @@ pub fn fetch_revision_by_id(
 
     revisions
         .filter(id.eq(revision_id))
+        .select(RevisionDb::as_select()) // Explicitly select fields for RevisionDb
         .first::<RevisionDb>(db_connection)
         .map_err(|e| format!("Error fetching revision: {}", e))
 }
@@ -45,6 +46,7 @@ pub fn fetch_revision_by_id(
 pub fn update_revision_data(
     revision_par: RevisionDb,
     revision_id: i32,
+    revision_hash : String,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<(), String> {
     use crate::schema::revisions::dsl::*;
@@ -53,7 +55,7 @@ pub fn update_revision_data(
 
     let res = diesel::update(revisions.find(revision_id))
         .set((
-            revision_hash.eq(&revision_par.revision_hash),
+            revision_hash.eq(revision_hash),
             previous_verification_hash.eq(&revision_par.previous_verification_hash),
             nonce.eq(&revision_par.nonce),
             local_timestamp.eq(&revision_par.local_timestamp),
@@ -64,7 +66,7 @@ pub fn update_revision_data(
             link_require_indepth_verification.eq(&revision_par.link_require_indepth_verification),
             link_verification_hash.eq(&revision_par.link_verification_hash),
             link_uri.eq(&revision_par.link_uri),
-            signature_data.eq(&revision_par.signature),
+            signature_data.eq(&revision_par.signature_data),
             signature_public_key.eq(&revision_par.signature_public_key),
             signature_wallet_address.eq(&revision_par.signature_wallet_address),
             signature_type.eq(&revision_par.signature_type),

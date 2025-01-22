@@ -12,6 +12,7 @@ use ethers_core::types::Address;
 use ethers_core::utils::keccak256;
 use hex::FromHex;
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
@@ -20,7 +21,6 @@ use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
-use rand::{thread_rng, Rng};
 
 use crate::auth::{SiweError, SiweNonceRequest, SiweResponse, SiweSession};
 

@@ -1,14 +1,14 @@
-use diesel::prelude::*;
-use diesel::r2d2::{ConnectionManager, PooledConnection}; // This will import RunQueryDsl
 use crate::auth::SiweSession;
 use crate::models::{SiweSessionsTable, DB_POOL};
+use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, PooledConnection}; // This will import RunQueryDsl
 use serde::{Deserialize, Serialize};
 
 pub fn insert_siwe_data(
-    data: SiweSession, 
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
+    data: SiweSession,
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<i64, String> {
-    let record =  &SiweSessionsTable {
+    let record = &SiweSessionsTable {
         id: None,
         address: data.address,
         nonce: data.nonce,
@@ -20,12 +20,12 @@ pub fn insert_siwe_data(
         .returning(crate::schema::siwe_sessions::dsl::id)
         .get_result::<Option<i32>>(db_connection)
         .map_err(|e| format!("Error saving new siwe data: {}", e))?
-        .unwrap_or(-1);  // Provide a default value if None
+        .unwrap_or(-1); // Provide a default value if None
 
     Ok(inserted_id as i64)
 }
 pub fn fetch_siwe_data(
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<Vec<SiweSessionsTable>, String> {
     use crate::schema::siwe_sessions::dsl::*;
 
@@ -37,7 +37,7 @@ pub fn fetch_siwe_data(
 
 pub fn fetch_siwe_data_by_address(
     address_param: &str,
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>
+    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<Vec<SiweSessionsTable>, String> {
     use crate::schema::siwe_sessions::dsl::*;
 

@@ -29,21 +29,21 @@ pub fn insert_user_profile_data(
 
     println!("Checking if user exists: {:?}", user_profile);
 
-    if user_profile.is_err(){
-        if user_profile.clone().err().unwrap() == "No user profile found with filename".to_string(){
+    if user_profile.is_err() {
+        if user_profile.clone().err().unwrap() == "No user profile found with filename".to_string()
+        {
             tracing::info!("Profile not found");
-        }
-        else{
-            return Err("Unable to query if user exists".to_string())
+        } else {
+            return Err("Unable to query if user exists".to_string());
         }
     }
 
-    if user_profile.is_ok(){
-        return Ok(user_profile.unwrap())
+    if user_profile.is_ok() {
+        return Ok(user_profile.unwrap());
     }
 
     let mut record = UserProfilesTable {
-        id: None,
+        id: 0,
         address: address_par,
         theme: env::var("THEME").unwrap_or_default(),
         contract_address: env::var("CONTRACT_ADDRESS").unwrap_or_default(),
@@ -55,11 +55,11 @@ pub fn insert_user_profile_data(
     let inserted_id: i32 = diesel::insert_into(crate::schema::user_profiles::table)
         .values(&record)
         .returning(crate::schema::user_profiles::dsl::id)
-        .get_result::<Option<i32>>(db_connection)
-        .map_err(|e| format!("Error saving new siwe data: {}", e))?
-        .unwrap_or(-1); // Provide a default value if None
-    record.id = Some(inserted_id);
-    
+        .get_result::<i32>(db_connection)
+        .map_err(|e| format!("Error saving new siwe data: {}", e))?;
+        //.unwrap_or(-1); // Provide a default value if None
+    record.id = inserted_id; // Some(inserted_id);
+
     Ok(record)
 }
 
@@ -85,7 +85,7 @@ pub fn fetch_all_profiles(
     use crate::schema::user_profiles::dsl::*;
 
     let results = user_profiles
-        .load::<UserProfilesTable>(db_connection) 
+        .load::<UserProfilesTable>(db_connection)
         .map_err(|e| format!("Error fetching user profiles: {}", e))?;
 
     Ok(results)

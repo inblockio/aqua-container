@@ -1,4 +1,5 @@
 use crate::db::siwe::fetch_siwe_data;
+use crate::db::siwe::insert_siwe_data;
 use crate::models::UserProfilesTable;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
@@ -14,10 +15,9 @@ use siwe::{Message, VerificationOpts};
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
-use crate::db::siwe::{insert_siwe_data };
 #[derive(Deserialize)]
 pub struct SiweRequest {
-    pub domain: String, // The domain in which the user is logging in from
+    pub domain: String,    // The domain in which the user is logging in from
     pub message: String,   // The SIWE message
     pub signature: String, // The Ethereum signature
 }
@@ -40,7 +40,7 @@ pub struct SiweResponse {
     pub logs: Vec<String>,
     pub success: bool,
     pub session: Option<SiweSession>,
-    pub user_profile: Option<UserProfilesTable>
+    pub user_profile: Option<UserProfilesTable>,
 }
 
 #[derive(Debug)]

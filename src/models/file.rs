@@ -9,9 +9,9 @@ use serde::{Deserialize, Serialize};
 //     pub owner: String
 // }
 
-#[derive(Debug,  Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct FileDataInformation {
-   pub file_type: String,
-   pub size_bytes: usize,
-   pub  mime_type: String,
+    pub file_type: String,
+    pub size_bytes: usize,
+    pub mime_type: String,
 }

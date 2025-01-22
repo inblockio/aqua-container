@@ -1,7 +1,7 @@
 -- Your SQL goes here
 -- Add migration script here
 CREATE TABLE IF NOT EXISTS revisions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     revision_hash TEXT NOT NULL,
     previous_verification_hash TEXT NOT NULL,
     nonce TEXT NOT NULL,
@@ -24,6 +24,6 @@ CREATE TABLE IF NOT EXISTS revisions (
     witness_transaction_hash TEXT DEFAULT NULL,
     witness_sender_account_address TEXT DEFAULT NULL,
     leaves TEXT DEFAULT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
