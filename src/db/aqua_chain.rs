@@ -1,5 +1,5 @@
 use crate::{
-    db::aqua_revisions::insert_revision,
+    db::aqua_revisions::{fetch_revision_by_nonce,  insert_revision, update_revision_data_by_nonce},
     models::{aqua_chain_to_aqua_chain_db, revision_to_revision_db, AquaChainDb, RevisionDb},
     util::vec_to_string,
 };
@@ -51,8 +51,7 @@ pub fn insert_aqua_chain(
         mode,
         rev_id_list,
     );
-    // aqua_chain.to_db(file_hash, file_name, file_content, owner, mode);
-
+   
     diesel::insert_into(aqua_chain::table)
         .values(&db_record)
         .execute(db_connection)
@@ -70,29 +69,85 @@ pub fn insert_aqua_chain(
 pub fn update_aqua_chain(
     chain_id: i32,
     updated_data: AquaChain,
+    file_hash: String,
+    file_name: String,
+    file_content: String,
+    owner: String,
+    mode: String,
     db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
 ) -> Result<(), String> {
     use crate::schema::aqua_chain::dsl::*;
 
-    // ...
-    // let updated_record : AquaChainDb = aqua_chain_to_aqua_chain_db(
-    //     aqua_chain.fi,
-    // );
+    let mut revsion_id : Vec<i32> = Vec::new();
 
-    // diesel::update(aqua_chain.filter(id.eq(chain_id)))
-    //     .set((
-    //         file_hash.eq(updated_record.file_hash),
-    //         file_name.eq(updated_record.file_name),
-    //         revisions.eq(updated_record.revisions),
-    //         file_content.eq(updated_record.file_content),
-    //         owner.eq(updated_record.owner),
-    //         mode.eq(updated_record.mode),
-    //         is_shared.eq(updated_record.is_shared),
-    //         updated_at.eq(Utc::now().naive_utc()),
-    //     ))
-    //     .execute(db_connection)
-    //     .map_err(|e| format!("Error updating AquaChain: {}", e))?;
+    for (hash , revision) in updated_data.revisions.iter() {
 
+         
+        match fetch_revision_by_nonce(revision.nonce.clone(),  db_connection) {
+            Ok(revision_db) => {
+                println!("update_aqua_chain: Found revision: {:?}", revision);
+
+                let rev_db_structure = revision_to_revision_db(revision.clone(), revision_db.created_at, Utc::now().naive_utc());
+                
+                let revision_in_db =update_revision_data_by_nonce(
+                    revision.nonce.clone(),
+                    rev_db_structure.clone(),
+                    revision.clone().file_hash.unwrap(),
+                    db_connection,
+                );
+            }
+            Err(e) => {
+                if e.contains("No revision found with nonce") {
+                    println!("update_aqua_chain : Custom error: {}", e); // Handling 'NotFound' error specifically
+
+                    let dt = chrono::Local::now().naive_local();
+
+                    let rev = revision_to_revision_db(revision.clone(), dt, dt);
+
+                    let rev = insert_revision(rev, db_connection);
+
+                    if rev.is_err() {
+                        return Err(format!("Error inserting revision: {}", rev.err().unwrap()));
+                    }
+
+                    revsion_id.push(rev.unwrap());
+                } else {
+                    println!("update_aqua_chain : Other error: {}", e); // Handling all other errors
+                    return Err(format!("Error fetching revision: {}", e));
+                }
+            }
+        }
+ 
+    }
+    
+    let aqua_chain_db_data_result = aqua_chain
+        .filter(id.eq(chain_id))
+        .first::<AquaChainDb>(db_connection)
+        .map_err(|e| format!("Error fetching AquaChain: {}", e));
+
+    if aqua_chain_db_data_result.is_err()    {
+        return Err(format!("Error fetching AquaChain(cannot fetch chain not saved in db): {}", aqua_chain_db_data_result.err().unwrap()));
+    }
+
+    let aqua_chain_db_data = aqua_chain_db_data_result.unwrap();
+
+
+    diesel::update(aqua_chain.filter(id.eq(chain_id)))
+        .set((
+            file_hash.eq(file_hash),
+            file_name.eq(file_name),
+            revisions.eq(vec_to_string(revsion_id)),
+            file_content.eq(file_content),
+            owner.eq(owner),
+            mode.eq(mode),
+            is_shared.eq(aqua_chain_db_data.is_shared),
+            updated_at.eq(Utc::now().naive_utc()),
+        ))
+        .execute(db_connection)
+        .map_err(|e| format!("Error updating AquaChain: {}", e))?;
+
+
+    
     Ok(())
 }
 
