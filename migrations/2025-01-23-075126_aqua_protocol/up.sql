@@ -93,6 +93,7 @@ CREATE TABLE "WitnessEvent" (
 );
 
 CREATE TABLE "MerkleNodes" (
+  id SERIAL PRIMARY KEY,
   "node_hash" TEXT,
   "parent_hash" TEXT,
   "height" INTEGER,
@@ -135,15 +136,15 @@ ALTER TABLE "Link" ADD FOREIGN KEY ("hash") REFERENCES "Revision" ("hash");
 
 ALTER TABLE "Contract" ADD FOREIGN KEY ("hash") REFERENCES "Revision" ("hash");
 
-ALTER TABLE "Index" ADD FOREIGN KEY ("hash") REFERENCES "FileHash" ("hash");
+-- ALTER TABLE "Index" ADD FOREIGN KEY ("hash") REFERENCES "FileHash" ("hash");
 
-ALTER TABLE "Link" ADD FOREIGN KEY ("link_verification_hash") REFERENCES "Index" ("hash");
+-- ALTER TABLE "Link" ADD FOREIGN KEY ("link_verification_hash") REFERENCES "Index" ("hash");
 
-ALTER TABLE "Revision" ADD FOREIGN KEY ("hash") REFERENCES "Index" ("file_hash");
+-- ALTER TABLE "Revision" ADD FOREIGN KEY ("hash") REFERENCES "Index" ("file_hash");
 
-ALTER TABLE "Witness" ADD FOREIGN KEY ("Witness_merkle_root") REFERENCES "WitnessEvent" ("Witness_merkle_root");
+-- ALTER TABLE "Witness" ADD FOREIGN KEY ("Witness_merkle_root") REFERENCES "WitnessEvent" ("Witness_merkle_root");
 
--- ALTER TABLE "MerkleNodes" ADD FOREIGN KEY ("node_hash") REFERENCES "Witness" ("hash");
+ALTER TABLE "MerkleNodes" ADD FOREIGN KEY ("node_hash") REFERENCES "Witness" ("hash");
 
 -- ALTER TABLE "MerkleNodes" ADD FOREIGN KEY ("node_hash") REFERENCES "WitnessEvent" ("Witness_merkle_root");
 
