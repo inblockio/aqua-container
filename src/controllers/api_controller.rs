@@ -11,8 +11,7 @@ use axum::{
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::{
-    models::{api::ApiResponse, input::DeleteInput},
-    Db,
+    db::aqua_chain::fetch_aqua_chain_by_owner, models::{api::ApiResponse, input::DeleteInput}, Db
 };
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
@@ -24,10 +23,62 @@ pub async fn fetch_explorer_files(
     tracing::debug!("fetch_explorer_files");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
+        chains:Vec::new(),
+        revisions: None,
         logs: log_data.clone(),
-        chain: None,
-        all_chains: Vec::new(),
     };
+
+    let user_address: Result<String, String> = match headers.get("metamask_address") {
+        Some(value) => match value.to_str() {
+            Ok(address) => Ok(address.to_string()), // Successfully extracted address
+            Err(_) => Err("Failed to parse the metamask_address header.".to_string()),
+        },
+        None => Err("metamask_address header not found.".to_string()), // Header not found
+    };
+
+    if user_address.is_err(){
+        log_data.push("Unable to parse metamask address/ Metamask address not provided".to_string());
+        let mut res: ApiResponse = ApiResponse {
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data.clone(),
+        };
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
+    let mut conn = match server_database.pool.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            log_data.push("Failed data not found in database".to_string());
+
+            log_data.push("Failed to get database connection".to_string());
+            let mut res: ApiResponse = ApiResponse {
+                chains:Vec::new(),
+                revisions: None,
+                logs: log_data.clone(),
+            };
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
+
+    let wallet_address = user_address.unwrap();
+    let chains = fetch_aqua_chain_by_owner(wallet_address, &mut conn);
+
+    if chains.is_err() {
+        log_data.push("Failed data not found in database".to_string());
+
+        let mut res: ApiResponse = ApiResponse {
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data,
+        };
+        return (StatusCode::NOT_FOUND, Json(res));
+    }
+    let chains_data = chains.unwrap();
+
+
+
+
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -40,10 +91,10 @@ pub async fn explorer_import_aqua_chain(
     tracing::debug!("explorer_import_aqua_chain fn");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-        logs: log_data,
-        chain: None,
-        all_chains: Vec::new(),
-    };
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data,
+        };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -56,10 +107,10 @@ pub async fn explorer_aqua_file_upload(
     tracing::debug!("explorer_aqua_file_upload fn");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-        logs: log_data,
-        chain: None,
-        all_chains: Vec::new(),
-    };
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data,
+        };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -73,10 +124,10 @@ pub async fn explorer_delete_all_files(
     tracing::debug!("explorer_aqua_file_upload fn");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-        logs: log_data,
-        chain: None,
-        all_chains: Vec::new(),
-    };
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data,
+        };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -89,9 +140,10 @@ pub async fn explorer_delete_file(
     let mut log_data: Vec<String> = Vec::new();
 
     let mut res: ApiResponse = ApiResponse {
-        logs: log_data,
-        chain: None,
-        all_chains: Vec::new(),
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data,
+    
     };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
@@ -106,10 +158,10 @@ pub async fn explorer_file_upload(
 
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-        logs: log_data,
-        chain: None,
-        all_chains: Vec::new(),
-    };
+            chains:Vec::new(),
+            revisions: None,
+            logs: log_data,
+        };
 
     // Extract the 'metamask_address' header
     let metamask_address = match headers.get("metamask_address") {

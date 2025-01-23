@@ -1,6 +1,8 @@
 use aqua_verifier_rs_types::models::chain::AquaChain;
 use serde::{Deserialize, Serialize};
 
+use crate::models::{AquaChainDb, RevisionDb};
+
 // use aqua_verifier_rs_types::models::page_data::HashChain;
 
 // #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -11,6 +13,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ApiResponse {
     pub logs: Vec<String>,
-    pub chain: Option<AquaChain>,
-    pub all_chains: Vec<AquaChain>,
+    pub chains: Vec<AquaChainDb>, 
+    pub revisions: Option<RevisionDb>, 
 }

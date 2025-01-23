@@ -1,8 +1,7 @@
--- Your SQL goes here
 CREATE TABLE IF NOT EXISTS siwe_sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     address TEXT NOT NULL,
     nonce TEXT NOT NULL,
-    issued_at TEXT NOT NULL,
-    expiration_time TEXT
+    issued_at TIMESTAMPTZ NOT NULL, -- Using TIMESTAMPTZ for timestamp with time zone
+    expiration_time TIMESTAMPTZ    -- TIMESTAMPTZ to handle expiration timestamps with time zone
 );

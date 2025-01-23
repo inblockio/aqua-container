@@ -55,14 +55,38 @@ Use at your own risk.
 # Running the Rust build locally
 ## Requirements
 
-1. Rust and `sqlx` (` cargo install sqlx-cli`)
-2. node and npm.
+1. Rust.
+2. Postgres Sql.
+3. diesel (check out [diesel-orm](https://diesel.rs/guides/getting-started) ).
+4. node and npm.
 
-## How to run
+## Getting started psql 
+* useful creating user & db commands
+  ```
+    sudo -u postgres psql
+    postgres=# create database aqua_container;
+    postgres=# create user arthur with encrypted password 'XXXXX';
+    postgres=# grant all privileges on database aqua_container to arthur;
 
-1. `export DATABASE_URL="sqlite:users.db"`
-   `sqlx database create`
-   `sqlx migrate run`
+* login as user to the db
+  `psql -h localhost -d aqua_container -U arthur`
+
+* if you run into db consistency issues either run from the psql console 
+
+         ```sql
+                   DO $$
+      DECLARE
+         r RECORD;
+      BEGIN
+         FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = current_schema()) LOOP
+            EXECUTE 'DROP TABLE IF EXISTS "' || r.tablename || '" CASCADE';
+         END LOOP;
+      END $$;
+      ```
+   b. fromterminal `diesel migration redo`   
+
+## Getting started Backend And  Frontend
+1. `sqlx migrate run`
    `cd web && npm i  `
 2. `cargo run `
 3. `cd web && npm run dev`
