@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 
-pub type DB_POOL = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 use crate::util::vec_to_string;
 use chrono::NaiveDateTime;
 use diesel::expression::AsExpression;
