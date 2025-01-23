@@ -1,4 +1,6 @@
+use crate::models::file::FileDataInformation;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use diesel::prelude::*;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
 use rand::distributions::Alphanumeric;
@@ -10,8 +12,6 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 use std::{env, fs};
-use crate::models::file::FileDataInformation;
-use diesel::prelude::*;
 // use diesel::sqlite::SqliteConnection;
 use diesel::Connection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
@@ -21,14 +21,12 @@ const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 use diesel::pg::PgConnection; // Import PgConnection
 use diesel::r2d2::{ConnectionManager, Pool};
 
-
 // pub fn run_db_migrations(
 //     conn: &mut impl MigrationHarness<PgConnection>,
 // ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
 //     conn.run_pending_migrations(MIGRATIONS)?;
 //     Ok(())
 // }
-
 
 /// Establishes a connection pool for PostgreSQL.
 ///
@@ -64,44 +62,44 @@ pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
 
 // }
 
-pub fn check_or_generate_domain() {
-    // Check if API_DOMAIN is set
-    let api_domain = env::var("API_DOMAIN").unwrap_or_default();
-    let chain = env::var("CHAIN").unwrap_or_default();
+// pub fn check_or_generate_domain() {
+//     // Check if API_DOMAIN is set
+//     let api_domain = env::var("API_DOMAIN").unwrap_or_default();
+//     let chain = env::var("CHAIN").unwrap_or_default();
 
-    if chain.is_empty() {
-        // Update the .env file with the new API_DOMAIN
-        if let Err(e) = update_env_file("CHAIN", "sepolia") {
-            println!("Failed to update .env file: {}", e);
-        }
-    } else {
-        println!("chain is set: {}", chain);
-    }
-    if api_domain.is_empty() {
-        println!("API_DOMAIN is empty, generating a random one...");
+//     if chain.is_empty() {
+//         // Update the .env file with the new API_DOMAIN
+//         if let Err(e) = update_env_file("CHAIN", "sepolia") {
+//             println!("Failed to update .env file: {}", e);
+//         }
+//     } else {
+//         println!("chain is set: {}", chain);
+//     }
+//     if api_domain.is_empty() {
+//         println!("API_DOMAIN is empty, generating a random one...");
 
-        // Generate a random alphanumeric string
-        let random_domain: String = thread_rng()
-            .sample_iter(&Alphanumeric)
-            .take(10)
-            .map(char::from)
-            .collect();
+//         // Generate a random alphanumeric string
+//         let random_domain: String = thread_rng()
+//             .sample_iter(&Alphanumeric)
+//             .take(10)
+//             .map(char::from)
+//             .collect();
 
-        println!("Generated API_DOMAIN: {:?}", random_domain);
+//         println!("Generated API_DOMAIN: {:?}", random_domain);
 
-        // Update the .env file with the new API_DOMAIN
-        if let Err(e) = update_env_file("API_DOMAIN", &random_domain) {
-            eprintln!("Failed to update .env file: {}", e);
-        }
-    } else {
-        println!("API_DOMAIN is set: {}", api_domain);
-    }
+//         // Update the .env file with the new API_DOMAIN
+//         if let Err(e) = update_env_file("API_DOMAIN", &random_domain) {
+//             eprintln!("Failed to update .env file: {}", e);
+//         }
+//     } else {
+//         println!("API_DOMAIN is set: {}", api_domain);
+//     }
 
-    println!(
-        "REMOTE is set: {}",
-        env::var("VITE_REMOTE").unwrap_or_default()
-    );
-}
+//     println!(
+//         "REMOTE is set: {}",
+//         env::var("VITE_REMOTE").unwrap_or_default()
+//     );
+// }
 
 // Function to update the .env file with the new API_DOMAIN
 pub fn update_env_file(key: &str, value: &str) -> std::io::Result<()> {

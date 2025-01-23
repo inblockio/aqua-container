@@ -11,7 +11,8 @@ use axum::{
 use chrono::{DateTime, NaiveDateTime, Utc};
 
 use crate::{
-     models::{api::ApiResponse, input::DeleteInput}, Db
+    models::{api::ApiResponse, input::DeleteInput},
+    Db,
 };
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
@@ -23,7 +24,7 @@ pub async fn fetch_explorer_files(
     tracing::debug!("fetch_explorer_files");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-        chains:Vec::new(),
+        chains: Vec::new(),
         logs: log_data.clone(),
     };
 
@@ -35,11 +36,12 @@ pub async fn fetch_explorer_files(
         None => Err("metamask_address header not found.".to_string()), // Header not found
     };
 
-    if user_address.is_err(){
-        log_data.push("Unable to parse metamask address/ Metamask address not provided".to_string());
+    if user_address.is_err() {
+        log_data
+            .push("Unable to parse metamask address/ Metamask address not provided".to_string());
         let mut res: ApiResponse = ApiResponse {
-            chains:Vec::new(),
-           
+            chains: Vec::new(),
+
             logs: log_data.clone(),
         };
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
@@ -52,8 +54,8 @@ pub async fn fetch_explorer_files(
 
             log_data.push("Failed to get database connection".to_string());
             let mut res: ApiResponse = ApiResponse {
-                chains:Vec::new(),
-                
+                chains: Vec::new(),
+
                 logs: log_data.clone(),
             };
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
@@ -68,16 +70,12 @@ pub async fn fetch_explorer_files(
 
     //     let mut res: ApiResponse = ApiResponse {
     //         chains:Vec::new(),
-          
+
     //         logs: log_data,
     //     };
     //     return (StatusCode::NOT_FOUND, Json(res));
     // }
     // let chains_data = chains.unwrap();
-
-
-
-
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -90,9 +88,9 @@ pub async fn explorer_import_aqua_chain(
     tracing::debug!("explorer_import_aqua_chain fn");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-            chains:Vec::new(),
-            logs: log_data,
-        };
+        chains: Vec::new(),
+        logs: log_data,
+    };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -105,9 +103,9 @@ pub async fn explorer_aqua_file_upload(
     tracing::debug!("explorer_aqua_file_upload fn");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-            chains:Vec::new(),
-            logs: log_data,
-        };
+        chains: Vec::new(),
+        logs: log_data,
+    };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -121,9 +119,9 @@ pub async fn explorer_delete_all_files(
     tracing::debug!("explorer_aqua_file_upload fn");
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-            chains:Vec::new(),
-            logs: log_data,
-        };
+        chains: Vec::new(),
+        logs: log_data,
+    };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
@@ -136,9 +134,8 @@ pub async fn explorer_delete_file(
     let mut log_data: Vec<String> = Vec::new();
 
     let mut res: ApiResponse = ApiResponse {
-            chains:Vec::new(),
-            logs: log_data,
-    
+        chains: Vec::new(),
+        logs: log_data,
     };
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
@@ -153,9 +150,9 @@ pub async fn explorer_file_upload(
 
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
-            chains:Vec::new(),
-            logs: log_data,
-        };
+        chains: Vec::new(),
+        logs: log_data,
+    };
 
     // Extract the 'metamask_address' header
     let metamask_address = match headers.get("metamask_address") {

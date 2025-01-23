@@ -1,11 +1,12 @@
 use crate::auth::SiweRequest;
+use crate::db::settings::create_setting;
 use crate::db::siwe::delete_siwe_session_by_nonce;
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::fetch_siwe_session_by_nonce;
 use crate::db::siwe::insert_siwe_data;
-use crate::db::settings::create_setting;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
+use core::panic;
 use ethers::types::Signature;
 use ethers_core::k256::schnorr::SigningKey;
 use ethers_core::types::Address;
@@ -17,7 +18,6 @@ use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
 use siwe::{Message, VerificationOpts};
-use core::panic;
 use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
@@ -175,7 +175,6 @@ pub async fn verify_siwe_message(
         // // Ok(format!("{:?}", recovered_address))
         // Ok(siwe_session)
         panic!("SiweSession is not yet implemented");
-        
     } else {
         error!("Quack Message");
         Err(SiweError::MessageVerificationFailed)

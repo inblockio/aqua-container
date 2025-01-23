@@ -1,25 +1,31 @@
 use crate::models::database_models::SettingsTable;
 use crate::schema::Settings;
+use crate::schema::Settings::dsl::*;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
-use crate::schema::Settings::dsl::*;
 
-pub fn create_setting(conn: &mut PooledConnection<ConnectionManager<PgConnection>>, new_setting: SettingsTable) -> QueryResult<SettingsTable> {
+pub fn create_setting(
+    conn: &mut PooledConnection<ConnectionManager<PgConnection>>,
+    new_setting: SettingsTable,
+) -> QueryResult<SettingsTable> {
     diesel::insert_into(Settings::table)
         .values(&new_setting)
         .get_result(conn)
 }
 
-pub fn get_setting(conn: &mut PooledConnection<ConnectionManager<PgConnection>>, user_key: &str) -> QueryResult<SettingsTable> {
-  
-  
-    Settings.filter(user_pub_key.eq(user_key))
-        .first(conn)
+pub fn get_setting(
+    conn: &mut PooledConnection<ConnectionManager<PgConnection>>,
+    user_key: &str,
+) -> QueryResult<SettingsTable> {
+    Settings.filter(user_pub_key.eq(user_key)).first(conn)
 }
 
-pub fn update_setting(conn: &mut PooledConnection<ConnectionManager<PgConnection>>, user_key: &str, updated_setting: SettingsTable) -> QueryResult<SettingsTable> {
-    
+pub fn update_setting(
+    conn: &mut PooledConnection<ConnectionManager<PgConnection>>,
+    user_key: &str,
+    updated_setting: SettingsTable,
+) -> QueryResult<SettingsTable> {
     diesel::update(Settings.filter(user_pub_key.eq(user_key)))
         .set((
             cli_pub_key.eq(updated_setting.cli_pub_key),
@@ -39,7 +45,9 @@ pub fn update_setting(conn: &mut PooledConnection<ConnectionManager<PgConnection
 // ///
 // /// # Returns
 // /// Returns the number of rows deleted (`usize`) or a `diesel::result::Error`.
-pub fn delete_setting(conn: &mut PooledConnection<ConnectionManager<PgConnection>>, user_key: &str) -> QueryResult<usize> {
-    diesel::delete(Settings.filter(user_pub_key.eq(user_key)))
-        .execute(conn)
+pub fn delete_setting(
+    conn: &mut PooledConnection<ConnectionManager<PgConnection>>,
+    user_key: &str,
+) -> QueryResult<usize> {
+    diesel::delete(Settings.filter(user_pub_key.eq(user_key))).execute(conn)
 }

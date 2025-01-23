@@ -1,2 +1,2 @@
-pub mod siwe;
 pub mod settings;
+pub mod siwe;

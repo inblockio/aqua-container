@@ -1,9 +1,9 @@
-use chrono::{DateTime, Utc};
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::insert_siwe_data;
 use crate::models::database_models::SettingsTable;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
+use chrono::{DateTime, Utc};
 use ethers::types::Signature;
 use ethers_core::k256::schnorr::SigningKey;
 use ethers_core::types::Address;
@@ -27,8 +27,8 @@ pub struct SiweRequest {
 pub struct SiweSession {
     pub address: String,
     pub nonce: String,
-    pub issued_at: DateTime<Utc>, //String,
-    pub expiration_time: Option<DateTime<Utc>> , // Option<String>,
+    pub issued_at: DateTime<Utc>,               //String,
+    pub expiration_time: Option<DateTime<Utc>>, // Option<String>,
 }
 
 #[derive(Deserialize)]
