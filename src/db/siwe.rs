@@ -6,26 +6,27 @@ use serde::{Deserialize, Serialize};
 
 pub fn insert_siwe_data(
     data: SiweSession,
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+    db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
 ) -> Result<i64, String> {
-    let record = &SiweSessionsTable {
-        id: None,
-        address: data.address,
-        nonce: data.nonce,
-        issued_at: data.issued_at,
-        expiration_time: data.expiration_time,
-    };
-    let inserted_id: i32 = diesel::insert_into(crate::schema::siwe_sessions::table)
-        .values(record)
-        .returning(crate::schema::siwe_sessions::dsl::id)
-        .get_result::<Option<i32>>(db_connection)
-        .map_err(|e| format!("Error saving new siwe data: {}", e))?
-        .unwrap_or(-1); // Provide a default value if None
+    // let record = &SiweSessionsTable {
+    //     id: 0,
+    //     address: data.address,
+    //     nonce: data.nonce,
+    //     issued_at: data.issued_at,
+    //     expiration_time: data.expiration_time,
+    // };
+    // let inserted_id: i32 = diesel::insert_into(crate::schema::siwe_sessions::table)
+    //     .values(record)
+    //     .returning(crate::schema::siwe_sessions::dsl::id)
+    //     .get_result::<Option<i32>>(db_connection)
+    //     .map_err(|e| format!("Error saving new siwe data: {}", e))?
+    //     .unwrap_or(-1); // Provide a default value if None
 
-    Ok(inserted_id as i64)
+    // Ok(inserted_id as i64)
+    Ok(0)
 }
 pub fn fetch_siwe_data(
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+    db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
 ) -> Result<Vec<SiweSessionsTable>, String> {
     use crate::schema::siwe_sessions::dsl::*;
 
@@ -37,7 +38,7 @@ pub fn fetch_siwe_data(
 
 pub fn fetch_siwe_data_by_address(
     address_param: &str,
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+    db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
 ) -> Result<Vec<SiweSessionsTable>, String> {
     use crate::schema::siwe_sessions::dsl::*;
 
@@ -50,7 +51,7 @@ pub fn fetch_siwe_data_by_address(
 
 pub fn fetch_siwe_session_by_nonce(
     nonce_value: &str,
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+    db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
 ) -> Result<SiweSessionsTable, String> {
     use crate::schema::siwe_sessions::dsl::*;
 
@@ -62,7 +63,7 @@ pub fn fetch_siwe_session_by_nonce(
 
 pub fn delete_siwe_session_by_nonce(
     nonce_value: &str,
-    db_connection: &mut PooledConnection<ConnectionManager<SqliteConnection>>,
+    db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
 ) -> Result<usize, String> {
     use crate::schema::siwe_sessions::dsl::*;
 

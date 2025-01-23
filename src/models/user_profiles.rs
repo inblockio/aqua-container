@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
-
-use super::UserProfilesTable;
+use crate::models::database_models::SettingsTable;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct UserProfileApiResponse {
+pub struct UseSettingsApiResponse {
     pub logs: Vec<String>,
-    pub user_profile: Option<UserProfilesTable>,
+    pub user_settings: Option<SettingsTable>,
 }

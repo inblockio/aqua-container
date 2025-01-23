@@ -4,9 +4,8 @@ diesel::table! {
     AquaForms (hash) {
         hash -> Text,
         key -> Nullable<Text>,
-        value -> Nullable<Jsonb>,
-        #[sql_name = "type"]
-        type_ -> Nullable<Text>,
+        value -> Nullable<Text>,
+        value_type -> Nullable<Text>,
     }
 }
 
@@ -84,8 +83,8 @@ diesel::table! {
         previous -> Nullable<Varchar>,
         children -> Nullable<Text>,
         local_timestamp -> Nullable<Timestamp>,
-        Revision_type -> Nullable<Text>,
-        Verification_leaves -> Nullable<Text>,
+        revision_type -> Nullable<Text>,
+        verification_leaves -> Nullable<Text>,
     }
 }
 
@@ -94,8 +93,8 @@ diesel::table! {
         user_pub_key -> Text,
         cli_pub_key -> Nullable<Text>,
         cli_priv_key -> Nullable<Text>,
-        Witness_network -> Nullable<Text>,
-        Witness_contract_address -> Nullable<Text>,
+        witness_network -> Nullable<Text>,
+        witness_contract_address -> Nullable<Text>,
         theme -> Nullable<Text>,
     }
 }
@@ -118,18 +117,18 @@ diesel::table! {
 diesel::table! {
     Witness (hash) {
         hash -> Text,
-        Witness_merkle_root -> Nullable<Text>,
+        witness_merkle_root -> Nullable<Text>,
     }
 }
 
 diesel::table! {
-    WitnessEvent (Witness_merkle_root) {
-        Witness_merkle_root -> Text,
-        Witness_timestamp -> Nullable<Timestamp>,
-        Witness_network -> Nullable<Text>,
-        Witness_smart_contract_address -> Nullable<Text>,
-        Witness_transaction_hash -> Nullable<Text>,
-        Witness_sender_account_address -> Nullable<Text>,
+    WitnessEvent (witness_merkle_root) {
+        witness_merkle_root -> Text,
+        witness_timestamp -> Nullable<Timestamp>,
+        witness_network -> Nullable<Text>,
+        witness_smart_contract_address -> Nullable<Text>,
+        witness_transaction_hash -> Nullable<Text>,
+        witness_sender_account_address -> Nullable<Text>,
     }
 }
 

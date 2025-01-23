@@ -6,4 +6,4 @@ pub mod user_profiles;
 pub mod database_models;
 
 
-pub type DB_POOL = r2d2::Pool<ConnectionManager<SqliteConnection>>;
+pub type DB_POOL = diesel::r2d2::Pool<diesel::r2d2::ConnectionManager<diesel::PgConnection>>;

@@ -16,14 +16,14 @@ use axum::{
     routing::{get, post},
     BoxError, Form, Json, Router,
 };
-use diesel::SqliteConnection;
+use diesel::{r2d2, Connection};
+use diesel::pg::PgConnection; 
 use diesel_migrations::embed_migrations;
 use ethaddr::address;
-
 use crate::models::DB_POOL;
 use axum::response::{IntoResponse, Response};
 use chrono::{DateTime, NaiveDateTime, Utc};
-use diesel::r2d2::{self, ConnectionManager};
+use diesel::r2d2::ConnectionManager;
 use futures::{Stream, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -43,7 +43,7 @@ use tower_http::{
     trace::TraceLayer,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use util::run_db_migrations;
+// use util::run_db_migrations;
 extern crate serde_json_path_to_error as serde_json;
 use std::sync::{mpsc, Mutex, MutexGuard};
 // use crate::controllers::api_controller::explorer_file_verify_hash_upload;
@@ -51,9 +51,9 @@ use crate::util::{check_or_generate_domain, establish_connection};
 // use controllers::{api_controller::{
 //     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
 // }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
-use controllers::user_profile_controller::{
-    explorer_fetch_user_profile, explorer_update_user_profile,
-};
+// use controllers::user_profile_controller::{
+//     explorer_fetch_user_profile, explorer_update_user_profile,
+// };
 use controllers::versions_controller::version_details;
 use controllers::{
     api_controller::{
@@ -94,15 +94,18 @@ async fn main() {
     check_or_generate_domain();
 
     // Establish database connection pool
-    let pool: r2d2::Pool<ConnectionManager<SqliteConnection>> = crate::util::establish_connection();
+    //Pool<ConnectionManager<PgConnection>>
+    let pool: r2d2::Pool<ConnectionManager<PgConnection>> = crate::util::establish_connection();
 
     // Run migrations
     // Get a connection from the pool to pass to run_db_migrations
     let mut conn = pool.get().expect("Failed to get database connection");
-    if let Err(e) = run_db_migrations(&mut conn) {
-        eprintln!("Failed to run migrations: {}", e);
-        return;
-    }
+    // not in needed in psql
+    // if let Err(e) = run_db_migrations(&mut conn) {
+        // eprintln!("Failed to run migrations: {}", e);
+        // return;
+    // }
+
     // save files to a separate directory to not override files in the current directory
     tokio::fs::create_dir(UPLOADS_DIRECTORY).await;
 
@@ -110,16 +113,16 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(status_handler).post(status_handler))
-        .route("/explorer_files", get(fetch_explorer_files))
-        .route("/explorer_file_upload", post(explorer_file_upload))
-        .route(
-            "/explorer_aqua_chain_import",
-            post(explorer_import_aqua_chain),
-        )
-        .route(
-            "/explorer_aqua_file_upload",
-            post(explorer_aqua_file_upload),
-        )
+        // .route("/explorer_files", get(fetch_explorer_files))
+        // .route("/explorer_file_upload", post(explorer_file_upload))
+        // .route(
+        //     "/explorer_aqua_chain_import",
+        //     post(explorer_import_aqua_chain),
+        // )
+        // .route(
+        //     "/explorer_aqua_file_upload",
+        //     post(explorer_aqua_file_upload),
+        // )
         // .route(
         //     "/explorer_verify_hash",
         //     post(explorer_file_verify_hash_upload),
@@ -127,23 +130,23 @@ async fn main() {
         // .route("/explorer_sign_revision", post(explorer_sign_revision))
         // .route("/explorer_witness_file", post(explorer_witness_file))
         // .route("/explorer_merge_chain", post(explorer_merge_chain))
-        .route("/explorer_delete_file", post(explorer_delete_file))
-        .route("/explorer_delete_all_files", get(explorer_delete_all_files))
-        .route(
-            "/explorer_fetch_user_profile",
-            get(explorer_fetch_user_profile),
-        )
-        .route(
-            "/explorer_update_user_profile",
-            post(explorer_update_user_profile),
-        )
+        // .route("/explorer_delete_file", post(explorer_delete_file))
+        // .route("/explorer_delete_all_files", get(explorer_delete_all_files))
+        // .route(
+        //     "/explorer_fetch_user_profile",
+        //     get(explorer_fetch_user_profile),
+        // )
+        // .route(
+        //     "/explorer_update_user_profile",
+        //     post(explorer_update_user_profile),
+        // )
         // .route(
         //     "/explorer_fetch_user_profiles",
         //     get(explorer_update_user_profile),
         // )
-        .route("/siwe", post(siwe_sign_in))
-        .route("/fetch_nonce_session", post(fetch_nonce_session))
-        .route("/siwe_logout", post(session_logout_by_nonce))
+        // .route("/siwe", post(siwe_sign_in))
+        // .route("/fetch_nonce_session", post(fetch_nonce_session))
+        // .route("/siwe_logout", post(session_logout_by_nonce))
         // .route("/share_data/{share_identifier}", get(get_share_data))
         // .route("/share_data", post(save_share_data))
         .route("/version", get(version_details))

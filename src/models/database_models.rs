@@ -11,30 +11,35 @@ use aqua_verifier_rs_types::models::chain::AquaChain;
 use aqua_verifier_rs_types::models::revision::Revision;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use diesel::SqliteConnection;
 use serde::{Deserialize, Serialize};
 
 
 #[derive(Queryable, Selectable, Deserialize, Serialize, Debug, Clone, Insertable)]
 #[diesel(table_name = crate::schema::siwe_sessions)]
-#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct SiweSessionsTable {
-    pub id: Option<i32>,
-    pub address: String,
-    pub nonce: String,
-    pub issued_at: String,
-    pub expiration_time: Option<String>,
+    pub id: i32, // SERIAL in PostgreSQL maps to i32 in Rust
+    pub address: String, // TEXT in PostgreSQL maps to String in Rust
+    pub nonce: String, // TEXT in PostgreSQL maps to String in Rust
+    pub issued_at: DateTime<Utc>, // TIMESTAMPTZ in PostgreSQL maps to DateTime<Utc> in Rust
+    pub expiration_time: Option<DateTime<Utc>>, // Nullable<TIMESTAMPTZ> maps to Option<DateTime<Utc>>
 }
+// pub struct SiweSessionsTable {
+    // pub id: Option<i32>,
+    // pub address: String,
+    // pub nonce: String,
+    // pub issued_at: String,
+    // pub expiration_time: Option<String>,
+// }
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::user)]
+#[diesel(table_name = crate::schema::User)]
 pub struct UserTable {
     pub user: String, // pubkey
 }
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::contract)]
+#[diesel(table_name = crate::schema::Contract)]
 pub struct ContractTable {
     pub hash: String,          // hash
     pub latest: Option<Vec<String>>, // TEXT[]
@@ -45,7 +50,7 @@ pub struct ContractTable {
 }
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::latest)]
+#[diesel(table_name = crate::schema::Latest)]
 pub struct LatestTable {
     pub hash: String,  // hash
     pub owner: String, // pubkey
@@ -53,7 +58,7 @@ pub struct LatestTable {
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::revision)]
+#[diesel(table_name = crate::schema::Revision)]
 pub struct RevisionTable {
     pub hash: String,                 // hash
     pub owner: String,                // pubkey
@@ -69,7 +74,7 @@ pub struct RevisionTable {
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::content)]
+#[diesel(table_name = crate::schema::Content)]
 pub struct ContentTable {
     pub hash: String,         // hash
     pub content: Option<String>, // TEXT
@@ -78,7 +83,7 @@ pub struct ContentTable {
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::file_hash)]
+#[diesel(table_name = crate::schema::FileHash)]
 pub struct FileHashTable {
     pub hash: String,         // hash
     pub file_hash: String,    // hash
@@ -87,7 +92,7 @@ pub struct FileHashTable {
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::link)]
+#[diesel(table_name = crate::schema::Link)]
 pub struct LinkTable {
     pub hash: String,                               // hash
     pub link_type: Option<String>,                 // TEXT
@@ -97,16 +102,16 @@ pub struct LinkTable {
 }
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::index)]
+#[diesel(table_name = crate::schema::Index)]
 pub struct IndexTable {
-    pub hash: Option<Vec<String>>, // TEXT[]
+    pub hash: String, //Option<Vec<String>>, // TEXT[]
     pub file_hash: String,         // hash
     pub uri: Option<String>,       // TEXT
 }
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::signature)]
+#[diesel(table_name = crate::schema::Signature)]
 pub struct SignatureTable {
     pub hash: String,                   // hash
     pub signature_digest: Option<String>, // TEXT
@@ -116,7 +121,7 @@ pub struct SignatureTable {
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::witness)]
+#[diesel(table_name = crate::schema::Witness)]
 pub struct WitnessTable {
     pub hash: String,               // hash
     pub witness_merkle_root: String, // hash
@@ -124,7 +129,7 @@ pub struct WitnessTable {
 
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::witness_event)]
+#[diesel(table_name = crate::schema::WitnessEvent)]
 pub struct WitnessEventTable {
     pub witness_merkle_root: String,       // hash
     pub witness_timestamp: chrono::NaiveDateTime, // timestamp
@@ -135,7 +140,7 @@ pub struct WitnessEventTable {
 }
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::merkle_nodes)]
+#[diesel(table_name = crate::schema::MerkleNodes)]
 pub struct MerkleNodesTable {
     pub node_hash: Option<String>,         // TEXT
     pub parent_hash: Option<String>,       // TEXT
@@ -146,16 +151,16 @@ pub struct MerkleNodesTable {
 }
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::aqua_forms)]
+#[diesel(table_name = crate::schema::AquaForms)]
 pub struct AquaFormsTable {
     pub hash: String,         // hash
     pub key: Option<String>,  // TEXT
-    pub value: Option<String>, // TEXT (Assuming object is stored as JSON-encoded string)
-    pub r#type: Option<String>, // TEXT
+    pub value: Option<String>,//Option<serde_json::Value>, //Option<String>, // TEXT (Assuming object is stored as JSON-encoded string)
+    pub value_type: Option<String>, // TEXT
 }
 
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
-#[diesel(table_name = crate::schema::settings)]
+#[diesel(table_name = crate::schema::Settings)]
 pub struct SettingsTable {
     pub user_pub_key: String,           // pubkey
     pub cli_pub_key: Option<String>,    // pubkey

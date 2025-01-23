@@ -40,8 +40,8 @@ CREATE TABLE "Revision" (
   "previous" varchar,
   "children" TEXT,
   "local_timestamp" timestamp,
-  "Revision_type" TEXT,
-  "Verification_leaves"  TEXT --hash_map
+  "revision_type" TEXT,
+  "verification_leaves"  TEXT --hash_map
 );
 
 CREATE TABLE "Content" (
@@ -80,16 +80,16 @@ CREATE TABLE "Signature" (
 
 CREATE TABLE "Witness" (
   "hash" hash PRIMARY KEY,
-  "Witness_merkle_root" hash
+  "witness_merkle_root" hash
 );
 
 CREATE TABLE "WitnessEvent" (
-  "Witness_merkle_root" hash PRIMARY KEY,
-  "Witness_timestamp" timestamp,
-  "Witness_network" TEXT, -- chain_id,
-  "Witness_smart_contract_address" hash,
-  "Witness_transaction_hash" TEXT, -- tx_hash,
-  "Witness_sender_account_address" TEXT -- pubkey
+  "witness_merkle_root" hash PRIMARY KEY,
+  "witness_timestamp" timestamp,
+  "witness_network" TEXT, -- chain_id,
+  "witness_smart_contract_address" hash,
+  "witness_transaction_hash" TEXT, -- tx_hash,
+  "witness_sender_account_address" TEXT -- pubkey
 );
 
 CREATE TABLE "MerkleNodes" (
@@ -105,16 +105,16 @@ CREATE TABLE "MerkleNodes" (
 CREATE TABLE "AquaForms" (
   "hash" hash PRIMARY KEY,
   "key" TEXT,
-  "value" JSONB, -- Replaced 'object' with JSONB.
-  "type" TEXT
+  "value" TEXT,--JSONB, -- Replaced 'object' with JSONB.
+  "value_type" TEXT
 );
 
 CREATE TABLE "Settings" (
   "user_pub_key" pubkey PRIMARY KEY,
   "cli_pub_key"  pubkey,
   "cli_priv_key" TEXT,-- private_key,
-  "Witness_network"  TEXT,-- chain_id,
-  "Witness_contract_address" hash,
+  "witness_network"  TEXT,-- chain_id,
+  "witness_contract_address" hash,
   "theme" TEXT
 );
 

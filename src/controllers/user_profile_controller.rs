@@ -1,9 +1,7 @@
-use crate::db::user_profiles::{fetch_user_profile, update_user_profile};
+// use crate::db::user_profiles::{fetch_user_profile, update_user_profile};
 use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
-use crate::models::user_profiles::UserProfileApiResponse;
-use crate::models::UserProfilesTable;
-
-use crate::Db;
+use crate::models::user_profiles::UseSettingsApiResponse;
+use crate::models::database_models::SettingsTable;
 use axum::response::{IntoResponse, Response};
 use axum::{
     body::Bytes,
@@ -35,18 +33,21 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
+use diesel::r2d2::Pool;
+use diesel::r2d2::ConnectionManager;
+use diesel::PgConnection;
 
 // We parse the .env file directly
 pub async fn explorer_fetch_user_profile(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
-) -> (StatusCode, Json<UserProfileApiResponse>) {
+) -> (StatusCode, Json<UseSettingsApiResponse>) {
     // let mut config_data = HashMap::new();
 
     let mut log_data: Vec<String> = Vec::new();
-    let mut res: UserProfileApiResponse = UserProfileApiResponse {
+    let mut res: UseSettingsApiResponse = UseSettingsApiResponse {
         logs: log_data.clone(),
-        user_profile: None,
+        user_settings : None,
     };
 
     let metamask_address = match headers.get("metamask_address") {
@@ -70,7 +71,7 @@ pub async fn explorer_fetch_user_profile(
         }
     };
 
-    let mut conn = match server_database.pool.get() {
+    let mut conn = match server_database.get() {
         Ok(connection) => connection,
         Err(e) => {
             // error!("Failed to get database connection: {}", e);
@@ -80,54 +81,54 @@ pub async fn explorer_fetch_user_profile(
         }
     };
 
-    let user_profile = fetch_user_profile(metamask_address.to_owned(), &mut conn);
-    println!("Fetched user profile: {:?}", user_profile);
+    // let user_profile = fetch_user_profile(metamask_address.to_owned(), &mut conn);
+    // println!("Fetched user profile: {:?}", user_profile);
 
-    if user_profile.is_err() {
-        return (StatusCode::NOT_FOUND, Json(res));
-    }
+    // if user_profile.is_err() {
+    //     return (StatusCode::NOT_FOUND, Json(res));
+    // }
 
-    let _user_profile = user_profile.unwrap();
+    // let _user_profile = user_profile.unwrap();
 
-    res.user_profile = Some(_user_profile);
-    return (StatusCode::OK, Json(res));
+    // res.user_profile = Some(_user_profile);
+    // return (StatusCode::OK, Json(res));
 
     (StatusCode::OK, Json(res))
 }
 
 pub async fn explorer_update_user_profile(
-    State(server_database): State<Db>,
-    Form(input): Form<UserProfilesTable>,
-) -> (StatusCode, Json<UserProfileApiResponse>) {
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
+    Form(input): Form<SettingsTable>,
+) -> (StatusCode, Json<UseSettingsApiResponse>) {
     let mut log_data: Vec<String> = Vec::new();
-    let mut res: UserProfileApiResponse = UserProfileApiResponse {
+    let mut res: UseSettingsApiResponse = UseSettingsApiResponse {
         logs: log_data.clone(),
-        user_profile: Some(input.clone()),
+        user_settings: None //Some(input.clone()),
     };
 
-    let mut conn = match server_database.pool.get() {
-        Ok(connection) => connection,
-        Err(e) => {
-            log_data.push("Failed data not found in database".to_string());
+    // let mut conn = match server_database.pool.get() {
+    //     Ok(connection) => connection,
+    //     Err(e) => {
+    //         log_data.push("Failed data not found in database".to_string());
 
-            log_data.push("Failed to get database connection".to_string());
+    //         log_data.push("Failed to get database connection".to_string());
 
-            println!("Error Fetching connection {:#?}", res);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-        }
-    };
+    //         println!("Error Fetching connection {:#?}", res);
+    //         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    //     }
+    // };
 
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
     // let page_data_result = fetch_page_data(input.filename, & mut conn);
 
-    let update_result = update_user_profile(input.clone(), &mut conn);
+    // let update_result = update_user_profile(input.clone(), &mut conn);
 
-    if update_result.is_err() {
-        let e = update_result.err().unwrap();
-        tracing::error!("Failed to update user profile: {:?}", e);
-        log_data.push(format!("Failed to update user profile : {:?}", e));
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
-    }
+    // if update_result.is_err() {
+    //     let e = update_result.err().unwrap();
+    //     tracing::error!("Failed to update user profile: {:?}", e);
+    //     log_data.push(format!("Failed to update user profile : {:?}", e));
+    //     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    // }
 
     (StatusCode::OK, Json(res))
 }

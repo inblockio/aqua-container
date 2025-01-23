@@ -1,5 +1,4 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use diesel::r2d2::ConnectionManager;
 use ethers::core::k256::SecretKey;
 use ethers::prelude::*;
 use rand::distributions::Alphanumeric;
@@ -11,30 +10,44 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 use std::{env, fs};
-
 use crate::models::file::FileDataInformation;
 use diesel::prelude::*;
-use diesel::sqlite::SqliteConnection;
-use diesel::{r2d2, Connection};
+// use diesel::sqlite::SqliteConnection;
+use diesel::Connection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
-type DB = diesel::sqlite::Sqlite;
+// type DB = diesel::sqlite::Sqlite;
+use diesel::pg::PgConnection; // Import PgConnection
+use diesel::r2d2::{ConnectionManager, Pool};
 
-pub fn run_db_migrations(
-    conn: &mut impl MigrationHarness<DB>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
-    conn.run_pending_migrations(MIGRATIONS)?;
-    Ok(())
-}
 
-pub fn establish_connection() -> r2d2::Pool<ConnectionManager<SqliteConnection>> {
+// pub fn run_db_migrations(
+//     conn: &mut impl MigrationHarness<PgConnection>,
+// ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+//     conn.run_pending_migrations(MIGRATIONS)?;
+//     Ok(())
+// }
+
+
+/// Establishes a connection pool for PostgreSQL.
+///
+/// # Returns
+/// Returns an `r2d2::Pool<ConnectionManager<PgConnection>>` for managing database connections.
+///
+/// # Panics
+/// Panics if the `DATABASE_URL` environment variable is not set or if the connection pool cannot be created.
+pub fn establish_connection() -> Pool<ConnectionManager<PgConnection>> {
+    // Load the DATABASE_URL from environment variables
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    println!("Database url {}", database_url);
-    let manager = ConnectionManager::<SqliteConnection>::new(database_url);
+    println!("Database URL: {}", database_url);
 
-    r2d2::Pool::builder()
+    // Create a connection manager for PostgreSQL
+    let manager = ConnectionManager::<PgConnection>::new(database_url);
+
+    // Create a connection pool
+    diesel::r2d2::Pool::builder()
         .build(manager)
         .expect("Failed to create database pool")
 }

@@ -3,7 +3,7 @@ use crate::db::siwe::delete_siwe_session_by_nonce;
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::fetch_siwe_session_by_nonce;
 use crate::db::siwe::insert_siwe_data;
-use crate::db::user_profiles::insert_user_profile_data;
+use crate::db::settings::create_setting;
 use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use ethers::types::Signature;
@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
 use siwe::{Message, VerificationOpts};
+use core::panic;
 use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
@@ -46,7 +47,7 @@ pub async fn siwe_sign_in(
                         logs: log_data,
                         success: false,
                         session: None,
-                        user_profile: None,
+                        user_settings: None,
                     };
                     return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
                 }
@@ -62,54 +63,56 @@ pub async fn siwe_sign_in(
                     logs: log_data,
                     success: false,
                     session: None,
-                    user_profile: None,
+                    user_settings: None,
                 };
 
                 return (StatusCode::BAD_REQUEST, Json(res));
             }
 
             // Creating a user profile
-            let res = insert_user_profile_data(siwe_session.address.clone(), &mut conn);
-            if res.is_err() {
-                let e = res.err().unwrap();
+            // let res = insert_user_settings_data(siwe_session.address.clone(), &mut conn);
+            // if res.is_err() {
+            //     let e = res.err().unwrap();
 
-                error!("Error occured inserting session into db: {:#?}", e);
-                log_data.push("Failed to create sign in session".to_string());
-                let res = SiweResponse {
-                    logs: log_data,
-                    success: false,
-                    session: None,
-                    user_profile: None,
-                };
+            //     error!("Error occured inserting session into db: {:#?}", e);
+            //     log_data.push("Failed to create sign in session".to_string());
+            //     let res = SiweResponse {
+            //         logs: log_data,
+            //         success: false,
+            //         session: None,
+            //         user_settings: None,
+            //     };
 
-                return (StatusCode::BAD_REQUEST, Json(res));
-            }
+            //     return (StatusCode::BAD_REQUEST, Json(res));
+            // }
+            panic!("User profile creation is not yet implemented");
 
-            log_data.push(format!(
-                "SIWE sign-in successful for address: {}",
-                siwe_session.address.clone()
-            ));
-            let res: SiweResponse = SiweResponse {
-                logs: log_data.clone(),
-                success: true,
-                session: Some(siwe_session.clone()),
-                user_profile: Some(res.unwrap()),
-            };
-            return (StatusCode::OK, Json(res));
+            // log_data.push(format!(
+            //     "SIWE sign-in successful for address: {}",
+            //     siwe_session.address.clone()
+            // ));
+            // let res: SiweResponse = SiweResponse {
+            //     logs: log_data.clone(),
+            //     success: true,
+            //     session: Some(siwe_session.clone()),
+            //     user_settings: Some(res.unwrap()),
+            // };
+            // return (StatusCode::OK, Json(res));
         }
         Err(e) => {
-            let error_message = format!("SIWE sign-in failed: {:?}", e);
-            log_data.push(error_message.clone());
-            error!("Error --> {}", error_message);
+            // let error_message = format!("SIWE sign-in failed: {:?}", e);
+            // log_data.push(error_message.clone());
+            // error!("Error --> {}", error_message);
 
-            let res = SiweResponse {
-                logs: log_data,
-                success: false,
-                session: None,
-                user_profile: None,
-            };
+            // let res = SiweResponse {
+            //     logs: log_data,
+            //     success: false,
+            //     session: None,
+            //     user_settings: None,
+            // };
 
-            (StatusCode::BAD_REQUEST, Json(res))
+            // (StatusCode::BAD_REQUEST, Json(res))
+            panic!("Error occured verifying SIWE message: {:#?}", e);
         }
     }
 }
@@ -162,15 +165,17 @@ pub async fn verify_siwe_message(
     // Confirm whether the message verification is successful
     if msg_verification.is_ok() {
         info!("Message is Okay and recovered address is correct");
-        let siwe_session = SiweSession {
-            address: format!("{:?}", recovered_address),
-            nonce: _message.nonce.to_string(),
-            issued_at: _message.issued_at.to_string(),
-            expiration_time: _message.expiration_time.map(|time| time.to_string()),
-        };
+        // let siwe_session = SiweSession {
+        //     address: format!("{:?}", recovered_address),
+        //     nonce: _message.nonce.to_string(),
+        //     issued_at: _message.issued_at.to_string(),
+        //     expiration_time: _message.expiration_time.map(|time| time.to_string()),
+        // };
 
-        // Ok(format!("{:?}", recovered_address))
-        Ok(siwe_session)
+        // // Ok(format!("{:?}", recovered_address))
+        // Ok(siwe_session)
+        panic!("SiweSession is not yet implemented");
+        
     } else {
         error!("Quack Message");
         Err(SiweError::MessageVerificationFailed)
@@ -192,7 +197,7 @@ pub async fn fetch_nonce_session(
                 logs: log_data,
                 success: false,
                 session: None,
-                user_profile: None,
+                user_settings: None,
             };
             println!("Error Fetching connection {:#?}", res);
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(None));
@@ -232,7 +237,7 @@ pub async fn session_logout_by_nonce(
                 logs: log_data,
                 success: false,
                 session: None,
-                user_profile: None,
+                user_settings: None,
             };
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
@@ -247,7 +252,7 @@ pub async fn session_logout_by_nonce(
                     logs: log_data,
                     success: false,
                     session: None,
-                    user_profile: None,
+                    user_settings: None,
                 };
                 return (StatusCode::NOT_FOUND, Json(res));
             }
@@ -257,7 +262,7 @@ pub async fn session_logout_by_nonce(
                 logs: log_data,
                 success: true,
                 session: None,
-                user_profile: None,
+                user_settings: None,
             };
             (StatusCode::OK, Json(res))
         }
@@ -268,7 +273,7 @@ pub async fn session_logout_by_nonce(
                 logs: log_data,
                 success: false,
                 session: None,
-                user_profile: None,
+                user_settings: None,
             };
             (StatusCode::INTERNAL_SERVER_ERROR, Json(res))
         }
