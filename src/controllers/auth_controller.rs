@@ -4,7 +4,6 @@ use crate::db::siwe::delete_siwe_session_by_nonce;
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::fetch_siwe_session_by_nonce;
 use crate::db::siwe::insert_siwe_data;
-use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use core::panic;
 use ethers::types::Signature;
@@ -22,11 +21,14 @@ use std::ops::Deref;
 use std::{fmt, str::FromStr};
 use tokio::sync::Mutex;
 use tracing::{error, info};
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::PgConnection;
 
 use crate::auth::{SiweError, SiweNonceRequest, SiweResponse, SiweSession};
 
 pub async fn siwe_sign_in(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     Form(payload): Form<SiweRequest>,
 ) -> (StatusCode, Json<SiweResponse>) {
     let mut log_data: Vec<String> = Vec::new();
@@ -38,7 +40,7 @@ pub async fn siwe_sign_in(
     // Verify the SIWE message
     match verify_siwe_message(payload.message, payload.signature, payload.domain).await {
         Ok(siwe_session) => {
-            let mut conn = match server_database.pool.get() {
+            let mut conn = match server_database.get() {
                 Ok(connection) => connection,
                 Err(e) => {
                     error!("Failed to get database connection: {}", e);
@@ -182,12 +184,12 @@ pub async fn verify_siwe_message(
 }
 
 pub async fn fetch_nonce_session(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     Form(payload): Form<SiweNonceRequest>,
 ) -> (StatusCode, Json<Option<SiweSession>>) {
     let mut log_data: Vec<String> = Vec::new();
 
-    let mut conn = match server_database.pool.get() {
+    let mut conn = match server_database.get() {
         Ok(connection) => connection,
         Err(e) => {
             error!("Failed to get database connection: {}", e);
@@ -221,13 +223,13 @@ pub async fn fetch_nonce_session(
 }
 
 pub async fn session_logout_by_nonce(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     Form(payload): Form<SiweNonceRequest>,
 ) -> (StatusCode, Json<SiweResponse>) {
     let mut log_data: Vec<String> = Vec::new();
 
     // Get database connection
-    let mut conn = match server_database.pool.get() {
+    let mut conn = match server_database.get() {
         Ok(connection) => connection,
         Err(e) => {
             error!("Failed to get database connection: {}", e);

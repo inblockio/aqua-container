@@ -28,7 +28,7 @@
 
 // // Handler with path and query parameters combined
 // pub async fn get_share_data(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     Path(share_identifier): Path<String>,
 // ) -> (StatusCode, Json<ShareDataResponse>) {
 //     let mut log_data: Vec<String> = Vec::new();
@@ -94,7 +94,7 @@
 // }
 
 // pub async fn save_share_data(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     Form(input): Form<CreateShareData>,
 // ) -> (StatusCode, Json<ApiResponse>) {
 //     tracing::debug!("explorer_delete_file");

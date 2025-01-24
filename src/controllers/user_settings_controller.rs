@@ -1,8 +1,8 @@
 use crate::db::settings::{get_setting, update_setting};
-// use crate::db::user_profiles::{fetch_user_profile, update_user_profile};
+// use crate::db::user_settingss::{fetch_user_settings, update_user_settings};
 use crate::models::database_models::SettingsTable;
 use crate::models::input::{DeleteInput, RevisionInput, UpdateConfigurationInput, WitnessInput};
-use crate::models::user_profiles::UseSettingsApiResponse;
+use crate::models::user_settings::UseSettingsApiResponse;
 use axum::response::{IntoResponse, Response};
 use axum::{
     body::Bytes,
@@ -39,7 +39,7 @@ use tower::ServiceExt;
 use tracing_subscriber::{fmt::format, layer::SubscriberExt, util::SubscriberInitExt};
 
 // We parse the .env file directly
-pub async fn explorer_fetch_user_profile(
+pub async fn explorer_fetch_user_settings(
     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
 ) -> (StatusCode, Json<UseSettingsApiResponse>) {
@@ -99,7 +99,7 @@ pub async fn explorer_fetch_user_profile(
 
 }
 
-pub async fn explorer_update_user_profile(
+pub async fn explorer_update_user_settings(
     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
     Form(input): Form<SettingsTable>,

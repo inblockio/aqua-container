@@ -1,7 +1,6 @@
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::insert_siwe_data;
 use crate::models::database_models::SettingsTable;
-use crate::Db;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use chrono::{DateTime, Utc};
 use ethers::types::Signature;

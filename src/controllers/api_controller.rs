@@ -10,15 +10,16 @@ use axum::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{
-    models::{api::ApiResponse, input::DeleteInput},
-    Db,
-};
+use crate::models::{api::ApiResponse, input::DeleteInput};
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::PgConnection;
+
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
 pub async fn fetch_explorer_files(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("fetch_explorer_files");
@@ -47,7 +48,7 @@ pub async fn fetch_explorer_files(
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
 
-    let mut conn = match server_database.pool.get() {
+    let mut conn = match server_database.get() {
         Ok(connection) => connection,
         Err(e) => {
             log_data.push("Failed data not found in database".to_string());
@@ -81,7 +82,7 @@ pub async fn fetch_explorer_files(
 }
 
 pub async fn explorer_import_aqua_chain(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
     mut multipart: Multipart,
 ) -> (StatusCode, Json<ApiResponse>) {
@@ -96,7 +97,7 @@ pub async fn explorer_import_aqua_chain(
 }
 
 pub async fn explorer_aqua_file_upload(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
     mut multipart: Multipart,
 ) -> (StatusCode, Json<ApiResponse>) {
@@ -111,7 +112,7 @@ pub async fn explorer_aqua_file_upload(
 }
 
 pub async fn explorer_delete_all_files(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
 ) -> (StatusCode, Json<ApiResponse>) {
     let mut log_data: Vec<String> = Vec::new();
@@ -127,7 +128,7 @@ pub async fn explorer_delete_all_files(
 }
 
 pub async fn explorer_delete_file(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     Form(input): Form<DeleteInput>,
 ) -> (StatusCode, Json<ApiResponse>) {
     tracing::debug!("explorer_delete_file");
@@ -142,7 +143,7 @@ pub async fn explorer_delete_file(
 }
 
 pub async fn explorer_file_upload(
-    State(server_database): State<Db>,
+    State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
     headers: HeaderMap,
     mut multipart: Multipart,
 ) -> (StatusCode, Json<ApiResponse>) {
@@ -458,7 +459,7 @@ pub async fn explorer_file_upload(
 // }
 
 // pub async fn explorer_file_verify_hash_upload(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     mut multipart: Multipart,
 // ) -> (StatusCode, Json<ApiResponse>) {
 //     tracing::debug!("explorer_file_verify_hash_upload fn");
@@ -1145,7 +1146,7 @@ pub async fn explorer_file_upload(
 // }
 
 // pub async fn explorer_file_upload(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     headers: HeaderMap,
 //     mut multipart: Multipart,
 // ) -> (StatusCode, Json<ApiResponse>) {
@@ -1426,7 +1427,7 @@ pub async fn explorer_file_upload(
 // }
 
 // pub async fn explorer_sign_revision(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     Form(input): Form<RevisionInput>,
 // ) -> (StatusCode, Json<ApiResponse>) {
 //     let mut log_data: Vec<String> = Vec::new();
@@ -1676,7 +1677,7 @@ pub async fn explorer_file_upload(
 // }
 
 // pub async fn explorer_merge_chain(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     Json(input): Json<MergeInput>,
 // ) -> (StatusCode, Json<ApiResponse>) {
 //     let mut log_data: Vec<String> = Vec::new();
@@ -1976,7 +1977,7 @@ pub async fn explorer_file_upload(
 // }
 
 // pub async fn explorer_witness_file(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 //     Form(input): Form<WitnessInput>,
 // ) -> (StatusCode, Json<ApiResponse>) {
 //     tracing::debug!("explorer_witness_file");
@@ -2348,7 +2349,7 @@ pub async fn explorer_file_upload(
 // }
 
 // pub async fn explorer_fetch_configuration(
-//     State(server_database): State<Db>,
+//     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
 // ) -> (StatusCode, Json<HashMap<String, String>>) {
 //     let mut config_data = HashMap::new();
 

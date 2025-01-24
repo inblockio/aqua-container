@@ -1,5 +1,5 @@
 use crate::auth::SiweSession;
-use crate::models::{database_models::SiweSessionsTable, DB_POOL};
+use crate::models::database_models::SiweSessionsTable;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection}; // This will import RunQueryDsl
 use serde::{Deserialize, Serialize};

@@ -7,7 +7,7 @@ mod models;
 mod schema;
 mod util;
 
-use crate::models::DB_POOL;
+// use crate::models::DB_POOL;
 use axum::response::{IntoResponse, Response};
 use axum::{
     body::Bytes,
@@ -51,8 +51,8 @@ use crate::util:: establish_connection;
 // use controllers::{api_controller::{
 //     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
 // }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
-use controllers::user_profile_controller::{
-    explorer_fetch_user_profile, explorer_update_user_profile,
+use controllers::user_settings_controller::{
+    explorer_fetch_user_settings, explorer_update_user_settings,
 };
 use controllers::versions_controller::version_details;
 use controllers::{
@@ -67,10 +67,10 @@ use controllers::{
 
 const UPLOADS_DIRECTORY: &str = "uploads";
 
-#[derive(Clone)]
-pub struct Db {
-    pub pool: DB_POOL,
-}
+// #[derive(Clone)]
+// pub struct Db {
+//     pub pool: DB_POOL,
+// }
 
 // Handler function that returns a JSON response
 async fn status_handler() -> Json<serde_json::Value> {
@@ -133,20 +133,20 @@ async fn main() {
         // .route("/explorer_delete_file", post(explorer_delete_file))
         // .route("/explorer_delete_all_files", get(explorer_delete_all_files))
         .route(
-            "/explorer_fetch_user_profile",
-            get(explorer_fetch_user_profile),
+            "/explorer_fetch_user_settings",
+            get(explorer_fetch_user_settings),
         )
         .route(
-            "/explorer_update_user_profile",
-            post(explorer_update_user_profile),
+            "/explorer_update_user_settings",
+            post(explorer_update_user_settings),
         )
         .route(
-            "/explorer_fetch_user_profiles",
-            get(explorer_update_user_profile),
+            "/explorer_fetch_user_settingss",
+            get(explorer_update_user_settings),
         )
-        // .route("/siwe", post(siwe_sign_in))
-        // .route("/fetch_nonce_session", post(fetch_nonce_session))
-        // .route("/siwe_logout", post(session_logout_by_nonce))
+        .route("/siwe", post(siwe_sign_in))
+        .route("/fetch_nonce_session", post(fetch_nonce_session))
+        .route("/siwe_logout", post(session_logout_by_nonce))
         // .route("/share_data/{share_identifier}", get(get_share_data))
         // .route("/share_data", post(save_share_data))
         .route("/version", get(version_details))
