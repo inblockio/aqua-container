@@ -77,7 +77,7 @@ diesel::table! {
     Revision (hash) {
         hash -> Text,
         owner -> Text,
-        nonce -> Nullable<Text>,
+        nonce -> Text,
         shared -> Nullable<Array<Nullable<Text>>>,
         contract -> Nullable<Array<Nullable<Text>>>,
         previous -> Nullable<Varchar>,

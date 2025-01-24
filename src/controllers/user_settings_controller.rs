@@ -148,10 +148,12 @@ pub async fn explorer_update_user_settings(
     // let insert_result = insert_page_data(db_data_model.clone(), & mut conn);
     // let page_data_result = fetch_page_data(input.filename, & mut conn);
 
+    // println!("User key {}",metamask_address);
     let update_result = update_setting(
         &mut conn,
-        metamask_address,
-        input.clone(), //SettingsTable { cli_pub_key: "cli_pub_key".to_string(), cli_priv_key: "cli_priv_key".to_string(), witness_network: "witness_network".to_string(), witness_contract_address: "witness_contract_address".to_string(), theme: "theme".to_string() },
+        metamask_address.to_lowercase().as_str(),
+        input.clone(),
+         //SettingsTable { cli_pub_key: "cli_pub_key".to_string(), cli_priv_key: "cli_priv_key".to_string(), witness_network: "witness_network".to_string(), witness_contract_address: "witness_contract_address".to_string(), theme: "theme".to_string() },
     );
 
     if update_result.is_err() {

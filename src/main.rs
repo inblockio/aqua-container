@@ -140,10 +140,7 @@ async fn main() {
             "/explorer_update_user_settings",
             post(explorer_update_user_settings),
         )
-        .route(
-            "/explorer_fetch_user_settings",
-            get(explorer_update_user_settings),
-        )
+       
         .route("/siwe", post(siwe_sign_in))
         .route("/fetch_nonce_session", post(fetch_nonce_session))
         .route("/siwe_logout", post(session_logout_by_nonce))
