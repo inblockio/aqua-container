@@ -54,4 +54,5 @@ diesel_migrations = "2.2.0"
 
 aqua-verifier-rs-types = { git = "https://github.com/inblockio/aqua-verifier-rs-types", rev = "29732da894c191aefd7781cc91fcb84664144033" }
 aqua-verifier = { git = "https://github.com/inblockio/aqua-verifier-rs", rev = "20b2c8d213fb39fda286a7a205357bdcb3c77358" }
+time = "0.3.37"
 

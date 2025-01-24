@@ -4,8 +4,14 @@ use crate::db::siwe::delete_siwe_session_by_nonce;
 use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::fetch_siwe_session_by_nonce;
 use crate::db::siwe::insert_siwe_data;
+use crate::models::database_models::SettingsTable;
+use crate::util::timestamp_to_datetime_utc;
 use axum::{extract::State, http::StatusCode, Form, Json};
-use core::panic;
+use chrono::DateTime;
+use chrono::TimeZone;
+use chrono::Utc;
+use siwe::TimeStamp;
+use time::OffsetDateTime;
 use ethers::types::Signature;
 use ethers_core::k256::schnorr::SigningKey;
 use ethers_core::types::Address;
@@ -71,50 +77,58 @@ pub async fn siwe_sign_in(
                 return (StatusCode::BAD_REQUEST, Json(res));
             }
 
-            // Creating a user profile
-            // let res = insert_user_settings_data(siwe_session.address.clone(), &mut conn);
-            // if res.is_err() {
-            //     let e = res.err().unwrap();
+            // Creating a user settings
 
-            //     error!("Error occured inserting session into db: {:#?}", e);
-            //     log_data.push("Failed to create sign in session".to_string());
-            //     let res = SiweResponse {
-            //         logs: log_data,
-            //         success: false,
-            //         session: None,
-            //         user_settings: None,
-            //     };
+            let user_settings : SettingsTable = SettingsTable {
+                user_pub_key: siwe_session.address.clone(),
+                cli_pub_key: None,
+                cli_priv_key: None,
+                witness_network: None,
+                witness_contract_address: None,
+                theme: None,
+            };
+            
+            let res = create_setting( &mut conn, user_settings);
+            if res.is_err() {
+                let e = res.err().unwrap();
 
-            //     return (StatusCode::BAD_REQUEST, Json(res));
-            // }
-            panic!("User profile creation is not yet implemented");
+                error!("Error occured inserting session into db: {:#?}", e);
+                log_data.push("Failed to create sign in session".to_string());
+                let res = SiweResponse {
+                    logs: log_data,
+                    success: false,
+                    session: None,
+                    user_settings: None,
+                };
 
-            // log_data.push(format!(
-            //     "SIWE sign-in successful for address: {}",
-            //     siwe_session.address.clone()
-            // ));
-            // let res: SiweResponse = SiweResponse {
-            //     logs: log_data.clone(),
-            //     success: true,
-            //     session: Some(siwe_session.clone()),
-            //     user_settings: Some(res.unwrap()),
-            // };
-            // return (StatusCode::OK, Json(res));
+                return (StatusCode::BAD_REQUEST, Json(res));
+            }
+           
+            log_data.push(format!(
+                "SIWE sign-in successful for address: {}",
+                siwe_session.address.clone()
+            ));
+            let res: SiweResponse = SiweResponse {
+                logs: log_data.clone(),
+                success: true,
+                session: Some(siwe_session.clone()),
+                user_settings: Some(res.unwrap()),
+            };
+            return (StatusCode::OK, Json(res));
         }
         Err(e) => {
-            // let error_message = format!("SIWE sign-in failed: {:?}", e);
-            // log_data.push(error_message.clone());
-            // error!("Error --> {}", error_message);
+            let error_message = format!("SIWE sign-in failed: {:?}", e);
+            log_data.push(error_message.clone());
+            error!("Error --> {}", error_message);
 
-            // let res = SiweResponse {
-            //     logs: log_data,
-            //     success: false,
-            //     session: None,
-            //     user_settings: None,
-            // };
+            let res = SiweResponse {
+                logs: log_data,
+                success: false,
+                session: None,
+                user_settings: None,
+            };
 
-            // (StatusCode::BAD_REQUEST, Json(res))
-            panic!("Error occured verifying SIWE message: {:#?}", e);
+            (StatusCode::BAD_REQUEST, Json(res))
         }
     }
 }
@@ -167,21 +181,28 @@ pub async fn verify_siwe_message(
     // Confirm whether the message verification is successful
     if msg_verification.is_ok() {
         info!("Message is Okay and recovered address is correct");
-        // let siwe_session = SiweSession {
-        //     address: format!("{:?}", recovered_address),
-        //     nonce: _message.nonce.to_string(),
-        //     issued_at: _message.issued_at.to_string(),
-        //     expiration_time: _message.expiration_time.map(|time| time.to_string()),
-        // };
+        let siwe_session = SiweSession {
+            address: format!("{:?}", recovered_address),
+            nonce: _message.nonce.to_string(),
+            issued_at:  timestamp_to_datetime_utc(&_message.issued_at),
+            expiration_time: if _message.expiration_time.is_none() {
+                None
+            } else {
+                Some(timestamp_to_datetime_utc(&_message.expiration_time.unwrap()))
+            },
+            
+        };
 
-        // // Ok(format!("{:?}", recovered_address))
-        // Ok(siwe_session)
-        panic!("SiweSession is not yet implemented");
+        // Ok(format!("{:?}", recovered_address))
+        Ok(siwe_session)
+        
     } else {
         error!("Quack Message");
         Err(SiweError::MessageVerificationFailed)
     }
 }
+
+
 
 pub async fn fetch_nonce_session(
     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,
