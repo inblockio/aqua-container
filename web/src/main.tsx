@@ -17,5 +17,5 @@ createRoot(document.getElementById('root')!).render(
         </ColorModeProvider>
       </ChakraProvider>
     </EnvironmentProvider>
-  </StrictMode >,
+  </StrictMode>,
 )
