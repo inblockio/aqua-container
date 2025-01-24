@@ -58,7 +58,7 @@ use controllers::versions_controller::version_details;
 use controllers::{
     api_controller::{
         explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file,
-        explorer_file_upload, explorer_import_aqua_chain, fetch_explorer_files,
+        explorer_file_upload, explorer_get_file , explorer_import_aqua_chain, fetch_explorer_files,
     },
     auth_controller::{
         fetch_nonce_session, session_logout_by_nonce, siwe_sign_in, verify_siwe_message,
@@ -113,8 +113,9 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(status_handler).post(status_handler))
-        // .route("/explorer_files", get(fetch_explorer_files))
-        // .route("/explorer_file_upload", post(explorer_file_upload))
+        .route("/explorer_files", get(fetch_explorer_files))
+        .route("/explorer_file_upload", post(explorer_file_upload))
+        .route("/assets/:metamask_address/:genesis_hash/:filename", get(explorer_get_file))
         // .route(
         //     "/explorer_aqua_chain_import",
         //     post(explorer_import_aqua_chain),

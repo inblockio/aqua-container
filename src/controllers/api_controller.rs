@@ -1,20 +1,25 @@
+use std::{env, fs};
+
 use aqua_verifier::{
     aqua::AquaProtocol,
     model::{aqua_chain_result::AquaChainResult, aqua_protocol_options::AquaProtocolOptions},
 };
 use aqua_verifier_rs_types::models::{base64::Base64, chain::AquaChain};
 use axum::{
-    body::Bytes,
+    body::{Body, Bytes},
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
     handler::HandlerWithoutStateExt,
     http::{HeaderMap, StatusCode},
-    response::{Html, Redirect},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
     BoxError, Form, Json, Router,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::{db::revision::insert_revision, models::{api::ApiResponse, database_models::RevisionTable, input::DeleteInput}};
+use crate::{
+    db::revision::insert_revision,
+    models::{api::ApiResponse, database_models::RevisionTable, input::DeleteInput},
+};
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -312,13 +317,22 @@ pub async fn explorer_file_upload(
         aqua_chain.generate_genesis_revision_from_file_data(file_name, body_bytes);
 
     if aqua_chain_genesis_result.is_successfull == false {
+        println!("Error genereting genisis revision  ==== ",);
         aqua_chain_genesis_result.logs.iter().for_each(|log| {
             res.logs
                 .push(format!("{:#?}: {}", log.log_type, log.log.to_string()));
         });
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
-    
+
+    if aqua_chain_genesis_result.aqua_chain.is_none() {
+        println!("Error genereting genisis is none .... ",);
+        aqua_chain_genesis_result.logs.iter().for_each(|log| {
+            res.logs
+                .push(format!("{:#?}: {}", log.log_type, log.log.to_string()));
+        });
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
     let mut conn = match server_database.get() {
         Ok(connection) => connection,
         Err(e) => {
@@ -328,29 +342,95 @@ pub async fn explorer_file_upload(
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
         }
     };
+
+    let chain_data: AquaChain = aqua_chain_genesis_result.aqua_chain.unwrap();
+
+    let (genesis_hash, genesis_revision) = chain_data.revisions.get(0).unwrap();
     // save to db
-    let rev_table = RevisionTable{
-        hash: todo!(),
-        owner: todo!(),
-        nonce: todo!(),
-        shared: todo!(),
-        contract: todo!(),
-        previous: todo!(),
-        children: todo!(),
-        local_timestamp: todo!(),
-        revision_type: todo!(),
+    // Explicitly convert Timestamp to NaiveDateTime
+    let converted_timestamp: NaiveDateTime = genesis_revision.local_timestamp.clone().into();
+    let rev_table = RevisionTable {
+        hash: genesis_hash.to_string(),
+        owner: metamask_address.to_string(),
+        nonce: genesis_revision.nonce.to_string(),
+        shared: None,
+        contract: None,
+        previous: None,
+        children: None,
+        local_timestamp: Some(converted_timestamp),
+        revision_type: Some(genesis_revision.revision_type.clone()),
         verification_leaves: todo!(),
     };
 
     let insert_rev_result = insert_revision(&mut conn, rev_table);
     if insert_rev_result.is_err() {
-        res.logs.push("Failed to insert revision into database".to_string());
+        res.logs
+            .push("Failed to insert revision into database".to_string());
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
+
+    // svae to file syste for rendering
+
+    let assets_base_path = env::var("ASSETS_PATH").expect("ASSETS_PATH must be set in .env");
+    let last_8_metamask = &metamask_address[metamask_address.len() - 8..];
+    
+    println!("last_8_metamask: {}", last_8_metamask);
+
+    // Create user's directory if not exists
+    let user_dir_path = std::path::Path::new(&assets_base_path).join(last_8_metamask);
+    fs::create_dir_all(&user_dir_path).expect("Failed to create user directory");
+    
+    println!("user_dir_path: {}", user_dir_path.display());
+    // Get last 8 characters of genesis hash
+    let last_8_genesis_hash = &genesis_hash[genesis_hash.len() - 8..];
+    let file_dir_path = user_dir_path.join(last_8_genesis_hash);
+    fs::create_dir_all(&file_dir_path).expect("Failed to create file directory");
+    
+    println!("file_dir_path: {}", file_dir_path.display());
+    // Save the file
+    let file_save_path = file_dir_path.join(&file_name);
+    fs::write(&file_save_path, &body_bytes).expect("Failed to save file");
+    
+    println!("file_save_path: {}", file_save_path.display());
+
+    // Update the logs
+    res.logs.push(format!("File saved at: {}", file_save_path.display()));
+
+    println!("res: {:#?}", res);
 
     (StatusCode::OK, Json::from(res))
 }
 
+
+pub async fn explorer_get_file(
+    Path((metamask_address, genesis_hash, filename)): Path<(String, String, String)>,
+    State(_pool): State<Pool<ConnectionManager<PgConnection>>>,
+) -> impl IntoResponse {
+    
+    let assets_base_path = env::var("ASSETS_PATH").expect("ASSETS_PATH must be set in .env");
+    let last_8_metamask = &metamask_address[metamask_address.len() - 8..];
+    let last_8_genesis_hash = &genesis_hash[genesis_hash.len() - 8..];
+
+    let file_path = std::path::Path::new(&assets_base_path)
+        .join(last_8_metamask)
+        .join(last_8_genesis_hash)
+        .join(filename);
+
+        match fs::read(&file_path) {
+            Ok(contents) => {
+                let mime_type = mime_guess::from_path(&file_path).first_or_octet_stream();
+                Response::builder()
+                    .status(StatusCode::OK)
+                    .header("content-type", mime_type.to_string())
+                    .body(Body::from(contents))
+                    .unwrap()
+            }
+            Err(_) => Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .body(Body::empty())
+                .unwrap(),
+        }
+}
 // use crate::models::input::{
 //     DeleteInput, MergeInput, RevisionInput, UpdateConfigurationInput, WitnessInput,
 // };
