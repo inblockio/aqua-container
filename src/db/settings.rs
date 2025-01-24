@@ -1,17 +1,44 @@
-use crate::models::database_models::SettingsTable;
+use crate::models::database_models::{SettingsTable, UserTable};
 use crate::schema::Settings;
 use crate::schema::Settings::dsl::*;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
+use futures::future::ok;
 
 pub fn create_setting(
     conn: &mut PooledConnection<ConnectionManager<PgConnection>>,
     new_setting: SettingsTable,
-) -> QueryResult<SettingsTable> {
-    diesel::insert_into(Settings::table)
+) -> Result<(), String> {
+    // create user if not exist
+    let user = UserTable {
+        user: new_setting.user_pub_key.clone(),
+    };
+    // Insert or do nothing if the user already exists
+    let result = diesel::insert_into(crate::schema::User::table)
+        .values(&user)
+        .on_conflict(crate::schema::User::dsl::user) // Specify the unique column(s)
+        .do_nothing() // Do nothing if there's a conflict
+        .execute(conn)
+        .map_err(|e| format!("Error inserting user: {}", e));
+
+    if result.is_err() {
+        return Err(format!("Error inserting user: {}", result.unwrap_err()));
+    }
+    // create user setting
+    let setting = diesel::insert_into(Settings::table)
         .values(&new_setting)
-        .get_result(conn)
+        .on_conflict(crate::schema::Settings::dsl::user_pub_key) // Specify the unique column(s)
+        .do_nothing() // Do nothing if there's a conflict
+        .execute(conn)
+        .map_err(|e| format!("Error inserting settings : {}", e));
+
+        // .get_result::<SettingsTable>(conn);
+
+    if setting.is_err() {
+        return Err(format!("Error inserting setting: {}", setting.unwrap_err()));
+    }
+    Ok(())
 }
 
 pub fn get_setting(

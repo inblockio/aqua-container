@@ -33,8 +33,8 @@ CREATE TABLE "Latest" (
 
 CREATE TABLE "Revision" (
   "hash" hash PRIMARY KEY,
-  "owner" pubkey,
-  "nonce" TEXT,
+  "owner" pubkey NOT NULL,
+  "nonce" TEXT NOT NULL,
   "shared" TEXT[],--pubkey[],
   "contract" TEXT[],
   "previous" varchar,

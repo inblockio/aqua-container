@@ -76,8 +76,8 @@ export const initializeBackendUrl = async (): Promise<string> => {
   // FETCH_ADDRESS_BY_NONCE: `${BACKEND_URL}/fetch_nonce_session`,
   // SIWE_SIGN_OUT: `${BACKEND_URL}/siwe_logout`,
 
-  // FETCH_USER_PROFILE: `${BACKEND_URL}/explorer_fetch_user_profile`,
-  // UPDATE_USER_PROFILE: `${BACKEND_URL}/explorer_update_user_profile`,
+  // FETCH_USER_PROFILE: `${BACKEND_URL}/explorer_fetch_user_settings`,
+  // UPDATE_USER_PROFILE: `${BACKEND_URL}/explorer_update_user_settings`,
 
  // EXPOLORER_FETCH_FILES: `${BACKEND_URL}/explorer_files`,
  // SIGN_FILE: `${BACKEND_URL}/explorer_sign_revision`,

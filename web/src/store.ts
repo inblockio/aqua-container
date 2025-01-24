@@ -6,14 +6,17 @@ import { ApiFileInfo } from './models/FileInfo';
 
 type AppStoreState = {
     user_profile: {
-        network: string,
-        domain: string,
-        fileMode: string,
-        contractAddress: string | null
+        user_pub_key: string,
+        cli_pub_key: string,
+        cli_priv_key: string,
+        witness_network: string,
+        theme: string,
+        witness_contract_address: string | null
     },
+
     files: ApiFileInfo[],
     metamaskAddress: string | null
-    avatar:string | undefined
+    avatar: string | undefined
     backend_url: string
 }
 
@@ -67,15 +70,17 @@ const appStore = createStore<TAppStore>()(
         (set) => ({
             // Initial state
             user_profile: {
-                network: 'sepolia',
-                domain: 'dHy4ds_dsf',
-                fileMode: 'public',
-                contractAddress: '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',
+                user_pub_key: "",
+                cli_pub_key: "",
+                cli_priv_key: "",
+                witness_network: "",
+                theme: "light",
+                witness_contract_address: '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',
             },
             files: [],
             metamaskAddress: '',
             avatar: "",
-            backend_url:"http://0.0.0.0:0",
+            backend_url: "http://0.0.0.0:0",
             // Actions
             setUserProfile: (config) => set({ user_profile: config }),
             setMetamaskAddress: (

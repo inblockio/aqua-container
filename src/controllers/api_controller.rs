@@ -14,7 +14,7 @@ use axum::{
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 
-use crate::models::{api::ApiResponse, input::DeleteInput};
+use crate::{db::revision::insert_revision, models::{api::ApiResponse, database_models::RevisionTable, input::DeleteInput}};
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
@@ -155,7 +155,7 @@ pub async fn explorer_file_upload(
     let mut log_data: Vec<String> = Vec::new();
     let mut res: ApiResponse = ApiResponse {
         chains: Vec::new(),
-        logs: log_data,
+        logs: log_data.clone(),
     };
 
     // Extract the 'metamask_address' header
@@ -318,10 +318,37 @@ pub async fn explorer_file_upload(
         });
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
     }
-
+    
+    let mut conn = match server_database.get() {
+        Ok(connection) => connection,
+        Err(e) => {
+            // error!("Failed to get database connection: {}", e);
+            log_data.push("Failed to get database connection".to_string());
+            println!("Error Fetching connection {:#?}", res);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+        }
+    };
     // save to db
+    let rev_table = RevisionTable{
+        hash: todo!(),
+        owner: todo!(),
+        nonce: todo!(),
+        shared: todo!(),
+        contract: todo!(),
+        previous: todo!(),
+        children: todo!(),
+        local_timestamp: todo!(),
+        revision_type: todo!(),
+        verification_leaves: todo!(),
+    };
 
-    (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
+    let insert_rev_result = insert_revision(&mut conn, rev_table);
+    if insert_rev_result.is_err() {
+        res.logs.push("Failed to insert revision into database".to_string());
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
+    (StatusCode::OK, Json::from(res))
 }
 
 // use crate::models::input::{

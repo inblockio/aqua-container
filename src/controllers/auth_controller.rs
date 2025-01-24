@@ -5,13 +5,14 @@ use crate::db::siwe::fetch_siwe_data;
 use crate::db::siwe::fetch_siwe_session_by_nonce;
 use crate::db::siwe::insert_siwe_data;
 use crate::models::database_models::SettingsTable;
-use crate::util::timestamp_to_datetime_utc;
+use crate::utils::time_utils::timestamp_to_datetime_utc;
 use axum::{extract::State, http::StatusCode, Form, Json};
 use chrono::DateTime;
 use chrono::TimeZone;
 use chrono::Utc;
-use siwe::TimeStamp;
-use time::OffsetDateTime;
+use diesel::r2d2::ConnectionManager;
+use diesel::r2d2::Pool;
+use diesel::PgConnection;
 use ethers::types::Signature;
 use ethers_core::k256::schnorr::SigningKey;
 use ethers_core::types::Address;
@@ -22,14 +23,13 @@ use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use sha3::Digest;
 use sha3::Keccak256;
+use siwe::TimeStamp;
 use siwe::{Message, VerificationOpts};
 use std::ops::Deref;
 use std::{fmt, str::FromStr};
+use time::OffsetDateTime;
 use tokio::sync::Mutex;
 use tracing::{error, info};
-use diesel::r2d2::ConnectionManager;
-use diesel::r2d2::Pool;
-use diesel::PgConnection;
 
 use crate::auth::{SiweError, SiweNonceRequest, SiweResponse, SiweSession};
 
@@ -79,16 +79,16 @@ pub async fn siwe_sign_in(
 
             // Creating a user settings
 
-            let user_settings : SettingsTable = SettingsTable {
+            let user_settings: SettingsTable = SettingsTable {
                 user_pub_key: siwe_session.address.clone(),
                 cli_pub_key: None,
                 cli_priv_key: None,
-                witness_network: None,
-                witness_contract_address: None,
-                theme: None,
+                witness_network: Some("sepolia".to_string()),
+                witness_contract_address: Some("0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611".to_string()),
+                theme: Some("light".to_string()),
             };
-            
-            let res = create_setting( &mut conn, user_settings);
+
+            let res = create_setting(&mut conn, user_settings.clone());
             if res.is_err() {
                 let e = res.err().unwrap();
 
@@ -103,7 +103,7 @@ pub async fn siwe_sign_in(
 
                 return (StatusCode::BAD_REQUEST, Json(res));
             }
-           
+
             log_data.push(format!(
                 "SIWE sign-in successful for address: {}",
                 siwe_session.address.clone()
@@ -112,7 +112,7 @@ pub async fn siwe_sign_in(
                 logs: log_data.clone(),
                 success: true,
                 session: Some(siwe_session.clone()),
-                user_settings: Some(res.unwrap()),
+                user_settings: Some(user_settings.clone()),
             };
             return (StatusCode::OK, Json(res));
         }
@@ -184,25 +184,23 @@ pub async fn verify_siwe_message(
         let siwe_session = SiweSession {
             address: format!("{:?}", recovered_address),
             nonce: _message.nonce.to_string(),
-            issued_at:  timestamp_to_datetime_utc(&_message.issued_at),
+            issued_at: timestamp_to_datetime_utc(&_message.issued_at),
             expiration_time: if _message.expiration_time.is_none() {
                 None
             } else {
-                Some(timestamp_to_datetime_utc(&_message.expiration_time.unwrap()))
+                Some(timestamp_to_datetime_utc(
+                    &_message.expiration_time.unwrap(),
+                ))
             },
-            
         };
 
         // Ok(format!("{:?}", recovered_address))
         Ok(siwe_session)
-        
     } else {
         error!("Quack Message");
         Err(SiweError::MessageVerificationFailed)
     }
 }
-
-
 
 pub async fn fetch_nonce_session(
     State(server_database): State<Pool<ConnectionManager<PgConnection>>>,

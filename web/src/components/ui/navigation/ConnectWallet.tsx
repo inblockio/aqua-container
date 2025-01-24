@@ -87,23 +87,24 @@ export default function ConnectWallet() {
             const responseData = response.data;
             const walletAddress = ethers.getAddress(responseData?.session?.address);
             setMetamaskAddress(walletAddress);
-            let avatar = generateAvatar(walletAddress);
+            const avatar = generateAvatar(walletAddress);
             setAvatar(avatar);
             const expirationDate = new Date(responseData?.session?.expiration_time);
             setCookie(SESSION_COOKIE_NAME, `${responseData.session.nonce}`, expirationDate);
             setConnectionState("success");
 
+            // network: response.data.user_profile.chain,
+            // domain: response.data.user_profile.domain_name,
+            // fileMode: response.data.user_profile.file_mode,
+            // contractAddress: response.data.user_profile.contract_address,
             setUserProfile({
-              network: response.data.user_profile.chain,
-              domain: response.data.user_profile.domain_name,
-              fileMode: response.data.user_profile.file_mode,
-              contractAddress: response.data.user_profile.contract_address,
+              ...response.data.user_settings,
             });
 
             const url = `${backend_url}/explorer_files`;
             console.log("url is ", url);
             
-            let files = await fetchFiles(walletAddress, url);
+            const files = await fetchFiles(walletAddress, url);
             setFiles(files);
           }
         }

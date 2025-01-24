@@ -4,7 +4,7 @@ import { DialogActionTrigger, DialogBody, DialogCloseTrigger, DialogContent, Dia
 import { Field } from "./field"
 import { useState } from "react"
 import { RadioCardItem, RadioCardRoot } from "./radio-card"
-import { ColorModeButton } from "./color-mode"
+import { ColorModeButton, useColorMode } from "./color-mode"
 import axios from "axios"
 import { useStore } from "zustand"
 import appStore from "../../store"
@@ -19,44 +19,65 @@ const networks = createListCollection({
     ],
 })
 
-const fileModes = createListCollection({
-    items: [
-        { label: "Public", value: "public" },
-        { label: "Private", value: "private" },
-    ],
-})
+// const fileModes = createListCollection({
+//     items: [
+//         { label: "Public", value: "public" },
+//         { label: "Private", value: "private" },
+//     ],
+// })
 
 const SettingsForm = () => {
     const { setUserProfile, user_profile , backend_url, metamaskAddress} = useStore(appStore)
-    const [activeNetwork, setActiveNetwork] = useState<string>(user_profile.network)
-    const [domain, setDomain] = useState<string>(user_profile.domain)
-    const [mode, setMode] = useState<string>(user_profile.fileMode)
-    const [contract, setContract] = useState<string>(user_profile.contractAddress ?? "0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611")
+    const {  colorMode } = useColorMode()
+    /**
+     * 
+     * user_pub_key : string,
+        cli_pub_key: string,
+        cli_priv_key: string,
+        theme: string,
+     */
+    const [activeNetwork, setActiveNetwork] = useState<string>(user_profile.witness_network)
+    // const [userPubKey, setUserPubKey] = useState<string>(user_profile.user_pub_key)
+    const [cliPubKey, setCliPubKey] = useState<string>(user_profile.cli_pub_key)
+    const [cliPrivKey, setCliPrivKey] = useState<string>(user_profile.cli_priv_key)
+    const [contract, setContract] = useState<string>(user_profile.witness_contract_address ?? "0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611")
 
+    /**
+     * "": "0x6c5544021930b7887455e21f00b157b2fa572667",
+        "cli_pub_key": null,
+        "cli_priv_key": null,
+        "witness_network": null,
+        "witness_contract_address": null,
+        "theme": null
+     */
     const updateUserProfile = async () => {
         const formData = new URLSearchParams();
-        formData.append('chain', activeNetwork);
-        formData.append('domain_name', domain);
-        formData.append('file_mode', mode);
-        formData.append('contract_address', contract);
-        formData.append("address", metamaskAddress ?? "")
-        formData.append('theme', 'light');
+        formData.append('cli_priv_key', cliPrivKey);
+        formData.append('cli_pub_key', cliPubKey);
+        formData.append('witness_contract_address', contract);
+        formData.append('witness_network', activeNetwork);
+        formData.append("user_pub_key", metamaskAddress ?? user_profile.user_pub_key)
+        formData.append('theme', colorMode ?? "light");
 
 
-        const url = `${backend_url}/explorer_update_user_profile`;
+        const url = `${backend_url}/explorer_update_user_settings`;
         
         const response = await axios.post(url, formData, {
             headers: {
+                'metamask_address' : metamaskAddress ?? user_profile.user_pub_key
                 // 'Content-Type': 'application/x-www-form-urlencoded'
             }
         });
 
         if (response.status === 200) {
             setUserProfile({
-                contractAddress: contract,
-                network: activeNetwork,
-                domain: domain,
-                fileMode: mode
+                user_pub_key: user_profile.user_pub_key,
+                cli_pub_key: cliPubKey,
+                cli_priv_key: cliPrivKey,
+                witness_network: activeNetwork,
+                theme: colorMode ?? "light",
+                witness_contract_address: contract ?? '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',
+          
             })
 
             toaster.create({
@@ -77,8 +98,14 @@ const SettingsForm = () => {
                     </Group>
                 </Card.Body>
             </Card.Root>
-            <Field invalid={false} label="Domain Name" helperText="self-issued identity claim used for generating/verifying aqua chain" errorText="This field is required">
-                <Input placeholder="Domain Name" value={domain} onChange={e => setDomain(e.currentTarget.value)} />
+            <Field invalid={false} label="Public address" helperText="self-issued identity claim used for generating/verifying aqua chain" errorText="This field is required">
+                <Input placeholder="User Public address" disabled={true} value={user_profile.user_pub_key}  />
+            </Field>
+            <Field invalid={false} label="CLI public key " helperText="self-issued identity claim used for generating/verifying aqua chain" errorText="This field is required">
+                <Input placeholder="XXXXXXX" value={cliPubKey} onChange={e => setCliPubKey(e.currentTarget.value)} />
+            </Field>
+            <Field invalid={false} label="CLI private key " helperText="self-issued identity claim used for generating/verifying aqua chain" errorText="This field is required">
+                <Input placeholder="XXXXXXXXX" value={cliPrivKey} type={"password"} onChange={e => setCliPrivKey(e.currentTarget.value)} />
             </Field>
             <Field invalid={false} label="Contract Address" errorText="This field is required" >
                 <Input placeholder="Contract Address" value={contract} onChange={e => setContract(e.currentTarget.value)} />
@@ -98,7 +125,7 @@ const SettingsForm = () => {
                 </RadioCardRoot>
             </Field>
             {/* <Field invalid={false} label="Default File Mode" helperText="Is a file public or private" errorText="This field is required"> */}
-            <Field invalid={false} label="Default File Mode" helperText="Any one can view the file or the file should be visible only to you." errorText="This field is required">
+            {/* <Field invalid={false} label="Default File Mode" helperText="Any one can view the file or the file should be visible only to you." errorText="This field is required">
                 <RadioCardRoot defaultValue="public" value={mode} onValueChange={e => setMode(e.value)}>
                     <HStack align="stretch">
                         {fileModes.items.map((item) => (
@@ -111,7 +138,7 @@ const SettingsForm = () => {
                         ))}
                     </HStack>
                 </RadioCardRoot>
-            </Field>
+            </Field> */}
             <Group>
                 <Button onClick={updateUserProfile}>Save</Button>
             </Group>

@@ -1,6 +1,5 @@
 use chrono::{DateTime, Utc};
 
-use crate::util::vec_to_string;
 use aqua_verifier_rs_types::models::chain::AquaChain;
 use aqua_verifier_rs_types::models::revision::Revision;
 use chrono::NaiveDateTime;
@@ -57,11 +56,14 @@ pub struct LatestTable {
 #[derive(Queryable, Insertable, Selectable, Debug, Clone, Deserialize, Serialize)]
 #[diesel(table_name = crate::schema::Revision)]
 pub struct RevisionTable {
-    pub hash: String,                                   // hash
-    pub owner: String,                                  // pubkey
-    pub nonce: String,                                  // TEXT
-    pub shared: Option<Vec<String>>,                    // TEXT[]
-    pub contract: Option<Vec<String>>,                  // TEXT[]
+    pub hash: String,  // hash
+    pub owner: String, // pubkey
+    pub nonce: String, // TEXT
+    // pub shared: Option<Vec<String>>,                    // TEXT[]
+    // pub contract: Option<Vec<String>>,                  // TEXT[]
+    pub shared: Option<Vec<Option<String>>>, // Change from Option<Vec<String>>
+    pub contract: Option<Vec<Option<String>>>, // Change from Option<Vec<String>>
+
     pub previous: Option<String>,                       // varchar
     pub children: Option<String>,                       // TEXT
     pub local_timestamp: Option<chrono::NaiveDateTime>, // timestamp

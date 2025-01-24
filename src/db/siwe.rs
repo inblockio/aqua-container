@@ -8,22 +8,35 @@ pub fn insert_siwe_data(
     data: SiweSession,
     db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,
 ) -> Result<i64, String> {
-    // let record = &SiweSessionsTable {
-    //     id: 0,
-    //     address: data.address,
-    //     nonce: data.nonce,
-    //     issued_at: data.issued_at,
-    //     expiration_time: data.expiration_time,
-    // };
-    // let inserted_id: i32 = diesel::insert_into(crate::schema::siwe_sessions::table)
-    //     .values(record)
-    //     .returning(crate::schema::siwe_sessions::dsl::id)
-    //     .get_result::<Option<i32>>(db_connection)
-    //     .map_err(|e| format!("Error saving new siwe data: {}", e))?
-    //     .unwrap_or(-1); // Provide a default value if None
+    // Get the current max id from the database
+    let current_max_id: Option<i32> = crate::schema::siwe_sessions::table
+        .select(diesel::dsl::max(crate::schema::siwe_sessions::dsl::id))
+        .first::<Option<i32>>(db_connection)
+        .map_err(|e| {
+            println!("Error fetching max id: {}", e);
+            format!("Error fetching max id: {}", e)
+        })?;
 
-    // Ok(inserted_id as i64)
-    Ok(0)
+    // Calculate the new id as max_id + 1
+    let new_id = current_max_id.unwrap_or(0) + 1;
+
+    let record = &SiweSessionsTable {
+        id: new_id,
+        address: data.address,
+        nonce: data.nonce,
+        issued_at: data.issued_at,
+        expiration_time: data.expiration_time,
+    };
+    let inserted_id: i32 = diesel::insert_into(crate::schema::siwe_sessions::table)
+        .values(record)
+        .returning(crate::schema::siwe_sessions::dsl::id)
+        .get_result::<i32>(db_connection)
+        .map_err(|e| {
+            println!("Error saving new siwe data: {}", e);
+            format!("Error saving new siwe data: {}", e)
+        })?; // Provide a default value if None
+
+    Ok(inserted_id as i64)
 }
 pub fn fetch_siwe_data(
     db_connection: &mut PooledConnection<ConnectionManager<PgConnection>>,

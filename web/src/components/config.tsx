@@ -41,10 +41,13 @@ const LoadConfiguration = () => {
                     setAvatar(undefined)
                     setFiles([])
                     setUserProfile({
-                        network: '',
-                        domain: '',
-                        fileMode: '',
-                        contractAddress: '',
+                        user_pub_key: "",
+                        cli_pub_key: "",
+                        cli_priv_key: "",
+                        witness_network: "",
+                        theme: "light",
+                        witness_contract_address: '0x45f59310ADD88E6d23ca58A0Fa7A55BEE6d2a611',
+                  
                     })
                 }
             }
@@ -62,7 +65,7 @@ const LoadConfiguration = () => {
 
     const fetchUserProfile = async (address: string) => {
 
-        const url = `${backend_url}/explorer_fetch_user_profile`;
+        const url = `${backend_url}/explorer_fetch_user_settings`;
         console.log("url is ", url);
 
         const response = await axios.get(url, {
@@ -73,12 +76,15 @@ const LoadConfiguration = () => {
         });
 
         if (response.status === 200) {
+            // setUserProfile({
+            //     network: response.data.user_profile.chain,
+            //     domain: response.data.user_profile.domain,
+            //     fileMode: response.data.user_profile.mode,
+            //     contractAddress: response.data.user_profile.contract,
+            // })
             setUserProfile({
-                network: response.data.user_profile.chain,
-                domain: response.data.user_profile.domain,
-                fileMode: response.data.user_profile.mode,
-                contractAddress: response.data.user_profile.contract,
-            })
+                ...response.data.user_settings,
+              });
         }
     }
 

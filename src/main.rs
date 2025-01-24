@@ -5,7 +5,7 @@ mod controllers;
 mod db;
 mod models;
 mod schema;
-mod util;
+mod utils;
 
 // use crate::models::DB_POOL;
 use axum::response::{IntoResponse, Response};
@@ -47,7 +47,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 extern crate serde_json_path_to_error as serde_json;
 use std::sync::{mpsc, Mutex, MutexGuard};
 // use crate::controllers::api_controller::explorer_file_verify_hash_upload;
-use crate::util:: establish_connection;
+use crate::utils::database_utils::establish_connection;
 // use controllers::{api_controller::{
 //     explorer_aqua_file_upload, explorer_delete_all_files, explorer_delete_file, explorer_file_upload, explorer_import_aqua_chain, explorer_merge_chain, explorer_sign_revision, explorer_witness_file, fetch_explorer_files
 // }, auth_controller::session_logout_by_nonce, share_controller::{get_share_data, save_share_data}};
@@ -95,7 +95,7 @@ async fn main() {
 
     // Establish database connection pool
     //Pool<ConnectionManager<PgConnection>>
-    let pool: r2d2::Pool<ConnectionManager<PgConnection>> = crate::util::establish_connection();
+    let pool: r2d2::Pool<ConnectionManager<PgConnection>> = crate::utils::database_utils::establish_connection();
 
     // Run migrations
     // Get a connection from the pool to pass to run_db_migrations
@@ -141,7 +141,7 @@ async fn main() {
             post(explorer_update_user_settings),
         )
         .route(
-            "/explorer_fetch_user_settingss",
+            "/explorer_fetch_user_settings",
             get(explorer_update_user_settings),
         )
         .route("/siwe", post(siwe_sign_in))
