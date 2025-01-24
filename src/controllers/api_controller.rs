@@ -1,4 +1,8 @@
-use aqua_verifier_rs_types::models::base64::Base64;
+use aqua_verifier::{
+    aqua::AquaProtocol,
+    model::{aqua_chain_result::AquaChainResult, aqua_protocol_options::AquaProtocolOptions},
+};
+use aqua_verifier_rs_types::models::{base64::Base64, chain::AquaChain};
 use axum::{
     body::Bytes,
     extract::{DefaultBodyLimit, Multipart, Path, Request, State},
@@ -14,7 +18,6 @@ use crate::models::{api::ApiResponse, input::DeleteInput};
 use diesel::r2d2::ConnectionManager;
 use diesel::r2d2::Pool;
 use diesel::PgConnection;
-
 
 const MAX_FILE_SIZE: u32 = 20 * 1024 * 1024; // 20 MB in bytes
 
@@ -292,7 +295,31 @@ pub async fn explorer_file_upload(
         file_size
     );
 
-    let b64 = Base64::from(body_bytes);
+    let b64 = Base64::from(body_bytes.clone());
+
+    // create aqua chain
+    let aqua_options = AquaProtocolOptions {
+        version: 1.3,
+        strict: false,
+        allow_null: false,
+        verification_platform: "self".to_string(),
+        chain_network: "sepolia".to_string(),
+        verification_platform_key: "".to_string(),
+    };
+    let aqua_chain = AquaProtocol::new(aqua_options);
+
+    let aqua_chain_genesis_result: AquaChainResult =
+        aqua_chain.generate_genesis_revision_from_file_data(file_name, body_bytes);
+
+    if aqua_chain_genesis_result.is_successfull == false {
+        aqua_chain_genesis_result.logs.iter().for_each(|log| {
+            res.logs
+                .push(format!("{:#?}: {}", log.log_type, log.log.to_string()));
+        });
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(res));
+    }
+
+    // save to db
 
     (StatusCode::INTERNAL_SERVER_ERROR, Json::from(res))
 }
