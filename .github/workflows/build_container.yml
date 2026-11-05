@@ -3,6 +3,9 @@ name: "Build Container"
 on:
   push:
     branches: [main,github-action]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 
 env:
